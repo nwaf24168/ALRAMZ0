@@ -193,7 +193,7 @@ const defaultMetrics = [
   {
     title: "معدل الرد على المكالمات",
     value: "18%",
-    target: "20%",
+    target: "80%",
     icon: null,
     change: 4.3,
     isPositive: false,
@@ -346,7 +346,7 @@ const defaultYearlyMetrics = [
   {
     title: "معدل الرد على المكالمات",
     value: "16%",
-    target: "20%",
+    target: "80%",
     icon: null,
     change: 20.0,
     isPositive: false,
@@ -416,11 +416,11 @@ const defaultYearlyMetrics = [
   {
     title: "عدد العملاء المرشحين",
     value: "672",
-    target: "584",
+    target: "7008",
     icon: null,
-    change: 15.1,
-    isPositive: true,
-    reachedTarget: true,
+    change: -90.4,
+    isPositive: false,
+    reachedTarget: false,
     isLowerBetter: false,
   },
   {
@@ -539,8 +539,24 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // تهيئة البيانات عند تحميل المكون
+  useEffect(() => {
+    // مسح البيانات المخزنة
+    localStorage.removeItem('metrics_data');
+    
+    // تعيين البيانات الافتراضية
+    setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+  }, []);
+
   // تحديث البيانات عند تغيير الفترة
   useEffect(() => {
+    // تعيين البيانات الافتراضية حسب الفترة المحددة
+    setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+    setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+    setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+    setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
+
+    // استرجاع البيانات المحفوظة إن وجدت
     const savedData = localStorage.getItem('metrics_data');
     if (savedData) {
       const data = JSON.parse(savedData);
@@ -548,8 +564,6 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       
       if (periodData.metrics) {
         setMetrics(periodData.metrics);
-      } else {
-        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
       }
       
       if (periodData.customerServiceData) {

@@ -19,7 +19,17 @@ import {
 import { useMetrics } from "@/context/MetricsContext";
 
 const MetricCard = ({ title, value, target, icon, change, isPositive, reachedTarget, isLowerBetter }) => {
-  const getStatusColor = (value: string, target: string, isLowerBetter: boolean): string => {
+  const getStatusColor = (value: string, target: string, isLowerBetter: boolean, title: string): string => {
+    // Special handling for call response rate
+    if (title === "معدل الرد على المكالمات") {
+      const numValue = parseFloat(value.replace(/[^0-9.-]/g, ''));
+      if (numValue > 80) {
+        return 'bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      }
+      return 'bg-gradient-to-br from-red-500/20 to-red-500/10 text-red-500 border-red-500/20';
+    }
+    
+    // Default handling for other metrics
     const numValue = parseFloat(value.replace(/[^0-9.-]/g, ''));
     const numTarget = parseFloat(target.replace(/[^0-9.-]/g, ''));
     
@@ -34,7 +44,7 @@ const MetricCard = ({ title, value, target, icon, change, isPositive, reachedTar
     }
   };
 
-  const statusColor = getStatusColor(value, target, isLowerBetter);
+  const statusColor = getStatusColor(value, target, isLowerBetter, title);
   const changeValue = parseFloat(change.toFixed(1));
 
   return (
