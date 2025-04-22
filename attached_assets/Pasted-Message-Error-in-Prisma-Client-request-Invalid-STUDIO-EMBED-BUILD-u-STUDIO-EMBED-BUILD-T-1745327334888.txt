@@ -1,0 +1,33 @@
+Message: Error in Prisma Client request: 
+
+
+Invalid `STUDIO_EMBED_BUILD<"u"&&STUDIO_EMBED_BUILD?Tbt():require(`${l.prismaClient}/runtime/${u}`),O=e,k=(0,wye.createHash)("sha256").update()` invocation in
+/home/runner/workspace/node_modules/prisma/build/index.js:4907:10856
+
+  4904 - If they want to connect to an existing database, they should go to console.prisma.io and copy the connection string
+  4905 - If they want to upgrade their plan, they should go to console.prisma.io and upgrade their plan in order to be able to create more databases
+  4906 - If they want to delete a database they no longer need, they should go to console.prisma.io and delete the database project`,{name:Y.string(),region:Y.string(),projectCWD:Y.string()},async({name:a,region:c,projectCWD:u})=>({content:[{type:"text",text:await zw({cwd:u,args:["init","--db","--name",a,"--region",c,"--non-interactive"]})}]})),i.tool("Prisma-Login","Login or create an account in order to be able to use Prisma Postgres.",{projectCWD:Y.string()},async({projectCWD:a})=>({content:[{type:"text",text:await zw({cwd:a,args:["platform","auth","login","--early-access"]})}]})),i.tool("Prisma-Studio",`Open Prisma Studio to view data in your database in a pleasing visual ui.
+→ 4907 Provide the current working directory of the users project. This should be the top level directory of the project.`,{projectCWD:Y.string()},async({projectCWD:a})=>({content:[{type:"text",text:await zw({cwd:a,args:["studio"]})}]}));let o=new V7;return await i.connect(o),""}};p7();ar();var jbt=require("@prisma/engines");Ie();var xdt=require("buffer");function bdt(e,r,n,i){Object.defineProperty(e,r,{get:n,set:i,enumerable:!0,configurable:!0})}var vdt={};bdt(vdt,"serializeRPCMessage",()=>vge);bdt(vdt,"deserializeRPCMessage",()=>wge);var xge="PrismaBigInt::",bge="PrismaBytes::";function vge(e){return JSON.stringify(e,(r,n)=>typeof n=="bigint"?xge+n:n?.type==="Buffer"&&Array.isArray(n?.data)?bge+xdt.Buffer.from(n.data).toString("base64"):n)}function wge(e){return JSON.parse(e,(r,n)=>typeof n=="string"&&n.startsWith(xge)?BigInt(n.substr(xge.length)):typeof n=="string"&&n.startsWith(bge)?n.substr(bge.length):n)}var Ibt=U(Cdt()),QU=U(M0t()),Rbt=U(require("http")),kbt=U(L0t()),Mbt=require("zlib");var bx=require("path");Ie();var wye=require("crypto"),Cbt=require("fs/promises"),Abt=U(_0e());function bye(e,r,n,i){Object.defineProperty(e,r,{get:n,set:i,enumerable:!0,configurable:!0})}var Pbt=globalThis,yye={},ZU={},sE=Pbt.parcelRequire94c2;sE==null&&(sE=function(e){if(e in yye)return yye[e].exports;if(e in ZU){var r=ZU[e];delete ZU[e];var n={id:e,exports:{}};return yye[e]=n,r.call(n.exports,n,n.exports),n.exports}var i=new Error("Cannot find module '"+e+"'");throw i.code="MODULE_NOT_FOUND",i},sE.register=function(r,n){ZU[r]=n},Pbt.parcelRequire94c2=sE);var Obt=sE.register;Obt("9lTzd",function(module,exports){bye(module.exports,"guessEnginePaths",()=>guessEnginePaths),bye(module.exports,"guessPrismaClientPath",()=>guessPrismaClientPath);var $5COlq=sE("5COlq");async function guessEnginePaths({forceBinary,forceLibrary,resolveOverrides}){let queryEngineName,queryEngineType;if(forceLibrary?(queryEngineName=await(0,$5COlq.prismaEngineName)("query-engine","library"),queryEngineType="library"):forceBinary?(queryEngineName=await(0,$5COlq.prismaEngineName)("query-engine","binary"),queryEngineType="binary"):(queryEngineName=void 0,queryEngineType=void 0),!queryEngineName||!queryEngineType)return{queryEngine:void 0};let queryEnginePath;if(resolveOverrides[".prisma/client"])queryEnginePath=(0,bx.resolve)(resolveOverrides[".prisma/client"],`../${queryEngineName}`);else if(resolveOverrides["@prisma/engines"])queryEnginePath=(0,bx.resolve)(resolveOverrides["@prisma/engines"],`../../${queryEngineName}`);else{let atPrismaEnginesPath;try{atPrismaEnginesPath=eval("require.resolve('@prisma/engines')")}catch(e){throw new Error("Unable to resolve Prisma engine paths. This is a bug.")}queryEnginePath=(0,bx.resolve)(atPrismaEnginesPath`../../${queryEngineName}`)}return{queryEngine:{type:queryEngineType,path:queryEnginePath}}}function guessPrismaClientPath({resolveOverrides}){let prismaClientPath=resolveOverrides["@prisma/client"]||eval("require.resolve('@prisma/client')");return(0,bx.resolve)(prismaClientPath,"../")}});Obt("5COlq",function(e,r){bye(e.exports,"prismaEngineName",()=>n);async function n(i,o){let a=await Ro(),c=a==="windows"?".exe":"";if(o==="library")return fc(a,"fs");if(o==="binary")return`${i}-${a}${c}`;throw new Error(`Unknown engine type: ${o}`)}});function VMr(e){return{models:xye(e.models),enums:xye(e.enums),types:xye(e.types)}}function xye(e){let r={};for(let{name:n,...i}of e)r[n]=i;return r}var WR=(0,Abt.debug)("prisma:studio-pcw"),zMr=/^\s*datasource\s+([^\s]+)\s*{/m,KMr=/url *= *env\("(.*)"\)/,JMr=/url *= *"(.*)"/;async function YMr({schema:e,schemaPath:r,dmmf:n,adapter:i,datasourceProvider:o,previewFeatures:a,datasources:c,engineType:u,paths:l,directUrl:p,versions:f}){let g=e.match(zMr)?.[1]??"",x=e.match(KMr)?.[1]??null,b=e.match(JMr)?.[1]??null,{getPrismaClient:v,PrismaClientKnownRequestError:E,PrismaClientRustPanicError:_,PrismaClientInitializationError:C,PrismaClientValidationError:F}=typeof STUDIO_EMBED_BUILD<"u"&&STUDIO_EMBED_BUILD?Tbt():require(`${l.prismaClient}/runtime/${u}`),O=e,k=(0,wye.createHash)("sha256").update(
+The table `main.CustomerServiceData` does not exist in the current database.
+  
+Query:
+{
+  "modelName": "CustomerServiceData",
+  "operation": "findMany",
+  "args": {
+    "take": 100,
+    "skip": 0,
+    "select": {
+      "id": true,
+      "period": true,
+      "createdAt": true,
+      "complaints": true,
+      "contactRequests": true,
+      "maintenanceRequests": true,
+      "inquiries": true,
+      "officeInterested": true,
+      "projectsInterested": true,
+      "customersInterested": true
+    }
+  }
+}
