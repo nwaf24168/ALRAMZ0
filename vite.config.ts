@@ -10,9 +10,8 @@ export default defineConfig(({ mode }) => ({
     cors: true,
     strictPort: true,
     hmr: {
-      protocol: "wss",
-      host: "32713e7c-bba7-4531-9316-e2c622eae770-00-1bn6bkbet2zhw.sisko.replit.dev",
       clientPort: 443,
+      port: 5000
     },
     allowedHosts: [
       "127.0.0.1",
