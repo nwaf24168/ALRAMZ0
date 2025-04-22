@@ -9,10 +9,7 @@ export default defineConfig(({ mode }) => ({
     port: 5000,
     cors: true,
     strictPort: true,
-    hmr: {
-      clientPort: 443,
-      port: 5000
-    },
+    hmr: true,
     allowedHosts: [
       "127.0.0.1",
       "localhost",
