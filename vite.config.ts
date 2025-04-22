@@ -12,7 +12,9 @@ export default defineConfig(({ mode }) => ({
       host: "0.0.0.0",
       protocol: "ws",
       clientPort: 443
-    }
+    },
+    cors: true,
+    strictPort: true
   },
   plugins: [
     react(),
