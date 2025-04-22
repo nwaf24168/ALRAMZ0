@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       clientPort: 443,
       host: "0.0.0.0"
+    },
+    watch: {
+      usePolling: true
     }
   },
   plugins: [
