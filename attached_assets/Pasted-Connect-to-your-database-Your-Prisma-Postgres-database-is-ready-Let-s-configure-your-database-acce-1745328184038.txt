@@ -1,0 +1,41 @@
+Connect to your database
+Your Prisma Postgres database is ready! Let’s configure your database access, run your first migration, then explore everything in Prisma Studio.
+
+
+Quickstart Project
+Generate a starter project pre-configured with Prisma Postgres.
+
+
+Existing Project
+Connect Prisma Postgres to your current project setup.
+
+Generate a starter project
+Run the following command locally to scaffold a new project with Prisma pre-configured:
+
+$ npx try-prisma@latest \
+    --template databases/prisma-postgres \
+    --databaseUrl 'prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZjBiNTJkZjgtZGE4Zi00ZDkyLTgzMzEtNDMxMzkyZDMyYzhhIiwidGVuYW50X2lkIjoiZTQxZjM1NDFkYmEyNTJiNmJiYWRlMDJiN2EzYTkwMjJmOTgzYTMxMjc4ZWQzNDA1ZTdjNGRiN2ZlNmFhNTlhOSIsImludGVybmFsX3NlY3JldCI6IjVlY2QxYWE1LTlkZDAtNGNmYS1hMGE0LTY1ZjQxOWRjZWVjYSJ9.nni4H7y8o1kp8kgzrNDE9FjUp_lDE_veEg3DBxA2y8U' \
+    --name hello-prisma \
+    --install npm
+
+Inside your hello-prisma folder, you’ll find an .env file with your credentials already set up. If you need to update it, you can copy from here:
+
+.env
+API key
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZjBiNTJkZjgtZGE4Zi00ZDkyLTgzMzEtNDMxMzkyZDMyYzhhIiwidGVuYW50X2lkIjoiZTQxZjM1NDFkYmEyNTJiNmJiYWRlMDJiN2EzYTkwMjJmOTgzYTMxMjc4ZWQzNDA1ZTdjNGRiN2ZlNmFhNTlhOSIsImludGVybmFsX3NlY3JldCI6IjVlY2QxYWE1LTlkZDAtNGNmYS1hMGE0LTY1ZjQxOWRjZWVjYSJ9.nni4H7y8o1kp8kgzrNDE9FjUp_lDE_veEg3DBxA2y8U"
+
+I've securely stored my credentials
+Run your first migration
+Change into your new folder, then create your initial database schema:
+
+$ cd hello-prisma && npx prisma migrate dev --name init
+
+Query your database
+Run a sample query with Prisma ORM to add some sample data, then click "Verify setup" to confirm you’re connected:
+
+$ npm run queries
+
+Connect with 3rd party database editors
+You can connect to your Prisma Postgres instance using third party database editors like pgAdmin, TablePlus, Postico etc using
+@prisma/ppg-tunnel
+ package. Check our docs for more information
