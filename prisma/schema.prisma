@@ -8,23 +8,78 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model CustomerServiceData {
-  id                 Int      @id @default(autoincrement())
-  createdAt          DateTime @default(now())
-  period             String
-  complaints         Int
-  contactRequests    Int
-  maintenanceRequests Int
-  inquiries          Int
-  officeInterested   Int
-  projectsInterested Int
-  customersInterested Int
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   password  String
   role      String
   createdAt DateTime @default(now())
+}
+
+model CustomerServiceData {
+  id                Int      @id @default(autoincrement())
+  period           String
+  createdAt        DateTime @default(now())
+  complaints       Int      @default(0)
+  contactRequests  Int      @default(0)
+  maintenanceRequests Int   @default(0)
+  inquiries        Int      @default(0)
+  officeInterested Int      @default(0)
+  projectsInterested Int    @default(0)
+  customersInterested Int   @default(0)
+}
+
+model MetricData {
+  id            Int      @id @default(autoincrement())
+  period        String
+  createdAt     DateTime @default(now())
+  title         String
+  value         String
+  target        String
+  change        Float
+  isPositive    Boolean
+  reachedTarget Boolean
+  isLowerBetter Boolean
+}
+
+model Complaint {
+  id          Int      @id @default(autoincrement())
+  ticketId    String   @unique
+  date        DateTime
+  customerName String
+  project     String
+  unitNumber  String?
+  source      String
+  status      String
+  description String
+  action      String?
+  duration    Int      @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedBy   String?
+  updatedAt   DateTime?
+  updates     ComplaintUpdate[]
+}
+
+model ComplaintUpdate {
+  id          Int      @id @default(autoincrement())
+  complaintId Int
+  field       String
+  oldValue    String
+  newValue    String
+  updatedBy   String
+  updatedAt   DateTime @default(now())
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+}
+
+model MaintenanceSatisfaction {
+  id        Int      @id @default(autoincrement())
+  period    String
+  createdAt DateTime @default(now())
+  category  String
+  veryHappy Int      @default(0)
+  happy     Int      @default(0)
+  neutral   Int      @default(0)
+  unhappy   Int      @default(0)
+  veryUnhappy Int    @default(0)
 }
