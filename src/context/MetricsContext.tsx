@@ -542,16 +542,32 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // تهيئة البيانات عند تحميل المكون
   useEffect(() => {
-    // مسح البيانات المخزنة
-    localStorage.removeItem('metrics_data');
-    
-    // تعيين البيانات الافتراضية
-    setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
-  }, []);
+    // استرجاع البيانات من قاعدة البيانات عند تحميل المكون
+    const fetchStoredMetrics = async () => {
+      try {
+        const response = await fetch('/api/metrics', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.metrics) {
+            setMetrics(JSON.parse(data.metrics.data));
+          } else {
+            setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+          }
+        }
+      } catch (error) {
+        console.error('خطأ في استرجاع البيانات:', error);
+        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+      }
+    };
 
-  // تحديث البيانات عند تغيير الفترة
-  useEffect(() => {
-    // تعيين البيانات الافتراضية حسب الفترة المحددة
+    fetchStoredMetrics();
+  }, [currentPeriod]);دة
     setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
     setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
     setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
