@@ -545,20 +545,24 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     // استرجاع البيانات من قاعدة البيانات عند تحميل المكون
     const fetchStoredMetrics = async () => {
       try {
-        const response = await fetch('/api/metrics', {
+        const response = await fetch(`/api/metrics?period=${currentPeriod}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           }
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.metrics) {
-            setMetrics(JSON.parse(data.metrics.data));
-          } else {
-            setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
-          }
+        if (!response.ok) {
+          throw new Error(`خطأ في الاستجابة: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.metrics?.data) {
+          const parsedMetrics = JSON.parse(data.metrics.data);
+          setMetrics(parsedMetrics);
+        } else {
+          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
         }
       } catch (error) {
         console.error('خطأ في استرجاع البيانات:', error);
