@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
       "127.0.0.1",
       "localhost",
       "32713e7c-bba7-4531-9316-e2c622eae770-00-1bn6bkbet2zhw.sisko.replit.dev",
+      "e544bbb6-2261-48a6-acf0-23b74ed63964-00-26nrlxttfz9vv.pike.replit.dev",
     ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
