@@ -547,27 +547,27 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       try {
         const data = JSON.parse(savedData);
         const periodData = data[currentPeriod];
-        
+
         if (periodData?.metrics?.length > 0) {
           setMetrics(periodData.metrics);
         }
-        
+
         if (periodData?.customerServiceData) {
           setCustomerServiceData(periodData.customerServiceData);
         }
-        
+
         if (periodData?.maintenanceSatisfaction) {
           setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
         }
-        
+
         if (periodData?.qualityData?.length > 0) {
           setQualityData(periodData.qualityData);
         }
-        
+
         if (periodData?.npsData?.length > 0) {
           setNPSData(periodData.npsData);
         }
-        
+
         if (periodData?.callsData?.length > 0) {
           setCallsData(periodData.callsData);
         }
@@ -626,14 +626,14 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     try {
       const updatedMetrics = [...metrics];
       updatedMetrics[index] = { ...updatedMetrics[index], ...data };
-      
+
       // تحديث الحالة المحلية فوراً
       setMetrics(updatedMetrics);
 
       // حفظ في localStorage
       const savedData = localStorage.getItem('metrics_data') || '{}';
       const currentData = JSON.parse(savedData);
-      
+
       const updatedData = {
         ...currentData,
         [currentPeriod]: {
@@ -646,9 +646,9 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
           maintenanceSatisfaction
         }
       };
-      
+
       localStorage.setItem('metrics_data', JSON.stringify(updatedData));
-      
+
       toast({
         title: "تم بنجاح",
         description: "تم حفظ البيانات بنجاح",
