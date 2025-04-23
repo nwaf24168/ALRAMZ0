@@ -406,11 +406,10 @@ const complaintsDummyData: Complaint[] = [
 
 // حالات الشكاوى
 const complaintStatuses = [
-  { value: "new", label: "جديدة" },
-  { value: "in_progress", label: "قيد المعالجة" },
-  { value: "pending", label: "معلقة" },
-  { value: "resolved", label: "تم حلها" },
-  { value: "closed", label: "مغلقة" }
+  { value: "all", label: "جميع الحالات" },
+  { value: "تم حلها", label: "تم حلها" },
+  { value: "لازالت قائمة", label: "لازالت قائمة" },
+  { value: "لم يتم حلها", label: "لم يتم حلها" }
 ];
 
 // مصادر الشكاوى
