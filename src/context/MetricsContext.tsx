@@ -575,20 +575,33 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // تحديث البيانات عند تغيير الفترة
   useEffect(() => {
-    setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+    // استرجاع البيانات المحفوظة أولاً
+    const savedData = localStorage.getItem('metrics_data');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        const periodData = data[currentPeriod] || {};
+
+        if (periodData.metrics && periodData.metrics.length > 0) {
+          setMetrics(periodData.metrics);
+        } else {
+          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+        }
+
+        if (periodData.customerServiceData) {
+          setCustomerServiceData(periodData.customerServiceData);
+        }
+      } catch (error) {
+        console.error('خطأ في قراءة البيانات المحفوظة:', error);
+        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+      }
+    } else {
+      setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+    }
+
     setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
     setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
     setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
-
-    // استرجاع البيانات المحفوظة إن وجدت
-    const savedData = localStorage.getItem('metrics_data');
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      const periodData = data[currentPeriod] || {};
-
-      if (periodData.metrics) {
-        setMetrics(periodData.metrics);
-      }
 
       if (periodData.customerServiceData) {
         setCustomerServiceData(periodData.customerServiceData);
@@ -605,7 +618,22 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       const updatedMetrics = [...metrics];
       updatedMetrics[index] = { ...updatedMetrics[index], ...data };
       
-      // حفظ في قاعدة البيانات
+      // تحديث الحالة المحلية فوراً
+      setMetrics(updatedMetrics);
+
+      // حفظ في localStorage
+      const savedData = localStorage.getItem('metrics_data') || '{}';
+      const currentData = JSON.parse(savedData);
+      
+      localStorage.setItem('metrics_data', JSON.stringify({
+        ...currentData,
+        [currentPeriod]: {
+          ...currentData[currentPeriod],
+          metrics: updatedMetrics
+        }
+      }));
+
+      // محاولة الحفظ في قاعدة البيانات
       const response = await fetch('/api/metrics', {
         method: 'POST',
         headers: {
@@ -617,14 +645,9 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'فشل حفظ البيانات');
+      if (!response.ok) {
+        console.warn('تم حفظ البيانات محلياً ولكن فشل الحفظ في قاعدة البيانات');
       }
-
-      // تحديث الحالة فقط بعد نجاح الحفظ
-      setMetrics(updatedMetrics);
       
       toast({
         title: "تم بنجاح",
