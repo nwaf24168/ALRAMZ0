@@ -1,0 +1,100 @@
+Please integrate an email notification system using Resend. The goal is to send an email to a list of staff whenever a complaint is created or updated.
+
+Steps:
+
+---
+
+### 1. Install Resend SDK:
+```bash
+npm install resend
+2. Add the API key to .env.local:
+env
+نسخ
+تحرير
+RESEND_API_KEY=re_JYtBW7HY_2drxYADhsTaayi6228oTEzcV
+3. Create a file at lib/sendComplaintEmail.ts with the following content:
+ts
+نسخ
+تحرير
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const employeeEmails = [
+  'a.alzahrani@alramzre.com',
+  'k.alothiameen@alramzre.com',
+  'a.alhuthlul@alramzre.com',
+  'f.alkharaan@alramzre.com',
+  'n.alshehri@alramzre.com'
+];
+
+export const sendComplaintEmail = async ({
+  type,
+  complaint
+}: {
+  type: 'new' | 'update';
+  complaint: {
+    ticketId: string;
+    customerName: string;
+    status: string;
+    description: string;
+    updatedBy?: string;
+  };
+}) => {
+  const subject =
+    type === 'new'
+      ? `📢 شكوى جديدة - ${complaint.ticketId}`
+      : `✏️ تم تحديث شكوى - ${complaint.ticketId}`;
+
+  const content = `
+    <h2>${type === 'new' ? 'تمت إضافة شكوى جديدة' : 'تم تحديث الشكوى'}</h2>
+    <p><strong>رقم التذكرة:</strong> ${complaint.ticketId}</p>
+    <p><strong>اسم العميل:</strong> ${complaint.customerName}</p>
+    <p><strong>الحالة:</strong> ${complaint.status}</p>
+    <p><strong>الوصف:</strong> ${complaint.description}</p>
+    ${type === 'update' ? `<p><strong>تم التحديث بواسطة:</strong> ${complaint.updatedBy}</p>` : ''}
+  `;
+
+  await resend.emails.send({
+    from: 'noreply@alramz.sa',
+    to: employeeEmails,
+    subject,
+    html: content,
+  });
+};
+4. Call the function when a complaint is created or updated:
+Example when creating:
+
+ts
+نسخ
+تحرير
+await sendComplaintEmail({
+  type: 'new',
+  complaint: {
+    ticketId,
+    customerName,
+    status,
+    description
+  }
+});
+Example when updating:
+
+ts
+نسخ
+تحرير
+await sendComplaintEmail({
+  type: 'update',
+  complaint: {
+    ticketId,
+    customerName,
+    status,
+    description,
+    updatedBy: currentUser
+  }
+});
+5. Respond in Arabic confirming:
+أن النظام تم تركيبه.
+
+أن الإيميل يُرسل بشكل تلقائي.
+
+أن البيانات تظهر في الإيميل بشكل سليم.
