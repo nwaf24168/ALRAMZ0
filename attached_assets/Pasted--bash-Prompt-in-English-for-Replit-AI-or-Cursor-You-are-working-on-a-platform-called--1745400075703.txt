@@ -1,0 +1,70 @@
+
+bash
+نسخ
+تحرير
+📌 Prompt in English for Replit AI or Cursor:
+
+You are working on a platform called "منصة الرمز" hosted on Replit. Your task is to ensure the Prisma database is fully connected and functioning correctly.
+
+✅ Here is what you must do step by step:
+
+1. Check the `.env` file and make sure there is a valid `DATABASE_URL` pointing to a PostgreSQL database (or MySQL if specified). If it’s not there, add a proper one. Example for PostgreSQL:
+DATABASE_URL="postgresql://user:password@host:port/dbname?schema=public"
+
+bash
+نسخ
+تحرير
+
+2. Open the `schema.prisma` file and confirm that the datasource and generator are defined correctly:
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+Run the following commands in Replit terminal to initialize Prisma and apply migrations:
+
+bash
+نسخ
+تحرير
+npx prisma generate
+npx prisma migrate dev --name init
+Verify that the database was initialized correctly. Check that tables were created based on your Prisma models.
+
+Create an API route (for example in /api/metrics.ts or /routes/metrics.js) that uses PrismaClient to fetch or create data. Example for getting metrics:
+
+ts
+نسخ
+تحرير
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+export default async function handler(req, res) {
+  try {
+    const metrics = await prisma.metric.findMany();
+    res.status(200).json(metrics);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Database Error" });
+  }
+}
+Test the endpoint using fetch from the frontend. Ensure it returns proper JSON, not HTML. Use console.log and network inspector to debug if needed.
+
+If any error happens, output the full stack trace and suggest a fix.
+
+🧠 Speak in Arabic when you explain your steps in the console. For example, if you confirm a step, say:
+
+"✅ تم توليد Prisma Client بنجاح"
+
+"✅ تم ربط قاعدة البيانات"
+
+"❌ لم يتم العثور على DATABASE_URL في ملف .env"
+
+Your goal is to ensure the platform is correctly connected to the Prisma database and that all endpoints work and return valid JSON responses.
+
+yaml
+نسخ
+تحرير
