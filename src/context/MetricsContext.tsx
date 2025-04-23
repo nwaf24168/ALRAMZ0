@@ -542,35 +542,39 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // تهيئة البيانات عند تحميل المكون
   useEffect(() => {
-    // استرجاع البيانات من قاعدة البيانات عند تحميل المكون
-    const fetchStoredMetrics = async () => {
+    const savedData = localStorage.getItem('metrics_data');
+    if (savedData) {
       try {
-        const response = await fetch(`/api/metrics?period=${currentPeriod}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`خطأ في الاستجابة: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = JSON.parse(savedData);
+        const periodData = data[currentPeriod];
         
-        if (data.success && data.metrics?.data) {
-          const parsedMetrics = JSON.parse(data.metrics.data);
-          setMetrics(parsedMetrics);
-        } else {
-          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+        if (periodData?.metrics?.length > 0) {
+          setMetrics(periodData.metrics);
+        }
+        
+        if (periodData?.customerServiceData) {
+          setCustomerServiceData(periodData.customerServiceData);
+        }
+        
+        if (periodData?.maintenanceSatisfaction) {
+          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
+        }
+        
+        if (periodData?.qualityData?.length > 0) {
+          setQualityData(periodData.qualityData);
+        }
+        
+        if (periodData?.npsData?.length > 0) {
+          setNPSData(periodData.npsData);
+        }
+        
+        if (periodData?.callsData?.length > 0) {
+          setCallsData(periodData.callsData);
         }
       } catch (error) {
-        console.error('خطأ في استرجاع البيانات:', error);
-        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+        console.error('خطأ في قراءة البيانات المحفوظة:', error);
       }
-    };
-
-    fetchStoredMetrics();
+    }
   }, [currentPeriod]);
 
   // تحديث البيانات عند تغيير الفترة
@@ -630,29 +634,20 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       const savedData = localStorage.getItem('metrics_data') || '{}';
       const currentData = JSON.parse(savedData);
       
-      localStorage.setItem('metrics_data', JSON.stringify({
+      const updatedData = {
         ...currentData,
         [currentPeriod]: {
           ...currentData[currentPeriod],
-          metrics: updatedMetrics
+          metrics: updatedMetrics,
+          qualityData,
+          npsData,
+          callsData,
+          customerServiceData,
+          maintenanceSatisfaction
         }
-      }));
-
-      // محاولة الحفظ في قاعدة البيانات
-      const response = await fetch('/api/metrics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          period: currentPeriod,
-          metrics: updatedMetrics
-        }),
-      });
-
-      if (!response.ok) {
-        console.warn('تم حفظ البيانات محلياً ولكن فشل الحفظ في قاعدة البيانات');
-      }
+      };
+      
+      localStorage.setItem('metrics_data', JSON.stringify(updatedData));
       
       toast({
         title: "تم بنجاح",
