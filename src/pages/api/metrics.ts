@@ -28,10 +28,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    res.status(200).json(result);
+    return res.status(200).json(result);
   } catch (error) {
     console.error('Error saving metrics:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to save metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
