@@ -575,17 +575,15 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // تحديث البيانات عند تغيير الفترة
   useEffect(() => {
-    // استرجاع البيانات المحفوظة أولاً
     const savedData = localStorage.getItem('metrics_data');
     if (savedData) {
       try {
         const data = JSON.parse(savedData);
         const periodData = data[currentPeriod] || {};
 
+        // تعيين البيانات المحفوظة فقط إذا كانت موجودة
         if (periodData.metrics && periodData.metrics.length > 0) {
           setMetrics(periodData.metrics);
-        } else {
-          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
         }
 
         if (periodData.customerServiceData) {
@@ -595,17 +593,29 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         if (periodData.maintenanceSatisfaction) {
           setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
         }
+
+        // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
+        if (!periodData.metrics) {
+          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+          setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+          setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+          setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
+        }
       } catch (error) {
         console.error('خطأ في قراءة البيانات المحفوظة:', error);
+        // تعيين البيانات الافتراضية فقط في حالة الخطأ
         setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+        setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+        setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+        setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
       }
     } else {
+      // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
       setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+      setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+      setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+      setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
     }
-
-    setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
-    setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
-    setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
   }, [currentPeriod]);
 
   const updateMetric = async (index: number, data: Partial<MetricData>) => {
