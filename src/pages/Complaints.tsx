@@ -520,7 +520,7 @@ export default function Complaints() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleAddComplaint = () => {
+  const handleAddComplaint = async () => {
     const newId = (1000 + complaints.length + 1).toString();
     const now = new Date().toISOString();
 
@@ -539,11 +539,41 @@ export default function Complaints() {
     setComplaints(updatedComplaints);
     localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
 
-    addNotification({
-      title: "تمت الإضافة",
-      message: `تم إضافة الشكوى رقم ${newId} بنجاح`,
-      type: "success"
-    });
+    // Send email notification
+    try {
+      const { success } = await sendComplaintEmail({
+        type: 'new',
+        complaint: {
+          id: complaint.id,
+          customerName: complaint.customerName,
+          status: complaint.status,
+          description: complaint.description,
+          project: complaint.project,
+          unitNumber: complaint.unitNumber
+        }
+      });
+
+      if (success) {
+        addNotification({
+          title: "تمت الإضافة",
+          message: `تم إضافة الشكوى رقم ${newId} بنجاح وإرسال الإشعارات`,
+          type: "success"
+        });
+      } else {
+        addNotification({
+          title: "تمت الإضافة",
+          message: `تم إضافة الشكوى رقم ${newId} بنجاح ولكن فشل إرسال الإشعارات`,
+          type: "warning"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      addNotification({
+        title: "تمت الإضافة",
+        message: `تم إضافة الشكوى رقم ${newId} بنجاح ولكن فشل إرسال الإشعارات`,
+        type: "warning"
+      });
+    }
 
     setIsAddDialogOpen(false);
 
@@ -559,7 +589,7 @@ export default function Complaints() {
     });
   };
 
-  const handleUpdateComplaint = () => {
+  const handleUpdateComplaint = async () => {
     if (!selectedComplaint || !user) return;
 
     const now = new Date().toISOString();
@@ -605,14 +635,45 @@ export default function Complaints() {
     localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
     setIsEditDialogOpen(false);
 
-    // إظهار إشعار لكل تحديث
-    updates.forEach(update => {
-    addNotification({
-      title: "تم التحديث",
-        message: `تم تحديث ${fieldsToCheck[update.field]} من "${update.oldValue}" إلى "${update.newValue}" بواسطة ${user.username}`,
-      type: "success"
+    // Send email notification for update
+    try {
+      const { success } = await sendComplaintEmail({
+        type: 'update',
+        complaint: {
+          id: selectedComplaint.id,
+          customerName: newComplaint.customerName,
+          status: newComplaint.status,
+          description: newComplaint.description,
+          project: newComplaint.project,
+          unitNumber: newComplaint.unitNumber,
+          updatedBy: user.username
+        }
       });
-    });
+
+      // إظهار إشعار لكل تحديث
+      updates.forEach(update => {
+        addNotification({
+          title: "تم التحديث",
+          message: `تم تحديث ${fieldsToCheck[update.field]} من "${update.oldValue}" إلى "${update.newValue}" بواسطة ${user.username}`,
+          type: "success"
+        });
+      });
+
+      if (!success) {
+        addNotification({
+          title: "تنبيه",
+          message: "تم حفظ التحديثات ولكن فشل إرسال الإشعارات",
+          type: "warning"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      addNotification({
+        title: "تنبيه",
+        message: "تم حفظ التحديثات ولكن فشل إرسال الإشعارات",
+        type: "warning"
+      });
+    }
   };
 
   const handleDeleteComplaint = () => {
