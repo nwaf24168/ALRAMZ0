@@ -604,8 +604,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     try {
       const updatedMetrics = [...metrics];
       updatedMetrics[index] = { ...updatedMetrics[index], ...data };
-      setMetrics(updatedMetrics);
-
+      
       // حفظ في قاعدة البيانات
       const response = await fetch('/api/metrics', {
         method: 'POST',
@@ -618,14 +617,25 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('فشل حفظ البيانات');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'فشل حفظ البيانات');
       }
+
+      // تحديث الحالة فقط بعد نجاح الحفظ
+      setMetrics(updatedMetrics);
+      
+      toast({
+        title: "تم بنجاح",
+        description: "تم حفظ البيانات بنجاح",
+        variant: "default",
+      });
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حفظ البيانات",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حفظ البيانات",
         variant: "destructive",
       });
     }

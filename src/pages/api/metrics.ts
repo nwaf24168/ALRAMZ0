@@ -1,9 +1,10 @@
+
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'GET') {
-    try {
+  try {
+    if (req.method === 'GET') {
       const metrics = await prisma.metrics.findFirst({
         where: {
           period: req.query.period as string
@@ -17,17 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         success: true, 
         metrics: metrics || null
       });
-    } catch (error) {
-      console.error('خطأ في استرجاع البيانات:', error);
-      return res.status(500).json({ 
-        success: false,
-        error: 'فشل في استرجاع البيانات'
-      });
     }
-  }
 
-  if (req.method === 'POST') {
-    try {
+    if (req.method === 'POST') {
       const { period, metrics } = req.body;
 
       if (!period || !metrics) {
@@ -54,14 +47,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         success: true, 
         data: result 
       });
-    } catch (error) {
-      console.error('خطأ في حفظ البيانات:', error);
-      return res.status(500).json({ 
-        success: false,
-        error: 'فشل في حفظ البيانات'
-      });
     }
-  }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
+  } catch (error) {
+    console.error('خطأ في معالجة الطلب:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'حدث خطأ في معالجة الطلب'
+    });
+  }
 }
