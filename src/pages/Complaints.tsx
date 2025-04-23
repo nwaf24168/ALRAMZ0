@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import Layout from "@/components/layout/Layout";
+import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -459,7 +459,6 @@ export default function Complaints() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -477,23 +476,17 @@ export default function Complaints() {
     action: ""
   });
 
-  const filteredComplaints = complaints
-    .filter((complaint) => {
-      const matchesSearch = 
-        complaint.customerName.includes(searchTerm) || 
-        complaint.project.includes(searchTerm) || 
-        complaint.description.includes(searchTerm) ||
-        complaint.id.includes(searchTerm);
+  const filteredComplaints = complaints.filter((complaint) => {
+    const matchesSearch = 
+      complaint.customerName.includes(searchTerm) || 
+      complaint.project.includes(searchTerm) || 
+      complaint.description.includes(searchTerm) ||
+      complaint.id.includes(searchTerm);
 
-      const matchesStatus = selectedStatus === "all" || complaint.status === selectedStatus;
+    const matchesStatus = selectedStatus === "all" || complaint.status === selectedStatus;
 
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-    });
+    return matchesSearch && matchesStatus;
+  });
 
   const handleNewComplaintChange = (field: string, value: string) => {
     setNewComplaint((prev) => ({
@@ -666,7 +659,7 @@ export default function Complaints() {
   };
 
   return (
-    <Layout requireAuth={true}>
+    <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">سجل الشكاوى</h1>
@@ -727,7 +720,7 @@ export default function Complaints() {
                     placeholder="أدخل رقم الوحدة"
                     required
                   />
-                </</div>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="source">مصدر الشكوى</Label>
@@ -825,25 +818,12 @@ export default function Complaints() {
                   className="pr-9"
                 />
               </div>
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="relative"
-                  title={sortOrder === "asc" ? "ترتيب تنازلي" : "ترتيب تصاعدي"}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
                 >
-                  <Calendar className="h-4 w-4" />
-                  <span className="absolute -top-1 -right-1 text-xs">
-                    {sortOrder === "asc" ? "↑" : "↓"}
-                  </span>
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <Select
-                    value={selectedStatus}
-                    onValueChange={setSelectedStatus}
-                  >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="جميع الحالات" />
                   </SelectTrigger>
