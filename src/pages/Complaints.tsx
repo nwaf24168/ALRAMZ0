@@ -726,7 +726,7 @@ export default function Complaints() {
                   <Label htmlFor="source">مصدر الشكوى</Label>
                   <Select
                     value={newComplaint.source}
-                    onValueChange={(value) => handleNewComplaintChange("source", value)}
+                    onValueChange={(value) => handleNewComplaintChange("source", value)}>
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر مصدر الشكوى" />
@@ -869,9 +869,11 @@ export default function Complaints() {
                           <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             complaint.status === "تم حلها" || complaint.status === "تم الحل"
                               ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                              : complaint.status === "لازالت قائمة" || complaint.status === "لم يتم حلها"
+                              : complaint.status === "لازالت قائمة"
                               ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                              : complaint.status === "لم يتم حلها"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                           }`}>
                             {complaint.status}
                           </div>
