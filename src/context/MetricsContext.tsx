@@ -264,11 +264,11 @@ const defaultMetrics = [
   {
     title: "عدد العملاء المرشحين",
     value: "584",
-    target: "584",
+    target: "7008",
     icon: null,
-    change: 3.5,
-    isPositive: true,
-    reachedTarget: true,
+    change: -91.7,
+    isPositive: false,
+    reachedTarget: false,
     isLowerBetter: false,
   },
   {
