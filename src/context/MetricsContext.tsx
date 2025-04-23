@@ -545,13 +545,13 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     // استرجاع البيانات من قاعدة البيانات عند تحميل المكون
     const fetchStoredMetrics = async () => {
       try {
-        const response = await fetch('/api/metrics', {
+        const response = await fetch('http://0.0.0.0:5000/api/metrics', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.metrics) {
@@ -581,15 +581,15 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     if (savedData) {
       const data = JSON.parse(savedData);
       const periodData = data[currentPeriod] || {};
-      
+
       if (periodData.metrics) {
         setMetrics(periodData.metrics);
       }
-      
+
       if (periodData.customerServiceData) {
         setCustomerServiceData(periodData.customerServiceData);
       }
-      
+
       if (periodData.maintenanceSatisfaction) {
         setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
       }
@@ -603,7 +603,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       setMetrics(updatedMetrics);
 
       // حفظ في قاعدة البيانات
-      const response = await fetch('/api/metrics', {
+      const response = await fetch('http://0.0.0.0:5000/api/metrics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -657,7 +657,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     // حفظ في localStorage مع مراعاة الفترة
     const savedData = localStorage.getItem('metrics_data') || '{}';
     const currentData = JSON.parse(savedData);
-    
+
     localStorage.setItem('metrics_data', JSON.stringify({
       ...currentData,
       [currentPeriod]: {
@@ -685,7 +685,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     // حفظ في localStorage مع مراعاة الفترة
     const savedData = localStorage.getItem('metrics_data') || '{}';
     const currentData = JSON.parse(savedData);
-    
+
     localStorage.setItem('metrics_data', JSON.stringify({
       ...currentData,
       [currentPeriod]: {
