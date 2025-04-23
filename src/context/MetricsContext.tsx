@@ -567,7 +567,10 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     };
 
     fetchStoredMetrics();
-  }, [currentPeriod]);دة
+  }, [currentPeriod]);
+
+  // تحديث البيانات عند تغيير الفترة
+  useEffect(() => {
     setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
     setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
     setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
