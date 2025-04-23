@@ -416,7 +416,7 @@ const defaultYearlyMetrics = [
   {
     title: "عدد العملاء المرشحين",
     value: "583",
-    target: "584",
+    target: "7008",
     icon: null,
     change: 0.2,
     isPositive: true,
