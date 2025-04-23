@@ -10,23 +10,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { period, metrics } = req.body;
 
+    if (!period || !metrics) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     // حفظ البيانات في قاعدة البيانات
     const result = await prisma.metrics.upsert({
       where: {
         period: period
       },
       update: {
-        data: metrics
+        data: JSON.stringify(metrics)
       },
       create: {
         period: period,
-        data: metrics
+        data: JSON.stringify(metrics)
       }
     });
 
     res.status(200).json(result);
   } catch (error) {
     console.error('Error saving metrics:', error);
-    res.status(500).json({ error: 'Failed to save metrics' });
+    res.status(500).json({ 
+      error: 'Failed to save metrics',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
