@@ -577,21 +577,34 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   }, [currentPeriod]);
 
   const updateMetric = async (index: number, data: Partial<MetricData>) => {
-    const updatedMetrics = [...metrics];
-    updatedMetrics[index] = { ...updatedMetrics[index], ...data };
-    setMetrics(updatedMetrics);
+    try {
+      const updatedMetrics = [...metrics];
+      updatedMetrics[index] = { ...updatedMetrics[index], ...data };
+      setMetrics(updatedMetrics);
 
-    // حفظ في localStorage مع مراعاة الفترة
-    const savedData = localStorage.getItem('metrics_data') || '{}';
-    const currentData = JSON.parse(savedData);
-    
-    localStorage.setItem('metrics_data', JSON.stringify({
-      ...currentData,
-      [currentPeriod]: {
-        ...currentData[currentPeriod],
-        metrics: updatedMetrics
+      // حفظ في قاعدة البيانات
+      const response = await fetch('/api/metrics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          period: currentPeriod,
+          metrics: updatedMetrics
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('فشل حفظ البيانات');
       }
-    }));
+    } catch (error) {
+      console.error('خطأ في حفظ البيانات:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ البيانات",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateQualityData = (index: number, data: Partial<QualityData>) => {
