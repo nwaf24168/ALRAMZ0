@@ -545,7 +545,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     // استرجاع البيانات من قاعدة البيانات عند تحميل المكون
     const fetchStoredMetrics = async () => {
       try {
-        const response = await fetch('http://0.0.0.0:5000/api/metrics', {
+        const response = await fetch('/api/metrics', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       setMetrics(updatedMetrics);
 
       // حفظ في قاعدة البيانات
-      const response = await fetch('http://0.0.0.0:5000/api/metrics', {
+      const response = await fetch('/api/metrics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
