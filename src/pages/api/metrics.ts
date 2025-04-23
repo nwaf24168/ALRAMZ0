@@ -1,30 +1,18 @@
-
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // تأكد من اتصال Prisma
-  try {
-    await prisma.$connect();
-  } catch (error) {
-    console.error('خطأ في الاتصال بقاعدة البيانات:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'فشل الاتصال بقاعدة البيانات'
-    });
-  }
-
   if (req.method === 'GET') {
     try {
       const metrics = await prisma.metrics.findFirst({
-        orderBy: {
-          createdAt: 'desc'
-        },
         where: {
           period: req.query.period as string
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
       });
-      
+
       return res.status(200).json({ 
         success: true, 
         metrics: metrics || null
@@ -54,8 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           period: period
         },
         update: {
-          data: JSON.stringify(metrics),
-          updatedAt: new Date()
+          data: JSON.stringify(metrics)
         },
         create: {
           period: period,
