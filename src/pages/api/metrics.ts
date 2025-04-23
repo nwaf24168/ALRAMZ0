@@ -4,6 +4,9 @@ import prisma from '@/lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    // التحقق من الاتصال
+    await prisma.$connect();
+    
     if (req.method === 'GET') {
       const metrics = await prisma.metrics.findFirst({
         where: {
@@ -57,7 +60,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('خطأ في معالجة الطلب:', error);
     return res.status(500).json({ 
       success: false,
-      error: 'حدث خطأ في معالجة الطلب'
+      error: error instanceof Error ? error.message : 'حدث خطأ في معالجة الطلب'
     });
+  } finally {
+    await prisma.$disconnect();
   }
 }
