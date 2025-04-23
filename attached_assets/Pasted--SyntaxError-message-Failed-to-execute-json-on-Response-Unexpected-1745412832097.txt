@@ -1,0 +1,42 @@
+خطأ في استرجاع البيانات: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at fetchStoredMetrics (https://a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev:5000/src/context/MetricsContext.tsx:545:45)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+محاولة تسجيل الدخول للمستخدم: nawaf
+تم تسجيل الدخول بنجاح للمستخدم: nawaf بدور: مدير النظام
+تم حفظ البيانات محلياً ولكن فشل الحفظ في قاعدة البيانات
+خطأ في استرجاع البيانات: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at fetchStoredMetrics (https://a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev:5000/src/context/MetricsContext.tsx:545:45)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+خطأ في استرجاع البيانات: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at fetchStoredMetrics (https://a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev:5000/src/context/MetricsContext.tsx:545:45)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+خطأ في استرجاع البيانات: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at fetchStoredMetrics (https://a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev:5000/src/context/MetricsContext.tsx:545:45)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+خطأ في استرجاع البيانات: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at fetchStoredMetrics (https://a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev:5000/src/context/MetricsContext.tsx:545:45)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
