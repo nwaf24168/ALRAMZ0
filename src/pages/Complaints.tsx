@@ -454,7 +454,10 @@ interface Complaint {
 export default function Complaints() {
   const { user } = useAuth();
   const { addNotification } = useNotification();
-  const [complaints, setComplaints] = useState<Complaint[]>(complaintsDummyData);
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    const savedComplaints = localStorage.getItem('complaints');
+    return savedComplaints ? JSON.parse(savedComplaints) : complaintsDummyData;
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -533,7 +536,9 @@ export default function Complaints() {
       updates: []
     };
 
-    setComplaints((prev) => [complaint, ...prev]);
+    const updatedComplaints = [complaint, ...complaints];
+    setComplaints(updatedComplaints);
+    localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
 
     addNotification({
       title: "تمت الإضافة",
@@ -598,6 +603,7 @@ export default function Complaints() {
     });
 
     setComplaints(updatedComplaints);
+    localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
     setIsEditDialogOpen(false);
 
     // إظهار إشعار لكل تحديث
@@ -618,6 +624,7 @@ export default function Complaints() {
     );
 
     setComplaints(filteredComplaints);
+    localStorage.setItem('complaints', JSON.stringify(filteredComplaints));
     setIsDeleteDialogOpen(false);
 
     addNotification({
