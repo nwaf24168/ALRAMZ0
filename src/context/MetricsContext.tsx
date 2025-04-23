@@ -591,6 +591,10 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         if (periodData.customerServiceData) {
           setCustomerServiceData(periodData.customerServiceData);
         }
+
+        if (periodData.maintenanceSatisfaction) {
+          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
+        }
       } catch (error) {
         console.error('خطأ في قراءة البيانات المحفوظة:', error);
         setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
@@ -602,15 +606,6 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
     setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
     setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
-
-      if (periodData.customerServiceData) {
-        setCustomerServiceData(periodData.customerServiceData);
-      }
-
-      if (periodData.maintenanceSatisfaction) {
-        setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
-      }
-    }
   }, [currentPeriod]);
 
   const updateMetric = async (index: number, data: Partial<MetricData>) => {
