@@ -56,45 +56,45 @@ const initializeDefaultAdmin = async () => {
       const defaultUsers = [
     {
       id: "1",
-      username: "admin",
-      password: "admin123",
+      username: "nawaf",
+      password: "Alramz2025",
       role: "مدير النظام"
     },
     {
       id: "2",
       username: "abdulsalam",
       password: "Alramz2025",
-      role: "مدير ادارة راحة العملاء"
+      role: "مدير إدارة راحة العملاء"
     },
     {
       id: "3",
-      username: "aljawhara",
+      username: "kholoud",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف جودة"
     },
     {
       id: "4",
-      username: "khulood",
+      username: "adnan",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف جودة"
     },
     {
       id: "5",
-      username: "adnan",
+      username: "aljawhara",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "خدمة عملاء"
     },
     {
       id: "6",
-      username: "lateefa",
+      username: "latifa",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "خدمة عملاء"
     },
     {
       id: "7",
-      username: "nawaf",
+      username: "faisal",
       password: "Alramz2025",
-      role: "مدير النظام"
+      role: "موظف صيانة"
     }
   ];
 
