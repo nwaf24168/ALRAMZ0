@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { getXataClient } from '@/lib/xata';
 
-const xata = getXataClient();
+const xataClient = getXataClient();
 
 interface User {
   id: string;
@@ -51,7 +51,7 @@ const initializeDefaultAdmin = async () => {
     const xata = getXataClient();
     // تحقق من وجود المستخدمين في Xata
     const existingUsers = await xata.db.users.getMany();
-    
+
     if (existingUsers.length === 0) {
       const defaultUsers = [
     {
@@ -106,7 +106,7 @@ const initializeDefaultAdmin = async () => {
       console.log('تم تهيئة المستخدمين الافتراضيين في Xata:', createdUsers);
       return createdUsers;
     }
-    
+
     console.log('المستخدمون موجودون بالفعل في Xata:', existingUsers);
     return existingUsers;
   } catch (error) {
@@ -137,10 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const record = await xata.db.users.filter({ username: username }).getFirst();
+      const record = await xataClient.db.users.filter({ username: username }).getFirst();
 
       if (record && record.password === password) {
-        await xata.db.users.update(record.id, {
+        await xataClient.db.users.update(record.id, {
           last_login: new Date()
         });
         setUser(record);

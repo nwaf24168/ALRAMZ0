@@ -1,4 +1,3 @@
-
 import { buildClient } from '@xata.io/client';
 
 const tables = {
@@ -24,26 +23,11 @@ const tables = {
   audit_logs: {}
 };
 
-const client = buildClient({
+export const xataClient = buildClient({
   databaseURL: 'https://workspace-a07nri.us-east-1.xata.sh/db/alramz2025:main',
   apiKey: 'xau_ACZ6dxgVC61Yj2ve7NINWFjCQVXzroI30',
   tables,
   enableBrowser: true
 });
-
-export const xataClient = {
-  db: {
-    users: client.db.users,
-    metrics: client.db.metrics,
-    customer_service: client.db.customer_service,
-    maintenance_satisfaction: client.db.maintenance_satisfaction,
-    complaints: client.db.complaints,
-    settings: client.db.settings,
-    email_templates: client.db.email_templates,
-    email_logs: client.db.email_logs,
-    notifications: client.db.notifications,
-    audit_logs: client.db.audit_logs
-  }
-};
 
 export const getXataClient = () => xataClient;
