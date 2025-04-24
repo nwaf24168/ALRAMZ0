@@ -136,22 +136,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const user = await xataClient.db.users.filter({ username }).getFirst();
-      
-      if (user && user.password === password) {
-        await xataClient.db.users.update(user.id, {
+      const records = await xataClient.db.users.filter('username', username).getFirst();
+
+      if (records && records.password === password) {
+        await xataClient.db.users.update({
+          id: records.id,
           last_login: new Date()
         });
-        setUser(user);
-        console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
+        setUser(records);
+        console.log('تم تسجيل الدخول بنجاح للمستخدم:', records.username, 'بدور:', records.role);
         return true;
       }
-      
+
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
-      throw new Error('Authentication failed');
+      return false;
     }
   };
 
