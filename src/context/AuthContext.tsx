@@ -43,10 +43,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initialize default admin user if no users exist
-const initializeDefaultAdmin = () => {
-  const savedUsers = localStorage.getItem('auth_users');
-  const defaultUsers = [
+// Initialize default admin users in Xata
+const initializeDefaultAdmin = async () => {
+  try {
+    // تحقق من وجود المستخدمين في Xata
+    const existingUsers = await xataClient.db.users.getMany();
+    
+    if (existingUsers.length === 0) {
+      const defaultUsers = [
     {
       id: "1",
       username: "admin",
@@ -92,26 +96,20 @@ const initializeDefaultAdmin = () => {
   ];
 
   // تحقق من وجود المستخدمين وتحديثهم إذا لزم الأمر
-  if (!savedUsers || JSON.parse(savedUsers).length === 0) {
-    localStorage.setItem('auth_users', JSON.stringify(defaultUsers));
-    console.log('تم تهيئة المستخدمين الافتراضيين:', defaultUsers);
-    return defaultUsers;
+  // رفع المستخدمين الافتراضيين إلى Xata
+      const createdUsers = await Promise.all(
+        defaultUsers.map(user => xataClient.db.users.create(user))
+      );
+      console.log('تم تهيئة المستخدمين الافتراضيين في Xata:', createdUsers);
+      return createdUsers;
+    }
+    
+    console.log('المستخدمون موجودون بالفعل في Xata:', existingUsers);
+    return existingUsers;
+  } catch (error) {
+    console.error('خطأ في تهيئة المستخدمين:', error);
+    return [];
   }
-
-  // تحقق من وجود جميع المستخدمين المطلوبين
-  const currentUsers = JSON.parse(savedUsers);
-  const missingUsers = defaultUsers.filter(defaultUser => 
-    !currentUsers.some(currentUser => currentUser.username === defaultUser.username)
-  );
-
-  if (missingUsers.length > 0) {
-    const updatedUsers = [...currentUsers, ...missingUsers];
-    localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
-    console.log('تم إضافة المستخدمين المفقودين:', missingUsers);
-    return updatedUsers;
-  }
-
-  return currentUsers;
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
