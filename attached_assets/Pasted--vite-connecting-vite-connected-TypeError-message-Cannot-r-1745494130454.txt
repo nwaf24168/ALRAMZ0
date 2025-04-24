@@ -1,0 +1,20 @@
+[vite] connecting...
+[vite] connected.
+خطأ في تهيئة المستخدمين: 
+TypeError {}
+message: "Cannot read properties of undefined (reading 'users')"
+stack: "TypeError: Cannot read properties of undefined (reading 'users')↵ at initializeDefaultAdmin (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/src/context/AuthContext.tsx:40:45)↵ at loadInitialUsers (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/src/context/AuthContext.tsx:111:44)↵ at https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/src/context/AuthContext.tsx:118:9↵ at commitHookEffectListMount (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:16915:34)↵ at commitPassiveMountOnFiber (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:18156:19)↵ at commitPassiveMountEffects_complete (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:18129:17)↵ at commitPassiveMountEffects_begin (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:18119:15)↵ at commitPassiveMountEffects (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:18109:11)↵ at flushPassiveEffectsImpl (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:19490:11)↵ at flushPassiveEffects (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:19447:22)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+تم تحميل المستخدمين: 
+Array []
+محاولة تسجيل الدخول للمستخدم: nawaf
+خطأ في تسجيل الدخول: 
+TypeError {}
+message: "Cannot read properties of undefined (reading 'users')"
+stack: "TypeError: Cannot read properties of undefined (reading 'users')↵ at login (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/src/context/AuthContext.tsx:131:48)↵ at handleSubmit (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/src/pages/Login.tsx:29:19)↵ at HTMLUnknownElement.callCallback2 (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:3674:22)↵ at Object.invokeGuardedCallbackDev (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:3699:24)↵ at invokeGuardedCallback (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:3733:39)↵ at invokeGuardedCallbackAndCatchFirstError (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:3736:33)↵ at executeDispatch (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:7014:11)↵ at processDispatchQueueItemsInOrder (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:7034:15)↵ at processDispatchQueue (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:7043:13)↵ at dispatchEventsForPlugins (https://37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev:5000/node_modules/.vite/deps/chunk-R6S4VRB5.js?v=25fba1e8:7051:11)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
