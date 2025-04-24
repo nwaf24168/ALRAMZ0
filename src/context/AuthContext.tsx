@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { xataClient } from '@/lib/xata';
+import { getXataClient } from '@/lib/xata';
+
+const xata = getXataClient();
 
 interface User {
   id: string;
@@ -134,15 +136,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const records = await xataClient.db.users.filter('username', username).getFirst();
+      const record = await xata.db.users.filter({ username: username }).getFirst();
 
-      if (records && records.password === password) {
-        await xataClient.db.users.update({
-          id: records.id,
+      if (record && record.password === password) {
+        await xata.db.users.update(record.id, {
           last_login: new Date()
         });
-        setUser(records);
-        console.log('تم تسجيل الدخول بنجاح للمستخدم:', records.username, 'بدور:', records.role);
+        setUser(record);
+        console.log('تم تسجيل الدخول بنجاح للمستخدم:', record.username, 'بدور:', record.role);
         return true;
       }
 

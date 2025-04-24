@@ -1,5 +1,5 @@
 
-import { BaseClientOptions, buildClient } from '@xata.io/client';
+import { buildClient } from '@xata.io/client';
 
 const tables = {
   users: {
@@ -24,11 +24,11 @@ const tables = {
   audit_logs: {}
 };
 
-const xataClient = buildClient({
+export const xataClient = buildClient({
   databaseURL: 'https://workspace-a07nri.us-east-1.xata.sh/db/alramz2025:main',
   apiKey: 'xau_ACZ6dxgVC61Yj2ve7NINWFjCQVXzroI30',
   tables,
   enableBrowser: true
 });
 
-export { xataClient };
+export const getXataClient = () => xataClient;
