@@ -50,9 +50,9 @@ const initializeDefaultAdmin = async () => {
   try {
     const xata = getXataClient();
     // تحقق من وجود المستخدمين في Xata
-    const existingUsers = await xata.db.users.getMany();
+    const existingUsers = await xata.db.table('users').getMany();
 
-    if (existingUsers.length === 0) {
+    if (!existingUsers || existingUsers.length === 0) {
       const defaultUsers = [
     {
       id: "1",
@@ -99,12 +99,17 @@ const initializeDefaultAdmin = async () => {
   ];
 
   // تحقق من وجود المستخدمين وتحديثهم إذا لزم الأمر
-  // رفع المستخدمين الافتراضيين إلى Xata
+    try {
+      // رفع المستخدمين الافتراضيين إلى Xata
       const createdUsers = await Promise.all(
         defaultUsers.map(user => xataClient.db.table('users').create(user))
       );
       console.log('تم تهيئة المستخدمين الافتراضيين في Xata:', createdUsers);
       return createdUsers;
+    } catch (error) {
+      console.error('خطأ في إنشاء المستخدمين:', error);
+      return [];
+    }
     }
 
     console.log('المستخدمون موجودون بالفعل في Xata:', existingUsers);
@@ -144,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const record = await xataClient.db.table('users').filter({ username: username }).getFirst();
+      const record = await xataClient.db.table('users').filter('username', username).getFirst();
 
       if (record && record.password === password) {
         await xataClient.db.table('users').update(record.id, {
