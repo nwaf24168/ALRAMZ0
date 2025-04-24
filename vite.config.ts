@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
       "32713e7c-bba7-4531-9316-e2c622eae770-00-1bn6bkbet2zhw.sisko.replit.dev",
       "e544bbb6-2261-48a6-acf0-23b74ed63964-00-26nrlxttfz9vv.pike.replit.dev",
       "a81e267e-2520-41b9-9c27-06a3af68e807-00-38tk3pjayo3x1.sisko.replit.dev",
+      "37ae1873-1079-4d25-90bf-72d38cbaa07e-00-2di7woa4oncfl.sisko.replit.dev",
     ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
