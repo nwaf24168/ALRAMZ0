@@ -120,9 +120,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const initialUsers = initializeDefaultAdmin();
-    setUsers(initialUsers);
-    console.log('تم تحميل المستخدمين:', initialUsers);
+    const loadInitialUsers = async () => {
+      try {
+        const initialUsers = await initializeDefaultAdmin();
+        setUsers(initialUsers);
+        console.log('تم تحميل المستخدمين:', initialUsers);
+      } catch (error) {
+        console.error('خطأ في تحميل المستخدمين:', error);
+      }
+    };
+    loadInitialUsers();
   }, []);
 
   const loadUsers = () => {
