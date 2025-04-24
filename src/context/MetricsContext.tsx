@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { xataClient } from '@/lib/xata';
 import { toast } from "@/components/ui/use-toast";
 
 // تعريف أنواع البيانات
@@ -127,6 +128,7 @@ export interface MetricsContextType {
   maintenanceSatisfaction: MaintenanceSatisfactionData;
   updateCustomerServiceData: (data: CustomerServiceData) => Promise<void>;
   updateMaintenanceSatisfactionData: (data: MaintenanceSatisfactionData) => void;
+  testXataConnection: () => Promise<void>; // Added test function
 }
 
 // البيانات الافتراضية
@@ -732,6 +734,22 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const testXataConnection = async () => {
+    try {
+      // Replace with a suitable Xata operation.  This example just checks for a branch.
+      const branch = await xataClient.branch.get();
+      if (branch) {
+        toast({ title: "نجاح", description: "اتصال ناجح بقاعدة البيانات", variant: "success" });
+      } else {
+        toast({ title: "فشل", description: "فشل الاتصال بقاعدة البيانات", variant: "error" });
+      }
+    } catch (error) {
+      console.error("خطأ في اختبار اتصال Xata:", error);
+      toast({ title: "فشل", description: "حدث خطأ أثناء اختبار الاتصال", variant: "error" });
+    }
+  };
+
+
   return (
     <MetricsContext.Provider 
       value={{ 
@@ -755,7 +773,8 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         customerServiceData,
         maintenanceSatisfaction,
         updateCustomerServiceData,
-        updateMaintenanceSatisfactionData
+        updateMaintenanceSatisfactionData,
+        testXataConnection // Added test function to context
       }}
     >
       {children}
