@@ -1,11 +1,29 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { xataClient } from '@/lib/xata';
 
 interface User {
   id: string;
   username: string;
   password: string;
   role: string;
+  email?: string;
+  full_name?: string;
+  department?: string;
+  is_active?: string;
+  last_login?: Date;
 }
+
+// Add login function that uses Xata
+const loginUser = async (username: string, password: string) => {
+  const user = await xataClient.db.users.filter({ username }).getFirst();
+  if (user && user.password === password && user.is_active === 'yes') {
+    await xataClient.db.users.update(user.id, {
+      last_login: new Date()
+    });
+    return user;
+  }
+  return null;
+};
 
 interface AuthContextType {
   user: User | null;
