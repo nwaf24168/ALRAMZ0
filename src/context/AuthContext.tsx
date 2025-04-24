@@ -1,36 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getXataClient } from '@/lib/xata';
-
-const xataClient = getXataClient();
 
 interface User {
   id: string;
   username: string;
   password: string;
   role: string;
-  email?: string;
-  full_name?: string;
-  department?: string;
-  is_active?: string;
-  last_login?: Date;
 }
-
-// Add login function that uses Xata
-const loginUser = async (username: string, password: string) => {
-  try {
-    const records = await xataClient.db['users'].select(['*']).filter({ username }).getFirst();
-    if (records && records.password === password) {
-      await xataClient.db['users'].update(records.id, {
-        last_login: new Date()
-      });
-      return records;
-    }
-    return null;
-  } catch (error) {
-    console.error('خطأ في تسجيل الدخول:', error);
-    return null;
-  }
-};
 
 interface AuthContextType {
   user: User | null;
@@ -45,79 +20,75 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initialize default admin users in Xata
-const initializeDefaultAdmin = async () => {
-  try {
-    const xata = getXataClient();
-    // تحقق من وجود المستخدمين في Xata
-    const existingUsers = await xata.db.users.getMany();
-
-    if (!existingUsers || existingUsers.length === 0) {
-      const defaultUsers = [
+// Initialize default admin user if no users exist
+const initializeDefaultAdmin = () => {
+  const savedUsers = localStorage.getItem('auth_users');
+  const defaultUsers = [
     {
       id: "1",
-      username: "nawaf",
-      password: "Alramz2025",
+      username: "admin",
+      password: "admin123",
       role: "مدير النظام"
     },
     {
       id: "2",
       username: "abdulsalam",
       password: "Alramz2025",
-      role: "مدير إدارة راحة العملاء"
+      role: "مدير ادارة راحة العملاء"
     },
     {
       id: "3",
-      username: "kholoud",
+      username: "aljawhara",
       password: "Alramz2025",
-      role: "موظف جودة"
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "4",
-      username: "adnan",
+      username: "khulood",
       password: "Alramz2025",
-      role: "موظف جودة"
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "5",
-      username: "aljawhara",
+      username: "adnan",
       password: "Alramz2025",
-      role: "خدمة عملاء"
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "6",
-      username: "latifa",
+      username: "lateefa",
       password: "Alramz2025",
-      role: "خدمة عملاء"
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "7",
-      username: "faisal",
+      username: "nawaf",
       password: "Alramz2025",
-      role: "موظف صيانة"
+      role: "مدير النظام"
     }
   ];
 
   // تحقق من وجود المستخدمين وتحديثهم إذا لزم الأمر
-    try {
-      // رفع المستخدمين الافتراضيين إلى Xata
-      const createdUsers = await Promise.all(
-        defaultUsers.map(user => xataClient.db.users.create(user))
-      );
-      console.log('تم تهيئة المستخدمين الافتراضيين في Xata:', createdUsers);
-      return createdUsers;
-    } catch (error) {
-      console.error('خطأ في إنشاء المستخدمين:', error);
-      return [];
-    }
-    }
-
-    console.log('المستخدمون موجودون بالفعل في Xata:', existingUsers);
-    return existingUsers;
-  } catch (error) {
-    console.error('خطأ في تهيئة المستخدمين:', error);
-    return [];
+  if (!savedUsers || JSON.parse(savedUsers).length === 0) {
+    localStorage.setItem('auth_users', JSON.stringify(defaultUsers));
+    console.log('تم تهيئة المستخدمين الافتراضيين:', defaultUsers);
+    return defaultUsers;
   }
+
+  // تحقق من وجود جميع المستخدمين المطلوبين
+  const currentUsers = JSON.parse(savedUsers);
+  const missingUsers = defaultUsers.filter(defaultUser => 
+    !currentUsers.some(currentUser => currentUser.username === defaultUser.username)
+  );
+
+  if (missingUsers.length > 0) {
+    const updatedUsers = [...currentUsers, ...missingUsers];
+    localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+    console.log('تم إضافة المستخدمين المفقودين:', missingUsers);
+    return updatedUsers;
+  }
+
+  return currentUsers;
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -125,16 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const loadInitialUsers = async () => {
-      try {
-        const initialUsers = await initializeDefaultAdmin();
-        setUsers(initialUsers);
-        console.log('تم تحميل المستخدمين:', initialUsers);
-      } catch (error) {
-        console.error('خطأ في تحميل المستخدمين:', error);
-      }
-    };
-    loadInitialUsers();
+    const initialUsers = initializeDefaultAdmin();
+    setUsers(initialUsers);
+    console.log('تم تحميل المستخدمين:', initialUsers);
   }, []);
 
   const loadUsers = () => {
@@ -149,22 +113,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const record = await xataClient.db.users.filter({ username: username }).getFirst();
-
-      if (record && record.password === password) {
-        await xataClient.db.users.update(record.id, {
-          last_login: new Date()
-        });
-        setUser(record);
-        console.log('تم تسجيل الدخول بنجاح للمستخدم:', record.username, 'بدور:', record.role);
+      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const user = localUsers.find((u: User) => 
+        u.username === username && u.password === password
+      );
+      
+      if (user) {
+        setUser(user);
+        console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
-
+      
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
-      return false;
+      throw new Error('Authentication failed');
     }
   };
 
@@ -174,20 +138,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addUser = async (userData: Omit<User, "id">) => {
     try {
-      const newUser = await xataClient.db.users.create(userData);
-      setUsers(prevUsers => [...prevUsers, newUser]);
-      toast({
-        title: "تم بنجاح",
-        description: "تم إضافة المستخدم بنجاح",
-        variant: "default",
-      });
+      const newUser = {
+        id: Date.now().toString(),
+        ...userData
+      };
+      
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      currentUsers.push(newUser);
+      localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+      setUsers(currentUsers);
     } catch (error) {
       console.error('Error adding user:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة المستخدم",
-        variant: "destructive",
-      });
       throw error;
     }
   };

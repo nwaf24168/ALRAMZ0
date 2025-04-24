@@ -1,7 +1,4 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { getXataClient } from '@/lib/xata';
-
-const xataClient = getXataClient();
 import { toast } from "@/components/ui/use-toast";
 
 // تعريف أنواع البيانات
@@ -130,7 +127,6 @@ export interface MetricsContextType {
   maintenanceSatisfaction: MaintenanceSatisfactionData;
   updateCustomerServiceData: (data: CustomerServiceData) => Promise<void>;
   updateMaintenanceSatisfactionData: (data: MaintenanceSatisfactionData) => void;
-  testXataConnection: () => Promise<void>; // Added test function
 }
 
 // البيانات الافتراضية
@@ -546,12 +542,84 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // تهيئة البيانات عند تحميل المكون
   useEffect(() => {
-    // Removed localStorage logic
+    const savedData = localStorage.getItem('metrics_data');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        const periodData = data[currentPeriod];
+
+        if (periodData?.metrics?.length > 0) {
+          setMetrics(periodData.metrics);
+        }
+
+        if (periodData?.customerServiceData) {
+          setCustomerServiceData(periodData.customerServiceData);
+        }
+
+        if (periodData?.maintenanceSatisfaction) {
+          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
+        }
+
+        if (periodData?.qualityData?.length > 0) {
+          setQualityData(periodData.qualityData);
+        }
+
+        if (periodData?.npsData?.length > 0) {
+          setNPSData(periodData.npsData);
+        }
+
+        if (periodData?.callsData?.length > 0) {
+          setCallsData(periodData.callsData);
+        }
+      } catch (error) {
+        console.error('خطأ في قراءة البيانات المحفوظة:', error);
+      }
+    }
   }, [currentPeriod]);
 
   // تحديث البيانات عند تغيير الفترة
   useEffect(() => {
-    // Removed localStorage logic
+    const savedData = localStorage.getItem('metrics_data');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        const periodData = data[currentPeriod] || {};
+
+        // تعيين البيانات المحفوظة فقط إذا كانت موجودة
+        if (periodData.metrics && periodData.metrics.length > 0) {
+          setMetrics(periodData.metrics);
+        }
+
+        if (periodData.customerServiceData) {
+          setCustomerServiceData(periodData.customerServiceData);
+        }
+
+        if (periodData.maintenanceSatisfaction) {
+          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
+        }
+
+        // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
+        if (!periodData.metrics) {
+          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+          setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+          setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+          setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
+        }
+      } catch (error) {
+        console.error('خطأ في قراءة البيانات المحفوظة:', error);
+        // تعيين البيانات الافتراضية فقط في حالة الخطأ
+        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+        setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+        setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+        setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
+      }
+    } else {
+      // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
+      setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
+      setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
+      setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
+      setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
+    }
   }, [currentPeriod]);
 
   const updateMetric = async (index: number, data: Partial<MetricData>) => {
@@ -559,24 +627,38 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       const updatedMetrics = [...metrics];
       updatedMetrics[index] = { ...updatedMetrics[index], ...data };
 
+      // تحديث الحالة المحلية فوراً
       setMetrics(updatedMetrics);
 
-      await xataClient.db.metrics.create({
-        period: currentPeriod,
-        data: JSON.stringify(updatedMetrics),
-        updated_at: new Date()
-      });
+      // حفظ في localStorage
+      const savedData = localStorage.getItem('metrics_data') || '{}';
+      const currentData = JSON.parse(savedData);
+
+      const updatedData = {
+        ...currentData,
+        [currentPeriod]: {
+          ...currentData[currentPeriod],
+          metrics: updatedMetrics,
+          qualityData,
+          npsData,
+          callsData,
+          customerServiceData,
+          maintenanceSatisfaction
+        }
+      };
+
+      localStorage.setItem('metrics_data', JSON.stringify(updatedData));
 
       toast({
         title: "تم بنجاح",
-        description: "تم حفظ البيانات في قاعدة البيانات",
+        description: "تم حفظ البيانات بنجاح",
         variant: "default",
       });
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حفظ البيانات في قاعدة البيانات",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حفظ البيانات",
         variant: "destructive",
       });
     }
@@ -610,7 +692,16 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     setCustomerServiceData(data);
 
     // حفظ في localStorage مع مراعاة الفترة
-    // Removed localStorage logic
+    const savedData = localStorage.getItem('metrics_data') || '{}';
+    const currentData = JSON.parse(savedData);
+
+    localStorage.setItem('metrics_data', JSON.stringify({
+      ...currentData,
+      [currentPeriod]: {
+        ...currentData[currentPeriod],
+        customerServiceData: data
+      }
+    }));
 
     // تحديث بيانات المكالمات
     const newCallsData = [
@@ -629,24 +720,17 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     setMaintenanceSatisfaction(data);
 
     // حفظ في localStorage مع مراعاة الفترة
-    // Removed localStorage logic
-  };
+    const savedData = localStorage.getItem('metrics_data') || '{}';
+    const currentData = JSON.parse(savedData);
 
-  const testXataConnection = async () => {
-    try {
-      // Replace with a suitable Xata operation.  This example just checks for a branch.
-      const branch = await xataClient.branch.get();
-      if (branch) {
-        toast({ title: "نجاح", description: "اتصال ناجح بقاعدة البيانات", variant: "success" });
-      } else {
-        toast({ title: "فشل", description: "فشل الاتصال بقاعدة البيانات", variant: "error" });
+    localStorage.setItem('metrics_data', JSON.stringify({
+      ...currentData,
+      [currentPeriod]: {
+        ...currentData[currentPeriod],
+        maintenanceSatisfaction: data
       }
-    } catch (error) {
-      console.error("خطأ في اختبار اتصال Xata:", error);
-      toast({ title: "فشل", description: "حدث خطأ أثناء اختبار الاتصال", variant: "error" });
-    }
+    }));
   };
-
 
   return (
     <MetricsContext.Provider 
@@ -671,8 +755,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         customerServiceData,
         maintenanceSatisfaction,
         updateCustomerServiceData,
-        updateMaintenanceSatisfactionData,
-        testXataConnection // Added test function to context
+        updateMaintenanceSatisfactionData
       }}
     >
       {children}
