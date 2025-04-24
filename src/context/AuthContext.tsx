@@ -50,7 +50,9 @@ const initializeDefaultAdmin = async () => {
   try {
     const xata = getXataClient();
     // تحقق من وجود المستخدمين في Xata
-    const existingUsers = await xata.db.users.getMany();
+    const existingUsers = await xata.db.users.getMany({
+      columns: ['*']
+    });
 
     if (!existingUsers || existingUsers.length === 0) {
       const defaultUsers = [
@@ -149,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const record = await xataClient.db.users.filter({ username: username }).getFirst();
+      const record = await xataClient.db.users.filter('username', username).getFirst();
 
       if (record && record.password === password) {
         await xataClient.db.users.update(record.id, {
