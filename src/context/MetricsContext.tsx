@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { xataClient } from '@/lib/xata';
+import { getXataClient } from '@/lib/xata';
+
+const xataClient = getXataClient();
 import { toast } from "@/components/ui/use-toast";
 
 // تعريف أنواع البيانات

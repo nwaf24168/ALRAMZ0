@@ -22,4 +22,5 @@ const client = buildClient({
   enableBrowser: true
 });
 
+export const xataClient = client;
 export const getXataClient = () => client;
