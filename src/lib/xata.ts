@@ -3,15 +3,15 @@ import { BaseClientOptions, buildClient } from '@xata.io/client';
 
 const tables = {
   users: {
-    id: string;
-    username: string;
-    password: string;
-    role: string;
-    email?: string;
-    full_name?: string;
-    department?: string;
-    is_active?: string;
-    last_login?: Date;
+    id: 'string',
+    username: 'string',
+    password: 'string',
+    role: 'string',
+    email: 'string?',
+    full_name: 'string?',
+    department: 'string?',
+    is_active: 'string?',
+    last_login: 'Date?'
   },
   metrics: {},
   customer_service: {},
