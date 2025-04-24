@@ -15,14 +15,19 @@ interface User {
 
 // Add login function that uses Xata
 const loginUser = async (username: string, password: string) => {
-  const user = await xataClient.db.users.filter({ username }).getFirst();
-  if (user && user.password === password && user.is_active === 'yes') {
-    await xataClient.db.users.update(user.id, {
-      last_login: new Date()
-    });
-    return user;
+  try {
+    const records = await xataClient.db['users'].select(['*']).filter({ username }).getFirst();
+    if (records && records.password === password) {
+      await xataClient.db['users'].update(records.id, {
+        last_login: new Date()
+      });
+      return records;
+    }
+    return null;
+  } catch (error) {
+    console.error('خطأ في تسجيل الدخول:', error);
+    return null;
   }
-  return null;
 };
 
 interface AuthContextType {

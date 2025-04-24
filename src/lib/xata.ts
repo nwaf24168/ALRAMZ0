@@ -1,18 +1,28 @@
 
 import { BaseClientOptions, buildClient } from '@xata.io/client';
 
-const tables = [
-  'users',
-  'metrics',
-  'customer_service',
-  'maintenance_satisfaction',
-  'complaints',
-  'settings',
-  'email_templates',
-  'email_logs',
-  'notifications',
-  'audit_logs'
-] as const;
+const tables = {
+  users: {
+    id: string;
+    username: string;
+    password: string;
+    role: string;
+    email?: string;
+    full_name?: string;
+    department?: string;
+    is_active?: string;
+    last_login?: Date;
+  },
+  metrics: {},
+  customer_service: {},
+  maintenance_satisfaction: {},
+  complaints: {},
+  settings: {},
+  email_templates: {},
+  email_logs: {},
+  notifications: {},
+  audit_logs: {}
+};
 
 const xataClient = buildClient({
   databaseURL: 'https://workspace-a07nri.us-east-1.xata.sh/db/alramz2025:main',
