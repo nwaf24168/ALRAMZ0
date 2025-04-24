@@ -131,12 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const user = localUsers.find((u: User) => 
-        u.username === username && u.password === password
-      );
+      const user = await xataClient.db.users.filter({ username }).getFirst();
       
-      if (user) {
+      if (user && user.password === password) {
+        await xataClient.db.users.update(user.id, {
+          last_login: new Date()
+        });
         setUser(user);
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
@@ -156,17 +156,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addUser = async (userData: Omit<User, "id">) => {
     try {
-      const newUser = {
-        id: Date.now().toString(),
-        ...userData
-      };
-      
-      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      currentUsers.push(newUser);
-      localStorage.setItem('auth_users', JSON.stringify(currentUsers));
-      setUsers(currentUsers);
+      const newUser = await xataClient.db.users.create(userData);
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة المستخدم بنجاح",
+        variant: "default",
+      });
     } catch (error) {
       console.error('Error adding user:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة المستخدم",
+        variant: "destructive",
+      });
       throw error;
     }
   };
