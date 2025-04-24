@@ -48,8 +48,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Initialize default admin users in Xata
 const initializeDefaultAdmin = async () => {
   try {
+    const xata = getXataClient();
     // تحقق من وجود المستخدمين في Xata
-    const existingUsers = await xataClient.db.users.getMany();
+    const existingUsers = await xata.db.users.getMany();
     
     if (existingUsers.length === 0) {
       const defaultUsers = [
