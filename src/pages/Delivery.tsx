@@ -141,12 +141,18 @@ export default function Delivery() {
   };
 
   const updateBookingStatus = (booking: Booking) => {
-    if (booking.status_sales_filled && booking.status_projects_filled && booking.status_customer_filled) {
+    const allFieldsFilled = booking.status_sales_filled && 
+                          booking.status_projects_filled && 
+                          booking.status_customer_filled;
+    
+    if (allFieldsFilled) {
       return "مكتمل من كل الإدارات";
     } else if (booking.status_sales_filled && booking.status_projects_filled) {
       return "بانتظار إدارة راحة العملاء";
-    } else {
+    } else if (booking.status_sales_filled) {
       return "بانتظار إدارة المشاريع وراحة العملاء";
+    } else {
+      return "بانتظار اكتمال البيانات";
     }
   };
 
@@ -477,7 +483,7 @@ export default function Delivery() {
                                   <Separator />
 
                                   {/* قسم المشاريع */}
-                                  {user?.role === "قسم المشاريع" && !booking.status_projects_filled && (
+                                  {(user?.role === "قسم المشاريع" || user?.role === "مدير النظام") && (
                                     <div>
                                       <h3 className="text-lg font-semibold mb-4">بيانات المشاريع</h3>
                                       <div className="grid grid-cols-2 gap-4">
@@ -563,7 +569,7 @@ export default function Delivery() {
                                   <Separator />
 
                                   {/* قسم راحة العملاء */}
-                                  {user?.role === "إدارة راحة العملاء" && !booking.status_customer_filled && (
+                                  {(user?.role === "إدارة راحة العملاء" || user?.role === "مدير النظام") && (
                                     <div>
                                       <h3 className="text-lg font-semibold mb-4">تقييم راحة العملاء</h3>
                                       <div className="space-y-4">
