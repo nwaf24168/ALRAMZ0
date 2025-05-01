@@ -282,7 +282,7 @@ export default function Delivery() {
 
     const bookingDate = new Date(booking.bookingDate);
     const matchesMonth = monthFilter === "all" || !monthFilter || (bookingDate.getMonth() + 1).toString() === monthFilter;
-    const matchesYear = !yearFilter || bookingDate.getFullYear().toString() === yearFilter;
+    const matchesYear = yearFilter === "all" || !yearFilter || bookingDate.getFullYear().toString() === yearFilter;
     
     return matchesSearch && matchesStatus && matchesMonth && matchesYear;
   });
@@ -474,7 +474,7 @@ export default function Delivery() {
                     <SelectValue placeholder="السنة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">كل السنوات</SelectItem>
+                    <SelectItem value="all">كل السنوات</SelectItem>
                     <SelectItem value="2024">2024</SelectItem>
                     <SelectItem value="2025">2025</SelectItem>
                   </SelectContent>
