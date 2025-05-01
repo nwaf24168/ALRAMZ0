@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -125,7 +124,7 @@ export default function Delivery() {
 
     setDeliveries([delivery, ...deliveries]);
     setIsAddDialogOpen(false);
-    
+
     addNotification({
       title: "تمت الإضافة",
       message: `تم إضافة تسليم جديد برقم ${newId} بنجاح`,
@@ -143,22 +142,22 @@ export default function Delivery() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">قسم التسليم</h1>
+          <h1 className="text-2xl font-bold">قسم الحجز</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center">
                 <Plus className="ml-2 h-4 w-4" />
-                إضافة تسليم جديد
+                إضافة حجز جديد
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>إضافة تسليم جديد</DialogTitle>
+                <DialogTitle>إضافة حجز جديد</DialogTitle>
                 <DialogDescription>
-                  أدخل بيانات التسليم الجديد
+                  أدخل بيانات الحجز الجديد
                 </DialogDescription>
               </DialogHeader>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
                 <div className="space-y-2">
                   <Label>تاريخ الحجز</Label>
@@ -257,7 +256,7 @@ export default function Delivery() {
                 </div>
 
                 {/* Add remaining fields similarly */}
-                
+
               </div>
 
               <DialogFooter>
@@ -274,7 +273,7 @@ export default function Delivery() {
 
         <Card>
           <CardHeader>
-            <CardTitle>سجل التسليم</CardTitle>
+            <CardTitle>سجل الحجز</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -298,7 +297,7 @@ export default function Delivery() {
                     <TableHead className="text-right">اسم العميل</TableHead>
                     <TableHead className="text-right">المشروع</TableHead>
                     <TableHead className="text-right">الوحدة</TableHead>
-                    <TableHead className="text-right">حالة التسليم</TableHead>
+                    <TableHead className="text-right">حالة الحجز</TableHead>
                     <TableHead className="text-right">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -306,7 +305,7 @@ export default function Delivery() {
                   {filteredDeliveries.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-6">
-                        لا توجد سجلات تسليم متطابقة مع معايير البحث
+                        لا توجد سجلات حجز متطابقة مع معايير البحث
                       </TableCell>
                     </TableRow>
                   ) : (
