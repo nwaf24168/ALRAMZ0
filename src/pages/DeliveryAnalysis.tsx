@@ -3,6 +3,7 @@ import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -98,6 +99,7 @@ const deliveryData = [
 ];
 
 export default function DeliveryAnalysis() {
+  const [activeTab, setActiveTab] = useState("overview");
   const [data] = useState(deliveryData);
 
   const exportToExcel = () => {
@@ -107,17 +109,28 @@ export default function DeliveryAnalysis() {
     XLSX.writeFile(wb, "تقرير_التسليم.xlsx");
   };
 
-  // حساب الإحصائيات
+  // الإحصائيات
   const totalUnits = data.length;
   const completedDeliveries = data.filter(item => item.deliveryDate).length;
   const pendingDeliveries = totalUnits - completedDeliveries;
+  const totalValue = data.reduce((sum, item) => sum + item.unitValue, 0);
   
   const projectStats = data.reduce((acc, curr) => {
     acc[curr.project] = (acc[curr.project] || 0) + 1;
     return acc;
   }, {});
 
+  const salesEmployeeStats = data.reduce((acc, curr) => {
+    acc[curr.salesEmployee] = (acc[curr.salesEmployee] || 0) + 1;
+    return acc;
+  }, {});
+
   const projectChartData = Object.entries(projectStats).map(([name, value]) => ({
+    name,
+    value
+  }));
+
+  const salesChartData = Object.entries(salesEmployeeStats).map(([name, value]) => ({
     name,
     value
   }));
@@ -134,109 +147,141 @@ export default function DeliveryAnalysis() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>إجمالي الوحدات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{totalUnits}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>الوحدات المسلمة</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{completedDeliveries}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>الوحدات قيد التسليم</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{pendingDeliveries}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+            <TabsTrigger value="details">تفاصيل</TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>توزيع الوحدات حسب المشروع</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={projectChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {projectChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>تفاصيل التسليم</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">الرقم</TableHead>
-                    <TableHead className="text-right">تاريخ الحجز</TableHead>
-                    <TableHead className="text-right">اسم العميل</TableHead>
-                    <TableHead className="text-right">المشروع</TableHead>
-                    <TableHead className="text-right">العمارة</TableHead>
-                    <TableHead className="text-right">الوحدة</TableHead>
-                    <TableHead className="text-right">تاريخ التسليم</TableHead>
-                    <TableHead className="text-right">حالة التسليم</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.id}</TableCell>
-                      <TableCell>{item.bookingDate}</TableCell>
-                      <TableCell>{item.customerName}</TableCell>
-                      <TableCell>{item.project}</TableCell>
-                      <TableCell>{item.building}</TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell>{item.deliveryDate || "لم يتم التسليم"}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.deliveryDate ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                        }`}>
-                          {item.deliveryDate ? "تم التسليم" : "قيد التسليم"}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>إجمالي الوحدات</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{totalUnits}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>الوحدات المسلمة</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">{completedDeliveries}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>القيمة الإجمالية</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{totalValue.toLocaleString()} ريال</div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>توزيع الوحدات حسب المشروع</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={projectChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {projectChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>توزيع المبيعات حسب الموظف</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={salesChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="details">
+            <Card>
+              <CardHeader>
+                <CardTitle>تفاصيل التسليم</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">الرقم</TableHead>
+                        <TableHead className="text-right">تاريخ الحجز</TableHead>
+                        <TableHead className="text-right">اسم العميل</TableHead>
+                        <TableHead className="text-right">المشروع</TableHead>
+                        <TableHead className="text-right">العمارة</TableHead>
+                        <TableHead className="text-right">الوحدة</TableHead>
+                        <TableHead className="text-right">قيمة الوحدة</TableHead>
+                        <TableHead className="text-right">تاريخ التسليم</TableHead>
+                        <TableHead className="text-right">حالة التسليم</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>{item.id}</TableCell>
+                          <TableCell>{item.bookingDate}</TableCell>
+                          <TableCell>{item.customerName}</TableCell>
+                          <TableCell>{item.project}</TableCell>
+                          <TableCell>{item.building}</TableCell>
+                          <TableCell>{item.unit}</TableCell>
+                          <TableCell>{item.unitValue.toLocaleString()}</TableCell>
+                          <TableCell>{item.deliveryDate || "لم يتم التسليم"}</TableCell>
+                          <TableCell>
+                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              item.deliveryDate ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                            }`}>
+                              {item.deliveryDate ? "تم التسليم" : "قيد التسليم"}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
