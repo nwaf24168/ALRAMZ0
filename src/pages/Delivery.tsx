@@ -139,19 +139,28 @@ export default function Delivery() {
         const updatedBooking = {
           ...booking,
           ...newBooking,
-          status_projects_filled: user?.role === "قسم المشاريع" ? new Date().toISOString() : booking.status_projects_filled,
-          status_customer_filled: user?.role === "إدارة راحة العملاء" ? new Date().toISOString() : booking.status_customer_filled,
         };
+        
+        // Update department completion status
+        if (user?.role === "قسم المبيعات") {
+          updatedBooking.status_sales_filled = new Date().toISOString();
+        } else if (user?.role === "قسم المشاريع") {
+          updatedBooking.status_projects_filled = new Date().toISOString();
+        } else if (user?.role === "إدارة راحة العملاء") {
+          updatedBooking.status_customer_filled = new Date().toISOString();
+        }
 
-        // Update final status based on filled sections
+        // Update final status based on department completions
         if (updatedBooking.status_sales_filled && updatedBooking.status_projects_filled && updatedBooking.status_customer_filled) {
           updatedBooking.final_status = "مكتمل";
-        } else if (!updatedBooking.status_projects_filled && !updatedBooking.status_customer_filled) {
-          updatedBooking.final_status = "بانتظار المشاريع وراحة العميل";
-        } else if (!updatedBooking.status_projects_filled) {
-          updatedBooking.final_status = "بانتظار المشاريع";
-        } else if (!updatedBooking.status_customer_filled) {
-          updatedBooking.final_status = "بانتظار راحة العميل";
+        } else {
+          const pendingDepts = [];
+          if (!updatedBooking.status_projects_filled) pendingDepts.push("المشاريع");
+          if (!updatedBooking.status_customer_filled) pendingDepts.push("راحة العميل");
+          
+          if (pendingDepts.length > 0) {
+            updatedBooking.final_status = `بانتظار ${pendingDepts.join(" و")}`;
+          }
         }
 
         return updatedBooking;
