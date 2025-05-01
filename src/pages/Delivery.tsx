@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Filter, Plus, Trash2, Edit, Eye } from "lucide-react";
+import * as XLSX from 'xlsx'; // Import the xlsx library
 
 interface Booking {
   id: string;
@@ -242,11 +242,11 @@ export default function Delivery() {
   const updateBookingStatus = (booking: Booking) => {
     // التحقق من اكتمال بيانات إدارة راحة العملاء
     const isCustomerServiceComplete = booking.isEvaluated && booking.evaluationScore > 0;
-    
+
     const allFieldsFilled = booking.status_sales_filled && 
                           booking.status_projects_filled && 
                           isCustomerServiceComplete;
-    
+
     if (allFieldsFilled) {
       return "مكتمل من كل الإدارات";
     } else if (booking.status_sales_filled && booking.status_projects_filled) {
@@ -261,10 +261,10 @@ export default function Delivery() {
   const handleUpdateBooking = (updatedBooking: Booking) => {
     const newStatus = updateBookingStatus(updatedBooking);
     const updated = { ...updatedBooking, status: newStatus };
-    
+
     setBookings(bookings.map(b => b.id === updated.id ? updated : b));
     setSelectedBooking(null);
-    
+
     addNotification({
       title: "تم التحديث",
       message: `تم تحديث الحجز رقم ${updated.id} بنجاح`,
@@ -277,13 +277,13 @@ export default function Delivery() {
       booking.customerName.includes(searchTerm) ||
       booking.project.includes(searchTerm) ||
       booking.id.includes(searchTerm);
-    
+
     const matchesStatus = statusFilter === "الكل" || booking.status === statusFilter;
 
     const bookingDate = new Date(booking.bookingDate);
     const matchesMonth = monthFilter === "all" || !monthFilter || (bookingDate.getMonth() + 1).toString() === monthFilter;
     const matchesYear = yearFilter === "all" || !yearFilter || bookingDate.getFullYear().toString() === yearFilter;
-    
+
     return matchesSearch && matchesStatus && matchesMonth && matchesYear;
   });
 
@@ -291,7 +291,53 @@ export default function Delivery() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">قسم الحجز</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">قسم الحجز</h1>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  // تحضير البيانات للتصدير
+                  const exportData = bookings.map(booking => ({
+                    'الرقم المتسلسل': booking.id,
+                    'تاريخ الحجز': booking.bookingDate,
+                    'اسم العميل': booking.customerName,
+                    'المشروع': booking.project,
+                    'العمارة': booking.building,
+                    'الوحدة': booking.unit,
+                    'طريقة الدفع': booking.paymentMethod,
+                    'نوع البيع': booking.saleType,
+                    'قيمة الوحدة': booking.unitValue,
+                    'تاريخ الإفراغ': booking.transferDate,
+                    'موظف المبيعات': booking.salesEmployee,
+                    'تاريخ انتهاء البناء': booking.constructionEndDate || '',
+                    'تاريخ الاستلام النهائي': booking.finalReceiptDate || '',
+                    'تاريخ نقل عداد الكهرباء': booking.electricityTransferDate || '',
+                    'تاريخ نقل عداد المياه': booking.waterTransferDate || '',
+                    'تاريخ التسليم للعميل': booking.deliveryDate || '',
+                    'تم التقييم': booking.isEvaluated ? 'نعم' : 'لا',
+                    'درجة التقييم': booking.evaluationScore || ''
+                  }));
+
+                  // إنشاء ورقة عمل Excel
+                  const ws = XLSX.utils.json_to_sheet(exportData, {
+                    header: Object.keys(exportData[0]),
+                  });
+
+                  // تنسيق عرض الأعمدة
+                  const colWidths = Object.keys(exportData[0]).map(() => ({ wch: 20 }));
+                  ws['!cols'] = colWidths;
+
+                  // إنشاء مصنف عمل جديد وإضافة ورقة العمل
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, 'الحجوزات');
+
+                  // تحميل الملف
+                  XLSX.writeFile(wb, 'تقرير_الحجوزات.xlsx');
+                }}
+              >
+                تحميل كملف إكسل
+              </Button>
+            </div>
           {(user?.role === "قسم المبيعات" || user?.role === "مدير النظام") && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -454,7 +500,7 @@ export default function Delivery() {
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 <Select value={monthFilter} onValueChange={setMonthFilter}>
                   <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="الشهر" />
