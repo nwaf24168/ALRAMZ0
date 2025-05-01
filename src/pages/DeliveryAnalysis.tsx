@@ -2,10 +2,9 @@
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Button } from "@/components/ui/button";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import * as XLSX from 'xlsx';
 
 interface Booking {
@@ -27,36 +26,51 @@ interface Booking {
   deliveryDate?: string;
   isEvaluated?: boolean;
   evaluationScore?: number;
-  status: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF99E6'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function DeliveryAnalysis() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [monthFilter, setMonthFilter] = useState("all");
-  const [yearFilter, setYearFilter] = useState("all");
-  const [projectFilter, setProjectFilter] = useState("all");
-
-  // استخدام نفس البيانات من صفحة التسليم
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [bookings] = useState<Booking[]>([
-    // ... نفس البيانات من صفحة التسليم
+    // Using the same mock data from Delivery.tsx
+    {
+      id: "1",
+      bookingDate: "2024-12-17",
+      customerName: "تركي السعيد",
+      project: "المعالي",
+      building: "26",
+      unit: "26",
+      paymentMethod: "بنك",
+      saleType: "جاهز",
+      unitValue: 3128750,
+      transferDate: "2025-01-09",
+      salesEmployee: "دعاء شدادي",
+      constructionEndDate: "2024-09-28",
+      finalReceiptDate: "2024-09-28",
+      electricityTransferDate: "2025-02-15",
+      waterTransferDate: "2025-02-20",
+      deliveryDate: "2025-03-25",
+      isEvaluated: true,
+      evaluationScore: 9
+    },
+    // ... Add more mock data here
   ]);
 
-  // تصفية البيانات حسب المرشحات
+  // تصفية البيانات حسب الشهر والسنة
   const filteredBookings = bookings.filter(booking => {
-    const bookingDate = new Date(booking.bookingDate);
-    const matchesMonth = monthFilter === "all" || (bookingDate.getMonth() + 1).toString() === monthFilter;
-    const matchesYear = yearFilter === "all" || bookingDate.getFullYear().toString() === yearFilter;
-    const matchesProject = projectFilter === "all" || booking.project === projectFilter;
-    return matchesMonth && matchesYear && matchesProject;
+    const date = new Date(booking.bookingDate);
+    const matchesMonth = monthFilter === "all" || (date.getMonth() + 1).toString() === monthFilter;
+    const matchesYear = yearFilter === "all" || date.getFullYear().toString() === yearFilter;
+    return matchesMonth && matchesYear;
   });
 
   // حساب المؤشرات
   const calculateMetrics = () => {
     const totalUnits = filteredBookings.length;
     const totalValue = filteredBookings.reduce((sum, b) => sum + b.unitValue, 0);
-    
+
     // حساب متوسط أيام نقل العدادات
     const electricityTransferDays = filteredBookings
       .filter(b => b.electricityTransferDate && b.transferDate)
@@ -101,10 +115,10 @@ export default function DeliveryAnalysis() {
       });
 
     // حساب متوسط رضا العملاء
-    const averageSatisfaction = filteredBookings
-      .filter(b => b.evaluationScore)
+    const customerSatisfaction = filteredBookings
+      .filter(b => b.isEvaluated)
       .reduce((sum, b) => sum + (b.evaluationScore || 0), 0) / 
-      filteredBookings.filter(b => b.evaluationScore).length;
+      filteredBookings.filter(b => b.isEvaluated).length;
 
     return {
       totalUnits,
@@ -114,26 +128,28 @@ export default function DeliveryAnalysis() {
       avgDeliveryDays: Math.round(deliveryDays.reduce((a, b) => a + b, 0) / deliveryDays.length || 0),
       avgCashTransferDays: Math.round(cashTransferDays.reduce((a, b) => a + b, 0) / cashTransferDays.length || 0),
       avgBankTransferDays: Math.round(bankTransferDays.reduce((a, b) => a + b, 0) / bankTransferDays.length || 0),
-      customerSatisfaction: Math.round(averageSatisfaction * 10) / 10
+      customerSatisfaction: Math.round(customerSatisfaction * 10) / 10
     };
   };
 
   const metrics = calculateMetrics();
 
-  // تجهيز بيانات الرسوم البيانية
+  // تحضير بيانات الرسوم البيانية
   const monthlyData = filteredBookings.reduce((acc, curr) => {
     const month = new Date(curr.bookingDate).toLocaleString('ar-SA', { month: 'long' });
-    acc[month] = (acc[month] || 0) + 1;
+    if (!acc[month]) {
+      acc[month] = {
+        month,
+        count: 0,
+        value: 0
+      };
+    }
+    acc[month].count++;
+    acc[month].value += curr.unitValue;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { month: string; count: number; value: number }>);
 
-  const monthlyChartData = Object.entries(monthlyData).map(([month, count]) => ({
-    month,
-    count,
-    value: filteredBookings
-      .filter(b => new Date(b.bookingDate).toLocaleString('ar-SA', { month: 'long' }) === month)
-      .reduce((sum, b) => sum + b.unitValue, 0)
-  }));
+  const chartData = Object.values(monthlyData);
 
   // تصدير البيانات إلى Excel
   const exportToExcel = () => {
@@ -143,11 +159,12 @@ export default function DeliveryAnalysis() {
       'اسم العميل': booking.customerName,
       'المشروع': booking.project,
       'قيمة الوحدة': booking.unitValue,
-      'طريقة الدفع': booking.paymentMethod,
-      'تاريخ الإفراغ': booking.transferDate || '',
-      'تاريخ نقل عداد الكهرباء': booking.electricityTransferDate || '',
-      'تاريخ نقل عداد المياه': booking.waterTransferDate || '',
-      'تاريخ التسليم': booking.deliveryDate || '',
+      'عدد أيام نقل عداد الكهرباء': booking.electricityTransferDate && booking.transferDate ? 
+        Math.floor((new Date(booking.electricityTransferDate).getTime() - new Date(booking.transferDate).getTime()) / (1000 * 60 * 60 * 24)) : '',
+      'عدد أيام نقل عداد المياه': booking.waterTransferDate && booking.transferDate ?
+        Math.floor((new Date(booking.waterTransferDate).getTime() - new Date(booking.transferDate).getTime()) / (1000 * 60 * 60 * 24)) : '',
+      'عدد أيام التسليم': booking.deliveryDate && booking.electricityTransferDate ?
+        Math.floor((new Date(booking.deliveryDate).getTime() - new Date(booking.electricityTransferDate).getTime()) / (1000 * 60 * 60 * 24)) : '',
       'تقييم العميل': booking.evaluationScore || ''
     }));
 
@@ -276,102 +293,62 @@ export default function DeliveryAnalysis() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="sales">المبيعات</TabsTrigger>
-            <TabsTrigger value="delivery">التسليم</TabsTrigger>
-            <TabsTrigger value="satisfaction">رضا العملاء</TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardHeader>
+            <CardTitle>المبيعات الشهرية</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="count" name="عدد الوحدات" fill="#8884d8" />
+                  <Bar yAxisId="right" dataKey="value" name="قيمة المبيعات" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="sales">
-            <Card>
-              <CardHeader>
-                <CardTitle>المبيعات الشهرية</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                      <Tooltip />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="count" name="عدد الوحدات" fill="#8884d8" />
-                      <Bar yAxisId="right" dataKey="value" name="قيمة المبيعات" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="delivery">
-            <Card>
-              <CardHeader>
-                <CardTitle>متوسط فترات التسليم</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: 'نقل عداد الكهرباء', days: metrics.avgElectricityDays },
-                      { name: 'نقل عداد المياه', days: metrics.avgWaterDays },
-                      { name: 'التسليم للعميل', days: metrics.avgDeliveryDays },
-                      { name: 'إفراغ الكاش', days: metrics.avgCashTransferDays },
-                      { name: 'إفراغ التحويل', days: metrics.avgBankTransferDays }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="days" name="عدد الأيام" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="satisfaction">
-            <Card>
-              <CardHeader>
-                <CardTitle>تقييمات العملاء</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'ممتاز (9-10)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 9).length },
-                          { name: 'جيد جداً (7-8)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 7 && b.evaluationScore < 9).length },
-                          { name: 'جيد (5-6)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 5 && b.evaluationScore < 7).length },
-                          { name: 'ضعيف (أقل من 5)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore < 5).length }
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={150}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      >
-                        {filteredBookings.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>توزيع تقييمات العملاء</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'ممتاز (9-10)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 9).length },
+                      { name: 'جيد جداً (7-8)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 7 && b.evaluationScore < 9).length },
+                      { name: 'جيد (5-6)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 5 && b.evaluationScore < 7).length },
+                      { name: 'ضعيف (أقل من 5)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore < 5).length }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={150}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  >
+                    {filteredBookings.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
