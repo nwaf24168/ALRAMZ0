@@ -3,15 +3,16 @@ import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
-import { 
-  LayoutDashboard, 
-  Settings, 
-  LogOut, 
-  FileInput, 
+import {
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  FileInput,
   MessageSquare,
   LineChart,
   User,
-  Package
+  Package,
+  BarChart3, // Added import for BarChart3 icon
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -52,6 +53,11 @@ export default function Sidebar() {
       title: "قسم التسليم",
       icon: <Package className="ml-2 h-5 w-5" />,
       path: "/delivery",
+    },
+    { // Added new menu item for delivery analysis
+      title: "تحليل التسليم",
+      icon: <BarChart3 className="ml-2 h-5 w-5" />,
+      path: "/delivery-analysis",
     },
   ];
 
@@ -114,3 +120,123 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+
+// Placeholder component for /delivery-analysis
+function DeliveryAnalysis() {
+  return (
+    <div>
+      <h1>Delivery Analysis Page</h1>
+      {/* Add your report and excel export functionality here */}
+      <p>This is a placeholder for the delivery analysis page.  Implement the required reporting and export functionality here.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>ت</th>
+            <th>تاريخ الحجز</th>
+            <th>اسم العميل</th>
+            <th>المشروع</th>
+            <th>العمارة</th>
+            <th>الوحدة</th>
+            <th>طريقة الدفع</th>
+            <th>بيع على الخارطه / جاهز</th>
+            <th>قيمة الوحدة</th>
+            <th>تاريخ الافراغ</th>
+            <th>اسم موظف المبيعات</th>
+            <th>تاريخ انتهاء اعمال البناء للوحدة من قبل المقاول</th>
+            <th>تاريخ الاستلام النهائي للوحدة</th>
+            <th>تاريخ نقل عدادا الكهرباء</th>
+            <th>تاريخ نقل عدادا المياه</th>
+            <th>تاريخ التسليم للعميل</th>
+            <th>هل تم تقييم عملية الاستلام (نعم او لا)</th>
+            <th>تقيييم عملية الاستلام للوحدة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>17-Dec-24</td>
+            <td>تركي السعيد</td>
+            <td>المعالي</td>
+            <td>26</td>
+            <td>26</td>
+            <td>بنك</td>
+            <td>جاهز</td>
+            <td>3,128,750</td>
+            <td>09-Jan-25</td>
+            <td>دعاء شدادي</td>
+            <td>28/9/2024</td>
+            <td>28/9/2024</td>
+            <td></td>
+            <td></td>
+            <td>25/3/2025</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>22-Dec-25</td>
+            <td>تركي السماري</td>
+            <td>المعالي</td>
+            <td>42</td>
+            <td>42</td>
+            <td>بنك</td>
+            <td>جاهز</td>
+            <td>2,687,500</td>
+            <td></td>
+            <td>محمد شعيب</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>01-Dec-24</td>
+            <td>علي بخاري</td>
+            <td>رمز 45</td>
+            <td>8</td>
+            <td>3</td>
+            <td>بنك</td>
+            <td>جاهز</td>
+            <td>657,945</td>
+            <td>01-Jan-25</td>
+            <td>دعاء شدادي</td>
+            <td>6/10/2024</td>
+            <td>6/10/2024</td>
+            <td></td>
+            <td></td>
+            <td>29/1/2025</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>18-Dec-24</td>
+            <td>ياسين العلي</td>
+            <td>رمز 45</td>
+            <td>4</td>
+            <td>14</td>
+            <td>بنك</td>
+            <td>جاهز</td>
+            <td>627,195</td>
+            <td>02-Jan-25</td>
+            <td>محمد شعيب</td>
+            <td>30/1/2025</td>
+            <td>30/1/2025</td>
+            <td></td>
+            <td></td>
+            <td>30/1/2025</td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export { DeliveryAnalysis };
