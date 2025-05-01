@@ -281,7 +281,7 @@ export default function Delivery() {
     const matchesStatus = statusFilter === "الكل" || booking.status === statusFilter;
 
     const bookingDate = new Date(booking.bookingDate);
-    const matchesMonth = !monthFilter || (bookingDate.getMonth() + 1).toString() === monthFilter;
+    const matchesMonth = monthFilter === "all" || !monthFilter || (bookingDate.getMonth() + 1).toString() === monthFilter;
     const matchesYear = !yearFilter || bookingDate.getFullYear().toString() === yearFilter;
     
     return matchesSearch && matchesStatus && matchesMonth && matchesYear;
@@ -460,7 +460,7 @@ export default function Delivery() {
                     <SelectValue placeholder="الشهر" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">كل الشهور</SelectItem>
+                    <SelectItem value="all">كل الشهور</SelectItem>
                     {Array.from({ length: 12 }, (_, i) => (
                       <SelectItem key={i + 1} value={(i + 1).toString()}>
                         {i + 1}
