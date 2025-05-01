@@ -494,18 +494,77 @@ export default function Delivery() {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl">
+                                <DialogHeader>
+                                  <DialogTitle>تفاصيل الحجز</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <h3 className="font-bold mb-2">قسم المبيعات</h3>
+                                    <div className="space-y-2">
+                                      <p>تاريخ الحجز: {booking.bookingDate}</p>
+                                      <p>اسم العميل: {booking.customerName}</p>
+                                      <p>المشروع: {booking.project}</p>
+                                      <p>العمارة: {booking.building}</p>
+                                      <p>الوحدة: {booking.unit}</p>
+                                      <p>طريقة الدفع: {booking.paymentMethod}</p>
+                                      <p>نوع البيع: {booking.saleType}</p>
+                                      <p>قيمة الوحدة: {booking.unitValue}</p>
+                                      <p>تاريخ الافراغ: {booking.transferDate}</p>
+                                      <p>موظف المبيعات: {booking.salesEmployee}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-bold mb-2">قسم المشاريع</h3>
+                                    <div className="space-y-2">
+                                      <p>تاريخ انتهاء البناء: {booking.constructionEndDate}</p>
+                                      <p>تاريخ الاستلام النهائي: {booking.finalReceiptDate}</p>
+                                      <p>تاريخ نقل عداد الكهرباء: {booking.electricityTransferDate}</p>
+                                      <p>تاريخ نقل عداد المياه: {booking.waterTransferDate}</p>
+                                      <p>تاريخ التسليم للعميل: {booking.deliveryDate}</p>
+                                    </div>
+                                    <h3 className="font-bold mt-4 mb-2">قسم راحة العميل</h3>
+                                    <div className="space-y-2">
+                                      <p>تم التقييم: {booking.isEvaluated ? 'نعم' : 'لا'}</p>
+                                      <p>درجة التقييم: {booking.evaluationScore}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                             <Button 
                               variant="ghost" 
                               size="icon"
                               onClick={() => handleEditBooking(booking)}
-                              disabled={user?.role === "قسم المبيعات" && booking.status_sales_filled}
+                              disabled={
+                                (user?.role === "قسم المبيعات" && booking.status_sales_filled) ||
+                                (user?.role === "قسم المشاريع" && booking.status_projects_filled) ||
+                                (user?.role === "إدارة راحة العملاء" && booking.status_customer_filled)
+                              }
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => {
+                                const confirmed = window.confirm('هل أنت متأكد من حذف هذا الحجز؟');
+                                if (confirmed) {
+                                  setBookings(bookings.filter(b => b.id !== booking.id));
+                                  addNotification({
+                                    title: "تم الحذف",
+                                    message: `تم حذف الحجز رقم ${booking.id} بنجاح`,
+                                    type: "success"
+                                  });
+                                }
+                              }}
+                            >
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
