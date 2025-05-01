@@ -91,10 +91,10 @@ export default function Delivery() {
     electricityTransferDate: "",
     waterTransferDate: "",
     deliveryDate: "25/3/2025",
-    status: "مكتمل من كل الإدارات",
+    status: "بانتظار إدارة راحة العملاء",
     status_sales_filled: true,
     status_projects_filled: true,
-    status_customer_filled: true,
+    status_customer_filled: false,
     isEvaluated: false,
     evaluationScore: null
   },
@@ -139,10 +139,10 @@ export default function Delivery() {
     electricityTransferDate: "",
     waterTransferDate: "",
     deliveryDate: "29/1/2025",
-    status: "مكتمل من كل الإدارات",
+    status: "بانتظار إدارة راحة العملاء",
     status_sales_filled: true,
     status_projects_filled: true,
-    status_customer_filled: true,
+    status_customer_filled: false,
     isEvaluated: false,
     evaluationScore: null
   },
@@ -163,10 +163,10 @@ export default function Delivery() {
     electricityTransferDate: "",
     waterTransferDate: "",
     deliveryDate: "30/1/2025",
-    status: "مكتمل من كل الإدارات",
+    status: "بانتظار إدارة راحة العملاء",
     status_sales_filled: true,
     status_projects_filled: true,
-    status_customer_filled: true,
+    status_customer_filled: false,
     isEvaluated: false,
     evaluationScore: null
   }
