@@ -173,6 +173,8 @@ export default function Delivery() {
 ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("الكل");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
@@ -277,8 +279,12 @@ export default function Delivery() {
       booking.id.includes(searchTerm);
     
     const matchesStatus = statusFilter === "الكل" || booking.status === statusFilter;
+
+    const bookingDate = new Date(booking.bookingDate);
+    const matchesMonth = !monthFilter || (bookingDate.getMonth() + 1).toString() === monthFilter;
+    const matchesYear = !yearFilter || bookingDate.getFullYear().toString() === yearFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesMonth && matchesYear;
   });
 
   return (
@@ -435,18 +441,45 @@ export default function Delivery() {
                   className="pr-9"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="فلتر حسب الحالة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusFilters.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="فلتر حسب الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusFilters.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="الشهر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">كل الشهور</SelectItem>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="السنة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">كل السنوات</SelectItem>
+                    <SelectItem value="2024">2024</SelectItem>
+                    <SelectItem value="2025">2025</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="rounded-md border">
