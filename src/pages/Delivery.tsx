@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -31,23 +32,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Filter, Plus, Trash2, Edit, Eye } from "lucide-react";
 
-interface DeliveryRecord {
+interface Booking {
   id: string;
   bookingDate: string;
   customerName: string;
-  customerPhone: string;
   project: string;
   building: string;
   unit: string;
@@ -56,40 +46,42 @@ interface DeliveryRecord {
   unitValue: number;
   transferDate: string;
   salesEmployee: string;
-  constructionEndDate: string;
-  finalReceiptDate: string;
-  electricityTransferDate: string;
-  waterTransferDate: string;
-  deliveryDate: string;
-  notes: string;
-  isEvaluated: boolean;
-  evaluationScore: number;
-  daysToReceiveFromContractor: number;
-  daysToDeliverToCustomer: number;
-  waterTransferDuration: number;
-  electricityTransferDuration: number;
-  cashTransferDays: number;
-  bankTransferDays: number;
+  status: string;
+  status_sales_filled: boolean;
+  status_projects_filled: boolean;
+  status_customer_filled: boolean;
+  // Project Management Fields
+  constructionEndDate?: string;
+  finalReceiptDate?: string;
+  electricityTransferDate?: string;
+  waterTransferDate?: string;
+  deliveryDate?: string;
+  // Customer Satisfaction Fields
+  isEvaluated?: boolean;
+  evaluationScore?: number;
 }
 
 const saleTypes = ["بيع على الخارطة", "جاهز"];
 const paymentMethods = ["نقدي", "تحويل بنكي", "تمويل عقاري"];
+const statusFilters = [
+  "الكل",
+  "بانتظار إدارة المشاريع وراحة العملاء",
+  "بانتظار إدارة راحة العملاء",
+  "مكتمل من كل الإدارات"
+];
 
 export default function Delivery() {
   const { user } = useAuth();
   const { addNotification } = useNotification();
-  const [deliveries, setDeliveries] = useState<DeliveryRecord[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("الكل");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedDelivery, setSelectedDelivery] = useState<DeliveryRecord | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  const [newDelivery, setNewDelivery] = useState<Partial<DeliveryRecord>>({
+  const [newBooking, setNewBooking] = useState<Partial<Booking>>({
     bookingDate: new Date().toISOString().split("T")[0],
     customerName: "",
-    customerPhone: "",
     project: "",
     building: "",
     unit: "",
@@ -98,177 +90,228 @@ export default function Delivery() {
     unitValue: 0,
     transferDate: "",
     salesEmployee: "",
-    constructionEndDate: "",
-    finalReceiptDate: "",
-    electricityTransferDate: "",
-    waterTransferDate: "",
-    deliveryDate: "",
-    notes: "",
-    isEvaluated: false,
-    evaluationScore: 0
+    status: "بانتظار إدارة المشاريع وراحة العملاء",
+    status_sales_filled: true,
+    status_projects_filled: false,
+    status_customer_filled: false
   });
 
-  const handleNewDeliveryChange = (field: string, value: any) => {
-    setNewDelivery((prev) => ({
+  const handleNewBookingChange = (field: string, value: any) => {
+    setNewBooking((prev) => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleAddDelivery = () => {
-    const newId = (deliveries.length + 1).toString();
-    const delivery: DeliveryRecord = {
+  const handleAddBooking = () => {
+    const newId = (bookings.length + 1).toString();
+    const booking = {
       id: newId,
-      ...newDelivery as DeliveryRecord
+      ...newBooking as Booking
     };
 
-    setDeliveries([delivery, ...deliveries]);
+    setBookings([booking, ...bookings]);
     setIsAddDialogOpen(false);
+    setNewBooking({
+      bookingDate: new Date().toISOString().split("T")[0],
+      customerName: "",
+      project: "",
+      building: "",
+      unit: "",
+      paymentMethod: "",
+      saleType: "",
+      unitValue: 0,
+      transferDate: "",
+      salesEmployee: "",
+      status: "بانتظار إدارة المشاريع وراحة العملاء",
+      status_sales_filled: true,
+      status_projects_filled: false,
+      status_customer_filled: false
+    });
 
     addNotification({
       title: "تمت الإضافة",
-      message: `تم إضافة تسليم جديد برقم ${newId} بنجاح`,
+      message: `تم إضافة حجز جديد برقم ${newId} بنجاح`,
       type: "success"
     });
   };
 
-  const filteredDeliveries = deliveries.filter((delivery) =>
-    delivery.customerName.includes(searchTerm) ||
-    delivery.project.includes(searchTerm) ||
-    delivery.id.includes(searchTerm)
-  );
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+  };
+
+  const updateBookingStatus = (booking: Booking) => {
+    if (booking.status_sales_filled && booking.status_projects_filled && booking.status_customer_filled) {
+      return "مكتمل من كل الإدارات";
+    } else if (booking.status_sales_filled && booking.status_projects_filled) {
+      return "بانتظار إدارة راحة العملاء";
+    } else {
+      return "بانتظار إدارة المشاريع وراحة العملاء";
+    }
+  };
+
+  const handleUpdateBooking = (updatedBooking: Booking) => {
+    const newStatus = updateBookingStatus(updatedBooking);
+    const updated = { ...updatedBooking, status: newStatus };
+    
+    setBookings(bookings.map(b => b.id === updated.id ? updated : b));
+    setSelectedBooking(null);
+    
+    addNotification({
+      title: "تم التحديث",
+      message: `تم تحديث الحجز رقم ${updated.id} بنجاح`,
+      type: "success"
+    });
+  };
+
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch = 
+      booking.customerName.includes(searchTerm) ||
+      booking.project.includes(searchTerm) ||
+      booking.id.includes(searchTerm);
+    
+    const matchesStatus = statusFilter === "الكل" || booking.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">قسم الحجز</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center">
-                <Plus className="ml-2 h-4 w-4" />
-                إضافة حجز جديد
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>إضافة حجز جديد</DialogTitle>
-                <DialogDescription>
-                  أدخل بيانات الحجز الجديد
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-                <div className="space-y-2">
-                  <Label>تاريخ الحجز</Label>
-                  <Input
-                    type="date"
-                    value={newDelivery.bookingDate}
-                    onChange={(e) => handleNewDeliveryChange("bookingDate", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>اسم العميل</Label>
-                  <Input
-                    value={newDelivery.customerName}
-                    onChange={(e) => handleNewDeliveryChange("customerName", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>رقم العميل</Label>
-                  <Input
-                    value={newDelivery.customerPhone}
-                    onChange={(e) => handleNewDeliveryChange("customerPhone", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>المشروع</Label>
-                  <Input
-                    value={newDelivery.project}
-                    onChange={(e) => handleNewDeliveryChange("project", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>العمارة</Label>
-                  <Input
-                    value={newDelivery.building}
-                    onChange={(e) => handleNewDeliveryChange("building", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>الوحدة</Label>
-                  <Input
-                    value={newDelivery.unit}
-                    onChange={(e) => handleNewDeliveryChange("unit", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>طريقة الدفع</Label>
-                  <Select
-                    value={newDelivery.paymentMethod}
-                    onValueChange={(value) => handleNewDeliveryChange("paymentMethod", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر طريقة الدفع" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {method}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>نوع البيع</Label>
-                  <Select
-                    value={newDelivery.saleType}
-                    onValueChange={(value) => handleNewDeliveryChange("saleType", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر نوع البيع" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {saleTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>قيمة الوحدة</Label>
-                  <Input
-                    type="number"
-                    value={newDelivery.unitValue}
-                    onChange={(e) => handleNewDeliveryChange("unitValue", parseFloat(e.target.value))}
-                  />
-                </div>
-
-                {/* Add remaining fields similarly */}
-
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  إلغاء
+          {user?.role === "قسم المبيعات" && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center">
+                  <Plus className="ml-2 h-4 w-4" />
+                  إضافة حجز جديد
                 </Button>
-                <Button onClick={handleAddDelivery}>
-                  إضافة
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>إضافة حجز جديد</DialogTitle>
+                  <DialogDescription>أدخل بيانات الحجز الجديد</DialogDescription>
+                </DialogHeader>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label>تاريخ الحجز</Label>
+                    <Input
+                      type="date"
+                      value={newBooking.bookingDate}
+                      onChange={(e) => handleNewBookingChange("bookingDate", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>اسم العميل</Label>
+                    <Input
+                      value={newBooking.customerName}
+                      onChange={(e) => handleNewBookingChange("customerName", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>المشروع</Label>
+                    <Input
+                      value={newBooking.project}
+                      onChange={(e) => handleNewBookingChange("project", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>العمارة</Label>
+                    <Input
+                      value={newBooking.building}
+                      onChange={(e) => handleNewBookingChange("building", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>الوحدة</Label>
+                    <Input
+                      value={newBooking.unit}
+                      onChange={(e) => handleNewBookingChange("unit", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>طريقة الدفع</Label>
+                    <Select
+                      value={newBooking.paymentMethod}
+                      onValueChange={(value) => handleNewBookingChange("paymentMethod", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر طريقة الدفع" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>نوع البيع</Label>
+                    <Select
+                      value={newBooking.saleType}
+                      onValueChange={(value) => handleNewBookingChange("saleType", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر نوع البيع" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {saleTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>قيمة الوحدة</Label>
+                    <Input
+                      type="number"
+                      value={newBooking.unitValue}
+                      onChange={(e) => handleNewBookingChange("unitValue", parseFloat(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>تاريخ الإفراغ</Label>
+                    <Input
+                      type="date"
+                      value={newBooking.transferDate}
+                      onChange={(e) => handleNewBookingChange("transferDate", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>اسم موظف المبيعات</Label>
+                    <Input
+                      value={newBooking.salesEmployee}
+                      onChange={(e) => handleNewBookingChange("salesEmployee", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button onClick={handleAddBooking}>
+                    إضافة
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <Card>
@@ -286,6 +329,18 @@ export default function Delivery() {
                   className="pr-9"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="فلتر حسب الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusFilters.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="rounded-md border">
@@ -302,36 +357,276 @@ export default function Delivery() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDeliveries.length === 0 ? (
+                  {filteredBookings.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-6">
                         لا توجد سجلات حجز متطابقة مع معايير البحث
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredDeliveries.map((delivery) => (
-                      <TableRow key={delivery.id}>
-                        <TableCell className="font-medium">{delivery.id}</TableCell>
-                        <TableCell>{delivery.bookingDate}</TableCell>
-                        <TableCell>{delivery.customerName}</TableCell>
-                        <TableCell>{delivery.project}</TableCell>
-                        <TableCell>{delivery.unit}</TableCell>
+                    filteredBookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell className="font-medium">{booking.id}</TableCell>
+                        <TableCell>{booking.bookingDate}</TableCell>
+                        <TableCell>{booking.customerName}</TableCell>
+                        <TableCell>{booking.project}</TableCell>
+                        <TableCell>{booking.unit}</TableCell>
                         <TableCell>
                           <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            delivery.deliveryDate ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                            booking.status === "مكتمل من كل الإدارات"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
                           }`}>
-                            {delivery.deliveryDate ? "تم التسليم" : "قيد التسليم"}
+                            {booking.status}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl">
+                                <DialogHeader>
+                                  <DialogTitle>تفاصيل الحجز</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <h3 className="font-bold mb-2">قسم المبيعات</h3>
+                                    <div className="space-y-2">
+                                      <p>تاريخ الحجز: {booking.bookingDate}</p>
+                                      <p>اسم العميل: {booking.customerName}</p>
+                                      <p>المشروع: {booking.project}</p>
+                                      <p>العمارة: {booking.building}</p>
+                                      <p>الوحدة: {booking.unit}</p>
+                                      <p>طريقة الدفع: {booking.paymentMethod}</p>
+                                      <p>نوع البيع: {booking.saleType}</p>
+                                      <p>قيمة الوحدة: {booking.unitValue}</p>
+                                      <p>تاريخ الإفراغ: {booking.transferDate}</p>
+                                      <p>موظف المبيعات: {booking.salesEmployee}</p>
+                                    </div>
+                                  </div>
+                                  {booking.status_projects_filled && (
+                                    <div>
+                                      <h3 className="font-bold mb-2">قسم المشاريع</h3>
+                                      <div className="space-y-2">
+                                        <p>تاريخ انتهاء البناء: {booking.constructionEndDate}</p>
+                                        <p>تاريخ الاستلام النهائي: {booking.finalReceiptDate}</p>
+                                        <p>تاريخ نقل عداد الكهرباء: {booking.electricityTransferDate}</p>
+                                        <p>تاريخ نقل عداد المياه: {booking.waterTransferDate}</p>
+                                        <p>تاريخ التسليم للعميل: {booking.deliveryDate}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {booking.status_customer_filled && (
+                                    <div>
+                                      <h3 className="font-bold mb-2">قسم راحة العميل</h3>
+                                      <div className="space-y-2">
+                                        <p>تم التقييم: {booking.isEvaluated ? 'نعم' : 'لا'}</p>
+                                        <p>درجة التقييم: {booking.evaluationScore}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={
+                                    (user?.role === "قسم المبيعات" && booking.status_sales_filled) ||
+                                    (user?.role === "قسم المشاريع" && booking.status_projects_filled) ||
+                                    (user?.role === "إدارة راحة العملاء" && booking.status_customer_filled)
+                                  }
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl">
+                                <DialogHeader>
+                                  <DialogTitle>تعديل الحجز</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* قسم المبيعات - عرض فقط */}
+                                  <div>
+                                    <h3 className="text-lg font-semibold mb-4">بيانات المبيعات</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <Label>تاريخ الحجز</Label>
+                                        <Input value={booking.bookingDate} disabled />
+                                      </div>
+                                      <div>
+                                        <Label>اسم العميل</Label>
+                                        <Input value={booking.customerName} disabled />
+                                      </div>
+                                      <div>
+                                        <Label>المشروع</Label>
+                                        <Input value={booking.project} disabled />
+                                      </div>
+                                      <div>
+                                        <Label>الوحدة</Label>
+                                        <Input value={booking.unit} disabled />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <Separator />
+
+                                  {/* قسم المشاريع */}
+                                  {user?.role === "قسم المشاريع" && !booking.status_projects_filled && (
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-4">بيانات المشاريع</h3>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label>تاريخ انتهاء البناء</Label>
+                                          <Input
+                                            type="date"
+                                            value={booking.constructionEndDate}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                constructionEndDate: e.target.value,
+                                                status_projects_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label>تاريخ الاستلام النهائي</Label>
+                                          <Input
+                                            type="date"
+                                            value={booking.finalReceiptDate}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                finalReceiptDate: e.target.value,
+                                                status_projects_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label>تاريخ نقل عداد الكهرباء</Label>
+                                          <Input
+                                            type="date"
+                                            value={booking.electricityTransferDate}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                electricityTransferDate: e.target.value,
+                                                status_projects_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label>تاريخ نقل عداد المياه</Label>
+                                          <Input
+                                            type="date"
+                                            value={booking.waterTransferDate}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                waterTransferDate: e.target.value,
+                                                status_projects_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label>تاريخ التسليم للعميل</Label>
+                                          <Input
+                                            type="date"
+                                            value={booking.deliveryDate}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                deliveryDate: e.target.value,
+                                                status_projects_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <Separator />
+
+                                  {/* قسم راحة العملاء */}
+                                  {user?.role === "إدارة راحة العملاء" && !booking.status_customer_filled && (
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-4">تقييم راحة العملاء</h3>
+                                      <div className="space-y-4">
+                                        <div>
+                                          <Label>هل تم تقييم الاستلام؟</Label>
+                                          <Select
+                                            value={booking.isEvaluated ? "نعم" : "لا"}
+                                            onValueChange={(value) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                isEvaluated: value === "نعم",
+                                                status_customer_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="اختر" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="نعم">نعم</SelectItem>
+                                              <SelectItem value="لا">لا</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div>
+                                          <Label>تقييم عملية الاستلام (1-10)</Label>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max="10"
+                                            value={booking.evaluationScore}
+                                            onChange={(e) => {
+                                              const updatedBooking = {
+                                                ...booking,
+                                                evaluationScore: parseInt(e.target.value),
+                                                status_customer_filled: true
+                                              };
+                                              handleUpdateBooking(updatedBooking);
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const confirmed = window.confirm("هل أنت متأكد من حذف هذا الحجز؟");
+                                if (confirmed) {
+                                  setBookings(bookings.filter(b => b.id !== booking.id));
+                                  addNotification({
+                                    title: "تم الحذف",
+                                    message: `تم حذف الحجز رقم ${booking.id} بنجاح`,
+                                    type: "success"
+                                  });
+                                }
+                              }}
+                            >
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
