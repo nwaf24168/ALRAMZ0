@@ -32,31 +32,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Filter, Plus, Trash2, Edit, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface BookingRecord {
   id: string;
+  // Sales Department Fields
   bookingDate: string;
   customerName: string;
-  customerPhone: string;
   project: string;
   building: string;
   unit: string;
+  paymentMethod: string;
   saleType: string;
   unitValue: number;
-  paymentMethod: string;
-  salesEmployee: string;
-  status_sales_filled: string | boolean;
-  status_projects_filled: string | boolean;
-  status_customer_filled: string | boolean;
-  final_status: string;
   transferDate: string;
+  salesEmployee: string;
+  // Projects Department Fields
   constructionEndDate: string;
   finalReceiptDate: string;
   electricityTransferDate: string;
   waterTransferDate: string;
   deliveryDate: string;
+  // Customer Comfort Department Fields
   isEvaluated: boolean;
   evaluationScore: number;
+  // Status Fields
+  status_sales_filled: boolean | string;
+  status_projects_filled: boolean | string;
+  status_customer_filled: boolean | string;
+  final_status: string;
 }
 
 const saleTypes = ["جاهز", "على الخارطة"];
@@ -69,12 +73,11 @@ export default function Delivery() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("الكل");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
+  const [activeTab, setActiveTab] = useState("sales");
 
   const [newBooking, setNewBooking] = useState<Partial<BookingRecord>>({
     bookingDate: new Date().toISOString().split("T")[0],
     customerName: "",
-    customerPhone: "",
     project: "",
     building: "",
     unit: "",
@@ -82,6 +85,13 @@ export default function Delivery() {
     unitValue: 0,
     paymentMethod: "",
     salesEmployee: user?.username || "",
+    constructionEndDate: "",
+    finalReceiptDate: "",
+    electricityTransferDate: "",
+    waterTransferDate: "",
+    deliveryDate: "",
+    isEvaluated: false,
+    evaluationScore: 0,
     status_sales_filled: false,
     status_projects_filled: false,
     status_customer_filled: false,
@@ -129,26 +139,15 @@ export default function Delivery() {
   const canEditFields = (role: string) => {
     switch (role) {
       case "قسم المبيعات":
-        return ["customerName", "project", "building", "unit", "paymentMethod", "saleType", "unitValue", "salesEmployee"];
+        return ["customerName", "project", "building", "unit", "paymentMethod", "saleType", "unitValue", "salesEmployee", "transferDate"];
       case "قسم المشاريع":
-        return ["transferDate", "constructionEndDate", "finalReceiptDate", "electricityTransferDate", "waterTransferDate"];
+        return ["constructionEndDate", "finalReceiptDate", "electricityTransferDate", "waterTransferDate", "deliveryDate"];
       case "إدارة راحة العملاء":
-        return ["deliveryDate", "isEvaluated", "evaluationScore"];
+        return ["isEvaluated", "evaluationScore"];
       default:
         return [];
     }
   };
-
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch = 
-      booking.customerName.includes(searchTerm) ||
-      booking.project.includes(searchTerm) ||
-      booking.id.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === "الكل" || booking.final_status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
 
   return (
     <Layout>
@@ -166,124 +165,199 @@ export default function Delivery() {
               <DialogHeader>
                 <DialogTitle>إضافة حجز جديد</DialogTitle>
                 <DialogDescription>
-                  أدخل بيانات الحجز الجديد
+                  أدخل بيانات الحجز حسب القسم
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-                <div className="space-y-2">
-                  <Label>تاريخ الحجز</Label>
-                  <Input
-                    type="date"
-                    value={newBooking.bookingDate}
-                    onChange={(e) => handleNewBookingChange("bookingDate", e.target.value)}
-                  />
-                </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="sales">قسم المبيعات</TabsTrigger>
+                  <TabsTrigger value="projects">إدارة المشاريع</TabsTrigger>
+                  <TabsTrigger value="customer">راحة العميل</TabsTrigger>
+                </TabsList>
 
-                <div className="space-y-2">
-                  <Label>اسم العميل</Label>
-                  <Input
-                    value={newBooking.customerName}
-                    onChange={(e) => handleNewBookingChange("customerName", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>رقم العميل</Label>
-                  <Input
-                    value={newBooking.customerPhone}
-                    onChange={(e) => handleNewBookingChange("customerPhone", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>المشروع</Label>
-                  <Input
-                    value={newBooking.project}
-                    onChange={(e) => handleNewBookingChange("project", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>العمارة</Label>
-                  <Input
-                    value={newBooking.building}
-                    onChange={(e) => handleNewBookingChange("building", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>الوحدة</Label>
-                  <Input
-                    value={newBooking.unit}
-                    onChange={(e) => handleNewBookingChange("unit", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>نوع البيع</Label>
-                  <Select
-                    value={newBooking.saleType}
-                    onValueChange={(value) => handleNewBookingChange("saleType", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر نوع البيع" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {saleTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>طريقة الدفع</Label>
-                  <Select
-                    value={newBooking.paymentMethod}
-                    onValueChange={(value) => handleNewBookingChange("paymentMethod", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر طريقة الدفع" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {method}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>قيمة الوحدة</Label>
-                  <Input
-                    type="number"
-                    value={newBooking.unitValue}
-                    onChange={(e) => handleNewBookingChange("unitValue", parseFloat(e.target.value))}
-                  />
-                </div>
-
-                {user?.role === "قسم المبيعات" && (
-                  <div className="space-y-2">
-                    <Label>اسم موظف المبيعات</Label>
-                    <Input
-                      value={newBooking.salesEmployee}
-                      onChange={(e) => handleNewBookingChange("salesEmployee", e.target.value)}
-                    />
+                <TabsContent value="sales">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>تاريخ الحجز</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.bookingDate}
+                        onChange={(e) => handleNewBookingChange("bookingDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>اسم العميل</Label>
+                      <Input
+                        value={newBooking.customerName}
+                        onChange={(e) => handleNewBookingChange("customerName", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>المشروع</Label>
+                      <Input
+                        value={newBooking.project}
+                        onChange={(e) => handleNewBookingChange("project", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>العمارة</Label>
+                      <Input
+                        value={newBooking.building}
+                        onChange={(e) => handleNewBookingChange("building", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>الوحدة</Label>
+                      <Input
+                        value={newBooking.unit}
+                        onChange={(e) => handleNewBookingChange("unit", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>طريقة الدفع</Label>
+                      <Select
+                        value={newBooking.paymentMethod}
+                        onValueChange={(value) => handleNewBookingChange("paymentMethod", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر طريقة الدفع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods.map((method) => (
+                            <SelectItem key={method} value={method}>
+                              {method}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>نوع البيع</Label>
+                      <Select
+                        value={newBooking.saleType}
+                        onValueChange={(value) => handleNewBookingChange("saleType", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر نوع البيع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {saleTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>قيمة الوحدة</Label>
+                      <Input
+                        type="number"
+                        value={newBooking.unitValue}
+                        onChange={(e) => handleNewBookingChange("unitValue", parseFloat(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تاريخ الافراغ</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.transferDate}
+                        onChange={(e) => handleNewBookingChange("transferDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>اسم موظف المبيعات</Label>
+                      <Input
+                        value={newBooking.salesEmployee}
+                        onChange={(e) => handleNewBookingChange("salesEmployee", e.target.value)}
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
+                </TabsContent>
+
+                <TabsContent value="projects">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>تاريخ انتهاء اعمال البناء</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.constructionEndDate}
+                        onChange={(e) => handleNewBookingChange("constructionEndDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تاريخ الاستلام النهائي</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.finalReceiptDate}
+                        onChange={(e) => handleNewBookingChange("finalReceiptDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تاريخ نقل عداد الكهرباء</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.electricityTransferDate}
+                        onChange={(e) => handleNewBookingChange("electricityTransferDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تاريخ نقل عداد المياه</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.waterTransferDate}
+                        onChange={(e) => handleNewBookingChange("waterTransferDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تاريخ التسليم للعميل</Label>
+                      <Input
+                        type="date"
+                        value={newBooking.deliveryDate}
+                        onChange={(e) => handleNewBookingChange("deliveryDate", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="customer">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>هل تم تقييم عملية الاستلام</Label>
+                      <Select
+                        value={newBooking.isEvaluated ? "نعم" : "لا"}
+                        onValueChange={(value) => handleNewBookingChange("isEvaluated", value === "نعم")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="نعم">نعم</SelectItem>
+                          <SelectItem value="لا">لا</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تقييم عملية الاستلام</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={newBooking.evaluationScore}
+                        onChange={(e) => handleNewBookingChange("evaluationScore", parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   إلغاء
                 </Button>
                 <Button onClick={handleAddBooking}>
-                  إضافة
+                  {activeTab === "sales" ? "التالي" : activeTab === "projects" ? "التالي" : "إضافة"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -332,14 +406,14 @@ export default function Delivery() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBookings.length === 0 ? (
+                  {bookings.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-6">
-                        لا توجد سجلات حجز متطابقة مع معايير البحث
+                        لا توجد سجلات حجز
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredBookings.map((booking) => (
+                    bookings.map((booking) => (
                       <TableRow key={booking.id}>
                         <TableCell className="font-medium">{booking.id}</TableCell>
                         <TableCell>{booking.bookingDate}</TableCell>
