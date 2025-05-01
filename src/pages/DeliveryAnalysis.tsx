@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import * as XLSX from 'xlsx';
-import { useState } from "react";
 
-// استيراد نموذج البيانات من صفحة التسليم
 interface Booking {
   id: string;
   bookingDate: string;
@@ -31,6 +30,8 @@ interface Booking {
   status: string;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF99E6'];
+
 export default function DeliveryAnalysis() {
   const [activeTab, setActiveTab] = useState("overview");
   const [monthFilter, setMonthFilter] = useState("all");
@@ -39,28 +40,7 @@ export default function DeliveryAnalysis() {
 
   // استخدام نفس البيانات من صفحة التسليم
   const [bookings] = useState<Booking[]>([
-    {
-      id: "1",
-      bookingDate: "17-Dec-24",
-      customerName: "تركي السعيد",
-      project: "المعالي",
-      building: "26",
-      unit: "26",
-      paymentMethod: "بنك",
-      saleType: "جاهز",
-      unitValue: 3128750,
-      transferDate: "09-Jan-25",
-      salesEmployee: "دعاء شدادي",
-      constructionEndDate: "28/9/2024",
-      finalReceiptDate: "28/9/2024",
-      electricityTransferDate: "",
-      waterTransferDate: "",
-      deliveryDate: "25/3/2025",
-      status: "بانتظار إدارة راحة العملاء",
-      isEvaluated: false,
-      evaluationScore: null
-    },
-    // ... باقي البيانات
+    // ... نفس البيانات من صفحة التسليم
   ]);
 
   // تصفية البيانات حسب المرشحات
@@ -72,41 +52,88 @@ export default function DeliveryAnalysis() {
     return matchesMonth && matchesYear && matchesProject;
   });
 
-  // حساب الإحصائيات
-  const totalBookings = filteredBookings.length;
-  const completedDeliveries = filteredBookings.filter(b => b.deliveryDate).length;
-  const totalValue = filteredBookings.reduce((sum, b) => sum + b.unitValue, 0);
-  const avgDeliveryTime = filteredBookings
-    .filter(b => b.deliveryDate)
-    .reduce((sum, b) => {
-      const start = new Date(b.bookingDate);
-      const end = new Date(b.deliveryDate!);
-      return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-    }, 0) / (completedDeliveries || 1);
+  // حساب المؤشرات
+  const calculateMetrics = () => {
+    const totalUnits = filteredBookings.length;
+    const totalValue = filteredBookings.reduce((sum, b) => sum + b.unitValue, 0);
+    
+    // حساب متوسط أيام نقل العدادات
+    const electricityTransferDays = filteredBookings
+      .filter(b => b.electricityTransferDate && b.transferDate)
+      .map(b => {
+        const transfer = new Date(b.transferDate);
+        const electricity = new Date(b.electricityTransferDate!);
+        return Math.floor((electricity.getTime() - transfer.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    const waterTransferDays = filteredBookings
+      .filter(b => b.waterTransferDate && b.transferDate)
+      .map(b => {
+        const transfer = new Date(b.transferDate);
+        const water = new Date(b.waterTransferDate!);
+        return Math.floor((water.getTime() - transfer.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    // حساب متوسط أيام التسليم
+    const deliveryDays = filteredBookings
+      .filter(b => b.deliveryDate && b.electricityTransferDate)
+      .map(b => {
+        const electricity = new Date(b.electricityTransferDate!);
+        const delivery = new Date(b.deliveryDate!);
+        return Math.floor((delivery.getTime() - electricity.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    // حساب متوسط أيام الإفراغ
+    const cashTransferDays = filteredBookings
+      .filter(b => b.transferDate && b.paymentMethod === "نقدي")
+      .map(b => {
+        const booking = new Date(b.bookingDate);
+        const transfer = new Date(b.transferDate);
+        return Math.floor((transfer.getTime() - booking.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    const bankTransferDays = filteredBookings
+      .filter(b => b.transferDate && b.paymentMethod === "تحويل بنكي")
+      .map(b => {
+        const booking = new Date(b.bookingDate);
+        const transfer = new Date(b.transferDate);
+        return Math.floor((transfer.getTime() - booking.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    // حساب متوسط رضا العملاء
+    const averageSatisfaction = filteredBookings
+      .filter(b => b.evaluationScore)
+      .reduce((sum, b) => sum + (b.evaluationScore || 0), 0) / 
+      filteredBookings.filter(b => b.evaluationScore).length;
+
+    return {
+      totalUnits,
+      totalValue,
+      avgElectricityDays: Math.round(electricityTransferDays.reduce((a, b) => a + b, 0) / electricityTransferDays.length || 0),
+      avgWaterDays: Math.round(waterTransferDays.reduce((a, b) => a + b, 0) / waterTransferDays.length || 0),
+      avgDeliveryDays: Math.round(deliveryDays.reduce((a, b) => a + b, 0) / deliveryDays.length || 0),
+      avgCashTransferDays: Math.round(cashTransferDays.reduce((a, b) => a + b, 0) / cashTransferDays.length || 0),
+      avgBankTransferDays: Math.round(bankTransferDays.reduce((a, b) => a + b, 0) / bankTransferDays.length || 0),
+      customerSatisfaction: Math.round(averageSatisfaction * 10) / 10
+    };
+  };
+
+  const metrics = calculateMetrics();
 
   // تجهيز بيانات الرسوم البيانية
-  const projectStats = filteredBookings.reduce((acc, curr) => {
-    acc[curr.project] = (acc[curr.project] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const projectChartData = Object.entries(projectStats).map(([name, value]) => ({
-    name,
-    value
-  }));
-
-  const monthlyDeliveries = filteredBookings.reduce((acc, curr) => {
+  const monthlyData = filteredBookings.reduce((acc, curr) => {
     const month = new Date(curr.bookingDate).toLocaleString('ar-SA', { month: 'long' });
     acc[month] = (acc[month] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const monthlyChartData = Object.entries(monthlyDeliveries).map(([month, count]) => ({
+  const monthlyChartData = Object.entries(monthlyData).map(([month, count]) => ({
     month,
-    count
+    count,
+    value: filteredBookings
+      .filter(b => new Date(b.bookingDate).toLocaleString('ar-SA', { month: 'long' }) === month)
+      .reduce((sum, b) => sum + b.unitValue, 0)
   }));
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF99E6', '#AF19FF'];
 
   // تصدير البيانات إلى Excel
   const exportToExcel = () => {
@@ -115,11 +142,13 @@ export default function DeliveryAnalysis() {
       'تاريخ الحجز': booking.bookingDate,
       'اسم العميل': booking.customerName,
       'المشروع': booking.project,
-      'العمارة': booking.building,
-      'الوحدة': booking.unit,
       'قيمة الوحدة': booking.unitValue,
-      'تاريخ التسليم': booking.deliveryDate || 'لم يتم التسليم',
-      'تقييم العميل': booking.evaluationScore || 'لم يتم التقييم'
+      'طريقة الدفع': booking.paymentMethod,
+      'تاريخ الإفراغ': booking.transferDate || '',
+      'تاريخ نقل عداد الكهرباء': booking.electricityTransferDate || '',
+      'تاريخ نقل عداد المياه': booking.waterTransferDate || '',
+      'تاريخ التسليم': booking.deliveryDate || '',
+      'تقييم العميل': booking.evaluationScore || ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -159,20 +188,6 @@ export default function DeliveryAnalysis() {
               </SelectContent>
             </Select>
 
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="المشروع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل المشاريع</SelectItem>
-                {Array.from(new Set(bookings.map(b => b.project))).map(project => (
-                  <SelectItem key={project} value={project}>
-                    {project}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             <Button onClick={exportToExcel}>
               تصدير إلى Excel
             </Button>
@@ -182,42 +197,80 @@ export default function DeliveryAnalysis() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>إجمالي الحجوزات</CardTitle>
+              <CardTitle>عدد الوحدات المباعة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{totalBookings}</div>
+              <div className="text-3xl font-bold">{metrics.totalUnits}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>التسليمات المكتملة</CardTitle>
+              <CardTitle>قيمة المبيعات</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {completedDeliveries}
+              <div className="text-3xl font-bold">
+                {metrics.totalValue.toLocaleString()} ريال
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>القيمة الإجمالية</CardTitle>
+              <CardTitle>متوسط رضا العملاء</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {totalValue.toLocaleString()} ريال
+                {metrics.customerSatisfaction}/10
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>متوسط مدة التسليم</CardTitle>
+              <CardTitle>متوسط أيام التسليم</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(avgDeliveryTime)} يوم
+                {metrics.avgDeliveryDays} يوم
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>متوسط أيام نقل العدادات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>الكهرباء:</span>
+                  <span className="font-bold">{metrics.avgElectricityDays} يوم</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>المياه:</span>
+                  <span className="font-bold">{metrics.avgWaterDays} يوم</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>متوسط أيام الإفراغ</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>عملاء الكاش:</span>
+                  <span className="font-bold">{metrics.avgCashTransferDays} يوم</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>عملاء التحويل:</span>
+                  <span className="font-bold">{metrics.avgBankTransferDays} يوم</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -225,22 +278,79 @@ export default function DeliveryAnalysis() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-            <TabsTrigger value="projects">المشاريع</TabsTrigger>
-            <TabsTrigger value="timeline">الجدول الزمني</TabsTrigger>
+            <TabsTrigger value="sales">المبيعات</TabsTrigger>
+            <TabsTrigger value="delivery">التسليم</TabsTrigger>
+            <TabsTrigger value="satisfaction">رضا العملاء</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
+          <TabsContent value="sales">
             <Card>
               <CardHeader>
-                <CardTitle>توزيع الحجوزات حسب المشروع</CardTitle>
+                <CardTitle>المبيعات الشهرية</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="count" name="عدد الوحدات" fill="#8884d8" />
+                      <Bar yAxisId="right" dataKey="value" name="قيمة المبيعات" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="delivery">
+            <Card>
+              <CardHeader>
+                <CardTitle>متوسط فترات التسليم</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[
+                      { name: 'نقل عداد الكهرباء', days: metrics.avgElectricityDays },
+                      { name: 'نقل عداد المياه', days: metrics.avgWaterDays },
+                      { name: 'التسليم للعميل', days: metrics.avgDeliveryDays },
+                      { name: 'إفراغ الكاش', days: metrics.avgCashTransferDays },
+                      { name: 'إفراغ التحويل', days: metrics.avgBankTransferDays }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="days" name="عدد الأيام" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="satisfaction">
+            <Card>
+              <CardHeader>
+                <CardTitle>تقييمات العملاء</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={projectChartData}
+                        data={[
+                          { name: 'ممتاز (9-10)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 9).length },
+                          { name: 'جيد جداً (7-8)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 7 && b.evaluationScore < 9).length },
+                          { name: 'جيد (5-6)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore >= 5 && b.evaluationScore < 7).length },
+                          { name: 'ضعيف (أقل من 5)', value: filteredBookings.filter(b => b.evaluationScore && b.evaluationScore < 5).length }
+                        ]}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -249,63 +359,13 @@ export default function DeliveryAnalysis() {
                         dataKey="value"
                         label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                       >
-                        {projectChartData.map((entry, index) => (
+                        {filteredBookings.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip />
                       <Legend />
                     </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="projects">
-            <Card>
-              <CardHeader>
-                <CardTitle>تحليل المشاريع</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={projectChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="value" name="عدد الحجوزات" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timeline">
-            <Card>
-              <CardHeader>
-                <CardTitle>التسليمات عبر الزمن</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={monthlyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="count"
-                        name="عدد التسليمات"
-                        stroke="#8884d8"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
