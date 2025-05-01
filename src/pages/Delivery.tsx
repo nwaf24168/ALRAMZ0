@@ -141,26 +141,37 @@ export default function Delivery() {
           ...newBooking,
         };
         
-        // Update department completion status
+        // Update department completion status based on filled data
         if (user?.role === "قسم المبيعات") {
-          updatedBooking.status_sales_filled = new Date().toISOString();
+          const salesFieldsFilled = [
+            'bookingDate', 'customerName', 'project', 'building', 
+            'unit', 'paymentMethod', 'saleType', 'unitValue', 
+            'transferDate', 'salesEmployee'
+          ].every(field => updatedBooking[field]);
+          updatedBooking.status_sales_filled = salesFieldsFilled ? new Date().toISOString() : false;
         } else if (user?.role === "قسم المشاريع") {
-          updatedBooking.status_projects_filled = new Date().toISOString();
+          const projectsFieldsFilled = [
+            'constructionEndDate', 'finalReceiptDate', 'electricityTransferDate',
+            'waterTransferDate', 'deliveryDate'
+          ].every(field => updatedBooking[field]);
+          updatedBooking.status_projects_filled = projectsFieldsFilled ? new Date().toISOString() : false;
         } else if (user?.role === "إدارة راحة العملاء") {
-          updatedBooking.status_customer_filled = new Date().toISOString();
+          const customerFieldsFilled = [
+            'isEvaluated', 'evaluationScore'
+          ].every(field => updatedBooking[field] !== undefined && updatedBooking[field] !== null);
+          updatedBooking.status_customer_filled = customerFieldsFilled ? new Date().toISOString() : false;
         }
 
-        // Update final status based on department completions
-        if (updatedBooking.status_sales_filled && updatedBooking.status_projects_filled && updatedBooking.status_customer_filled) {
+        // Update final status based on completion
+        const pendingDepts = [];
+        if (!updatedBooking.status_sales_filled) pendingDepts.push("المبيعات");
+        if (!updatedBooking.status_projects_filled) pendingDepts.push("المشاريع");
+        if (!updatedBooking.status_customer_filled) pendingDepts.push("راحة العميل");
+
+        if (pendingDepts.length === 0) {
           updatedBooking.final_status = "مكتمل";
         } else {
-          const pendingDepts = [];
-          if (!updatedBooking.status_projects_filled) pendingDepts.push("المشاريع");
-          if (!updatedBooking.status_customer_filled) pendingDepts.push("راحة العميل");
-          
-          if (pendingDepts.length > 0) {
-            updatedBooking.final_status = `بانتظار ${pendingDepts.join(" و")}`;
-          }
+          updatedBooking.final_status = `بانتظار ${pendingDepts.join(" و ")}`;
         }
 
         return updatedBooking;
