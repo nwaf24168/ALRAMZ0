@@ -180,7 +180,7 @@ export default function Delivery() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">قسم الحجز</h1>
-          {user?.role === "قسم المبيعات" && (
+          {(user?.role === "قسم المبيعات" || user?.role === "مدير النظام") && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center">
