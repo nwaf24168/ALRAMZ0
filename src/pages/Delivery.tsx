@@ -124,6 +124,51 @@ export default function Delivery() {
     });
   };
 
+  const handleEditBooking = (booking: BookingRecord) => {
+    setNewBooking(booking);
+    setIsAddDialogOpen(true);
+    setActiveTab(
+      user?.role === "قسم المشاريع" ? "projects" :
+      user?.role === "إدارة راحة العملاء" ? "customer" : "sales"
+    );
+  };
+
+  const handleUpdateBooking = () => {
+    const updatedBookings = bookings.map(booking => {
+      if (booking.id === newBooking.id) {
+        const updatedBooking = {
+          ...booking,
+          ...newBooking,
+          status_projects_filled: user?.role === "قسم المشاريع" ? new Date().toISOString() : booking.status_projects_filled,
+          status_customer_filled: user?.role === "إدارة راحة العملاء" ? new Date().toISOString() : booking.status_customer_filled,
+        };
+
+        // Update final status based on filled sections
+        if (updatedBooking.status_sales_filled && updatedBooking.status_projects_filled && updatedBooking.status_customer_filled) {
+          updatedBooking.final_status = "مكتمل";
+        } else if (!updatedBooking.status_projects_filled && !updatedBooking.status_customer_filled) {
+          updatedBooking.final_status = "بانتظار المشاريع وراحة العميل";
+        } else if (!updatedBooking.status_projects_filled) {
+          updatedBooking.final_status = "بانتظار المشاريع";
+        } else if (!updatedBooking.status_customer_filled) {
+          updatedBooking.final_status = "بانتظار راحة العميل";
+        }
+
+        return updatedBooking;
+      }
+      return booking;
+    });
+
+    setBookings(updatedBookings);
+    setIsAddDialogOpen(false);
+
+    addNotification({
+      title: "تم التحديث",
+      message: `تم تحديث الحجز رقم ${newBooking.id} بنجاح`,
+      type: "success"
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "مكتمل":
@@ -356,8 +401,8 @@ export default function Delivery() {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   إلغاء
                 </Button>
-                <Button onClick={handleAddBooking}>
-                  {activeTab === "sales" ? "التالي" : activeTab === "projects" ? "التالي" : "إضافة"}
+                <Button onClick={newBooking.id ? handleUpdateBooking : handleAddBooking}>
+                  {newBooking.id ? "تحديث" : activeTab === "sales" ? "التالي" : activeTab === "projects" ? "التالي" : "إضافة"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -432,7 +477,12 @@ export default function Delivery() {
                             <Button variant="ghost" size="icon">
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleEditBooking(booking)}
+                              disabled={user?.role === "قسم المبيعات" && booking.status_sales_filled}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon">
