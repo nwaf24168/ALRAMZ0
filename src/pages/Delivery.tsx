@@ -596,19 +596,59 @@ export default function Delivery() {
                                     <div className="grid grid-cols-2 gap-4">
                                       <div>
                                         <Label>تاريخ الحجز</Label>
-                                        <Input value={booking.bookingDate} disabled />
+                                        <Input 
+                                          value={booking.bookingDate || ''} 
+                                          onChange={(e) => {
+                                            const updatedBooking = {
+                                              ...booking,
+                                              bookingDate: e.target.value,
+                                              status_sales_filled: true
+                                            };
+                                            handleUpdateBooking(updatedBooking);
+                                          }}
+                                        />
                                       </div>
                                       <div>
                                         <Label>اسم العميل</Label>
-                                        <Input value={booking.customerName} disabled />
+                                        <Input 
+                                          value={booking.customerName || ''} 
+                                          onChange={(e) => {
+                                            const updatedBooking = {
+                                              ...booking,
+                                              customerName: e.target.value,
+                                              status_sales_filled: true
+                                            };
+                                            handleUpdateBooking(updatedBooking);
+                                          }}
+                                        />
                                       </div>
                                       <div>
                                         <Label>المشروع</Label>
-                                        <Input value={booking.project} disabled />
+                                        <Input 
+                                          value={booking.project || ''} 
+                                          onChange={(e) => {
+                                            const updatedBooking = {
+                                              ...booking,
+                                              project: e.target.value,
+                                              status_sales_filled: true
+                                            };
+                                            handleUpdateBooking(updatedBooking);
+                                          }}
+                                        />
                                       </div>
                                       <div>
                                         <Label>الوحدة</Label>
-                                        <Input value={booking.unit} disabled />
+                                        <Input 
+                                          value={booking.unit || ''} 
+                                          onChange={(e) => {
+                                            const updatedBooking = {
+                                              ...booking,
+                                              unit: e.target.value,
+                                              status_sales_filled: true
+                                            };
+                                            handleUpdateBooking(updatedBooking);
+                                          }}
+                                        />
                                       </div>
                                     </div>
                                   </div>
