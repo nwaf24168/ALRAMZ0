@@ -9,10 +9,11 @@ import { MetricsProvider } from "@/context/MetricsContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DataEntry from "./pages/DataEntry";
-import Complaints from "./pages/Complaints";
+import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
+import Delivery from "@/pages/Delivery";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,26 +27,27 @@ const queryClient = new QueryClient({
 // مكون للتحقق من المصادقة
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
-  
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
-      
+
       {/* المسارات المحمية */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/data-entry" element={<ProtectedRoute><DataEntry /></ProtectedRoute>} />
       <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+      <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />

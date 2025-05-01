@@ -10,13 +10,14 @@ import {
   FileInput, 
   MessageSquare,
   LineChart,
-  User
+  User,
+  Package
 } from "lucide-react";
 
 export default function Sidebar() {
   const { logout, user } = useAuth();
   const location = useLocation();
-  
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
@@ -47,6 +48,11 @@ export default function Sidebar() {
       icon: <Settings className="ml-2 h-5 w-5" />,
       path: "/settings",
     },
+    {
+      title: "قسم التسليم",
+      icon: <Package className="ml-2 h-5 w-5" />,
+      path: "/delivery",
+    },
   ];
 
   return (
@@ -58,7 +64,7 @@ export default function Sidebar() {
             <p className="text-sm text-muted-foreground">منصة إدارة راحة العملاء</p>
           </div>
         </div>
-        
+
         <div className="p-4 border-b">
           <div className="flex items-center space-x-4 space-x-reverse">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -70,7 +76,7 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        
+
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
             {menuItems.map((item) => (
@@ -91,7 +97,7 @@ export default function Sidebar() {
             ))}
           </ul>
         </nav>
-        
+
         <div className="p-4 border-t">
           <div className="flex items-center justify-between">
             <button
