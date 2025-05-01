@@ -296,8 +296,8 @@ export default function Delivery() {
               <Button 
                 variant="outline"
                 onClick={() => {
-                  // تحضير البيانات للتصدير
-                  const exportData = bookings.map(booking => ({
+                  // تحضير البيانات للتصدير مع مراعاة الفلترة
+                  const exportData = filteredBookings.map(booking => ({
                     'الرقم المتسلسل': booking.id,
                     'تاريخ الحجز': booking.bookingDate,
                     'اسم العميل': booking.customerName,
