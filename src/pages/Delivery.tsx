@@ -238,9 +238,12 @@ export default function Delivery() {
   };
 
   const updateBookingStatus = (booking: Booking) => {
+    // التحقق من اكتمال بيانات إدارة راحة العملاء
+    const isCustomerServiceComplete = booking.isEvaluated && booking.evaluationScore > 0;
+    
     const allFieldsFilled = booking.status_sales_filled && 
                           booking.status_projects_filled && 
-                          booking.status_customer_filled;
+                          isCustomerServiceComplete;
     
     if (allFieldsFilled) {
       return "مكتمل من كل الإدارات";
