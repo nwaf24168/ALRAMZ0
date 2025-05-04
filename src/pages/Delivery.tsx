@@ -293,6 +293,65 @@ export default function Delivery() {
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold">قسم الحجز</h1>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                id="excelFileInput"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                      const data = event.target?.result;
+                      const workbook = XLSX.read(data, { type: 'binary' });
+                      const sheetName = workbook.SheetNames[0];
+                      const worksheet = workbook.Sheets[sheetName];
+                      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                      // تحويل البيانات إلى تنسيق الحجوزات
+                      const importedBookings = jsonData.map((row: any, index) => ({
+                        id: (bookings.length + index + 1).toString(),
+                        bookingDate: row['تاريخ الحجز'] || '',
+                        customerName: row['اسم العميل'] || '',
+                        project: row['المشروع'] || '',
+                        building: row['العمارة'] || '',
+                        unit: row['الوحدة'] || '',
+                        paymentMethod: row['طريقة الدفع'] || '',
+                        saleType: row['نوع البيع'] || '',
+                        unitValue: row['قيمة الوحدة'] || 0,
+                        transferDate: row['تاريخ الإفراغ'] || '',
+                        salesEmployee: row['موظف المبيعات'] || '',
+                        constructionEndDate: row['تاريخ انتهاء البناء'] || '',
+                        finalReceiptDate: row['تاريخ الاستلام النهائي'] || '',
+                        electricityTransferDate: row['تاريخ نقل عداد الكهرباء'] || '',
+                        waterTransferDate: row['تاريخ نقل عداد المياه'] || '',
+                        deliveryDate: row['تاريخ التسليم للعميل'] || '',
+                        status: "بانتظار إدارة المشاريع وراحة العملاء",
+                        status_sales_filled: true,
+                        status_projects_filled: false,
+                        status_customer_filled: false,
+                        isEvaluated: false,
+                        evaluationScore: null
+                      }));
+
+                      setBookings([...importedBookings, ...bookings]);
+                      addNotification({
+                        title: "تم الاستيراد",
+                        message: `تم استيراد ${importedBookings.length} حجز بنجاح`,
+                        type: "success"
+                      });
+                    };
+                    reader.readAsBinaryString(file);
+                  }
+                }}
+              />
+              <Button
+                variant="outline"
+                onClick={() => document.getElementById('excelFileInput')?.click()}
+              >
+                استيراد من إكسل
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => {
