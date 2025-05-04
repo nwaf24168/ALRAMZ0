@@ -787,7 +787,7 @@ export default function Complaints() {
                   <Label htmlFor="source">مصدر الشكوى</Label>
                   <Select
                     value={newComplaint.source}
-                    onValueChange={(value) => handleNewComplaintChange("source", value)}>
+                    onValueChange={(value) => handleNewComplaintChange("source", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر مصدر الشكوى" />
