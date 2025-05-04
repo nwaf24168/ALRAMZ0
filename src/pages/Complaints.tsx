@@ -1263,8 +1263,8 @@ export default function Complaints() {
                 onValueChange={(value) => handleNewComplaintChange("source", value)}
               >
                       <SelectTrigger className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white">
-                  <SelectValue placeholder="اختر مصدر الشكوى" />
-                </SelectTrigger>
+                        <SelectValue placeholder="اختر مصدر الشكوى" />
+                      </SelectTrigger>
                 <SelectContent>
                   {complaintSources.map((source) => (
                     <SelectItem key={source.value} value={source.label}>
