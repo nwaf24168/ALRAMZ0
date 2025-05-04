@@ -54,11 +54,6 @@ export default function Sidebar() {
       icon: <Package className="ml-2 h-5 w-5" />,
       path: "/delivery",
     },
-    { // Added new menu item for delivery analysis
-      title: "تحليل التسليم",
-      icon: <BarChart3 className="ml-2 h-5 w-5" />,
-      path: "/delivery-analysis",
-    },
   ];
 
   return (

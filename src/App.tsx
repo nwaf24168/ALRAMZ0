@@ -15,17 +15,6 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 import Delivery from "@/pages/Delivery";
 
-// Placeholder component for DeliveryAnalysis
-const DeliveryAnalysis = () => {
-  return (
-    <div>
-      <h1>Delivery Analysis</h1>
-      {/* Add report and export functionality here */}
-    </div>
-  );
-};
-
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
