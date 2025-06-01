@@ -47,7 +47,24 @@ export interface CustomerServiceRecord {
 
 export interface SatisfactionRecord {
   id?: number
+  period: 'weekly' | 'yearly'
+  category: 'serviceQuality' | 'closureTime' | 'firstTimeResolution'
+  very_happy: number
+  happy: number
+  neutral: number
+  unhappy: number
+  very_unhappy: number
+  created_at?: string
+  updated_at?: string
+}
 
+export interface CommentRecord {
+  id?: number
+  period: 'weekly' | 'yearly'
+  text: string
+  username: string
+  created_at?: string
+}
 
 // دالة فحص الاتصال مع Supabase
 export async function testSupabaseConnection(): Promise<boolean> {
@@ -68,23 +85,4 @@ export async function testSupabaseConnection(): Promise<boolean> {
     console.error('خطأ في اختبار الاتصال:', error)
     return false
   }
-}
-
-  period: 'weekly' | 'yearly'
-  category: 'serviceQuality' | 'closureTime' | 'firstTimeResolution'
-  very_happy: number
-  happy: number
-  neutral: number
-  unhappy: number
-  very_unhappy: number
-  created_at?: string
-  updated_at?: string
-}
-
-export interface CommentRecord {
-  id?: number
-  period: 'weekly' | 'yearly'
-  text: string
-  username: string
-  created_at?: string
 }
