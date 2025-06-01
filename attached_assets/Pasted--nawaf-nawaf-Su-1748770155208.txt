@@ -1,0 +1,27 @@
+محاولة تسجيل الدخول للمستخدم: nawaf
+تم تسجيل الدخول بنجاح للمستخدم: nawaf بدور: مدير النظام
+خطأ Supabase في جلب الشكاوى: 
+Object {code: "42P01", details: null, hint: null, message: "relation "public.complaints" does not exist"}
+
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+خطأ في تحميل الشكاوى: 
+Error {}
+
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+خطأ Supabase في إضافة الشكوى: 
+Object {}
+
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ebb26b09-3829-418a-9dd1-f00c4710709d-00-38lsmx0zgqzid.sisko.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+خطأ في إضافة الشكوى: 
+Error {}
+
+تحميل البيانات من Supabase للفترة: weekly
