@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+The code is updated to implement real-time data loading and synchronization using Supabase subscriptions.
+```
+```replit_final_file
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/components/ui/use-toast";
 
 // تعريف أنواع البيانات
