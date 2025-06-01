@@ -1,8 +1,7 @@
-The code is updated to implement real-time data loading and synchronization using Supabase subscriptions.
-```
-```replit_final_file
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/components/ui/use-toast";
+import { DataService } from '@/lib/dataService';
 
 // تعريف أنواع البيانات
 export interface MetricData {
@@ -130,6 +129,7 @@ export interface MetricsContextType {
   maintenanceSatisfaction: MaintenanceSatisfactionData;
   updateCustomerServiceData: (data: CustomerServiceData) => Promise<void>;
   updateMaintenanceSatisfactionData: (data: MaintenanceSatisfactionData) => void;
+  loadData: () => Promise<void>;
 }
 
 // البيانات الافتراضية
@@ -493,6 +493,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   const [qualityData, setQualityData] = useState<QualityData[]>(defaultQualityData);
   const [npsData, setNPSData] = useState<NPSData[]>(defaultNpsData);
   const [callsData, setCallsData] = useState<CallsData[]>(defaultCallsData);
+  const [isLoading, setIsLoading] = useState(false);
   const [customerServiceData, setCustomerServiceData] = useState<CustomerServiceData>({
     _period: "weekly",
     calls: {
@@ -543,122 +544,109 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // تهيئة البيانات عند تحميل المكون
-  useEffect(() => {
-    const savedData = localStorage.getItem('metrics_data');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        const periodData = data[currentPeriod];
-
-        if (periodData?.metrics?.length > 0) {
-          setMetrics(periodData.metrics);
-        }
-
-        if (periodData?.customerServiceData) {
-          setCustomerServiceData(periodData.customerServiceData);
-        }
-
-        if (periodData?.maintenanceSatisfaction) {
-          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
-        }
-
-        if (periodData?.qualityData?.length > 0) {
-          setQualityData(periodData.qualityData);
-        }
-
-        if (periodData?.npsData?.length > 0) {
-          setNPSData(periodData.npsData);
-        }
-
-        if (periodData?.callsData?.length > 0) {
-          setCallsData(periodData.callsData);
-        }
-      } catch (error) {
-        console.error('خطأ في قراءة البيانات المحفوظة:', error);
+  // تحميل البيانات من Supabase
+  const loadData = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      console.log(`تحميل البيانات من Supabase للفترة: ${currentPeriod}`);
+      
+      // تحميل المؤشرات
+      const loadedMetrics = await DataService.getMetrics(currentPeriod);
+      if (loadedMetrics && loadedMetrics.length > 0) {
+        setMetrics(loadedMetrics);
+        console.log(`تم تحميل ${loadedMetrics.length} مؤشر من Supabase`);
       }
+
+      // تحميل بيانات خدمة العملاء
+      const loadedCustomerService = await DataService.getCustomerService(currentPeriod);
+      if (loadedCustomerService) {
+        setCustomerServiceData(loadedCustomerService);
+        console.log('تم تحميل بيانات خدمة العملاء من Supabase');
+      }
+
+      // تحميل بيانات رضا العملاء
+      const loadedSatisfaction = await DataService.getSatisfaction(currentPeriod);
+      if (loadedSatisfaction) {
+        setMaintenanceSatisfaction(loadedSatisfaction);
+        console.log('تم تحميل بيانات رضا العملاء من Supabase');
+      }
+
+      // تحميل التعليقات
+      const loadedComments = await DataService.getComments(currentPeriod);
+      if (loadedComments && loadedComments.length > 0) {
+        setMaintenanceSatisfaction(prev => ({
+          ...prev,
+          comments: loadedComments.map(comment => ({
+            text: comment.text,
+            date: new Date(comment.created_at || '').toLocaleDateString('ar-SA'),
+            time: new Date(comment.created_at || '').toLocaleTimeString('ar-SA'),
+            username: comment.username
+          }))
+        }));
+        console.log(`تم تحميل ${loadedComments.length} تعليق من Supabase`);
+      }
+
+    } catch (error) {
+      console.error('خطأ في تحميل البيانات من Supabase:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحميل البيانات من قاعدة البيانات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // تحميل البيانات عند بدء تشغيل التطبيق وعند تغيير الفترة
+  useEffect(() => {
+    loadData();
   }, [currentPeriod]);
 
-  // تحديث البيانات عند تغيير الفترة
+  // إعداد real-time subscriptions
   useEffect(() => {
-    const savedData = localStorage.getItem('metrics_data');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        const periodData = data[currentPeriod] || {};
+    const handleDataUpdate = () => {
+      console.log('تم تحديث البيانات، إعادة التحميل...');
+      loadData();
+    };
 
-        // تعيين البيانات المحفوظة فقط إذا كانت موجودة
-        if (periodData.metrics && periodData.metrics.length > 0) {
-          setMetrics(periodData.metrics);
-        }
+    // يمكن إضافة subscriptions هنا لاحقاً
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000); // إعادة تحميل كل 30 ثانية
 
-        if (periodData.customerServiceData) {
-          setCustomerServiceData(periodData.customerServiceData);
-        }
-
-        if (periodData.maintenanceSatisfaction) {
-          setMaintenanceSatisfaction(periodData.maintenanceSatisfaction);
-        }
-
-        // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
-        if (!periodData.metrics) {
-          setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
-          setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
-          setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
-          setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
-        }
-      } catch (error) {
-        console.error('خطأ في قراءة البيانات المحفوظة:', error);
-        // تعيين البيانات الافتراضية فقط في حالة الخطأ
-        setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
-        setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
-        setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
-        setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
-      }
-    } else {
-      // تعيين البيانات الافتراضية فقط إذا لم تكن هناك بيانات محفوظة
-      setMetrics(currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics);
-      setQualityData(currentPeriod === "weekly" ? defaultQualityData : defaultYearlyQualityData);
-      setNPSData(currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData);
-      setCallsData(currentPeriod === "weekly" ? defaultCallsData : defaultYearlyCallsData);
-    }
+    return () => {
+      clearInterval(interval);
+    };
   }, [currentPeriod]);
 
   const updateMetric = async (index: number, data: Partial<MetricData>) => {
     try {
       const updatedMetrics = [...metrics];
-      updatedMetrics[index] = { ...updatedMetrics[index], ...data };
+      const updatedMetric = { ...updatedMetrics[index], ...data };
+      updatedMetrics[index] = updatedMetric;
 
       // تحديث الحالة المحلية فوراً
       setMetrics(updatedMetrics);
 
-      // حفظ في localStorage
-      const savedData = localStorage.getItem('metrics_data') || '{}';
-      const currentData = JSON.parse(savedData);
+      // حفظ في Supabase
+      await DataService.saveMetric(currentPeriod, index, updatedMetric);
 
-      const updatedData = {
-        ...currentData,
-        [currentPeriod]: {
-          ...currentData[currentPeriod],
-          metrics: updatedMetrics,
-          qualityData,
-          npsData,
-          callsData,
-          customerServiceData,
-          maintenanceSatisfaction
-        }
-      };
-
-      localStorage.setItem('metrics_data', JSON.stringify(updatedData));
-
+      console.log(`تم حفظ المؤشر ${index} بنجاح في Supabase`);
+      
       toast({
         title: "تم بنجاح",
         description: "تم حفظ البيانات بنجاح",
         variant: "default",
       });
     } catch (error) {
-      console.error('خطأ في حفظ البيانات:', error);
+      console.error('خطأ في تحديث المؤشر:', error);
+      
+      // إعادة تحميل البيانات في حالة الخطأ
+      await loadData();
+      
       toast({
         title: "خطأ",
         description: error instanceof Error ? error.message : "حدث خطأ أثناء حفظ البيانات",
@@ -692,47 +680,71 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCustomerServiceData = async (data: CustomerServiceData) => {
-    setCustomerServiceData(data);
+    try {
+      setCustomerServiceData(data);
 
-    // حفظ في localStorage مع مراعاة الفترة
-    const savedData = localStorage.getItem('metrics_data') || '{}';
-    const currentData = JSON.parse(savedData);
+      // حفظ في Supabase
+      await DataService.saveCustomerService(currentPeriod, data);
 
-    localStorage.setItem('metrics_data', JSON.stringify({
-      ...currentData,
-      [currentPeriod]: {
-        ...currentData[currentPeriod],
-        customerServiceData: data
-      }
-    }));
+      // تحديث بيانات المكالمات
+      const newCallsData = [
+        { category: "شكاوى", count: data.calls.complaints },
+        { category: "طلبات تواصل", count: data.calls.contactRequests },
+        { category: "طلبات صيانة", count: data.calls.maintenanceRequests },
+        { category: "استفسارات", count: data.calls.inquiries },
+        { category: "مهتمين مكاتب", count: data.calls.officeInterested },
+        { category: "مهتمين مشاريع", count: data.calls.projectsInterested },
+        { category: "عملاء مهتمين", count: data.calls.customersInterested }
+      ];
+      setCallsData(newCallsData);
 
-    // تحديث بيانات المكالمات
-    const newCallsData = [
-      { category: "شكاوى", count: data.calls.complaints },
-      { category: "طلبات تواصل", count: data.calls.contactRequests },
-      { category: "طلبات صيانة", count: data.calls.maintenanceRequests },
-      { category: "استفسارات", count: data.calls.inquiries },
-      { category: "مهتمين مكاتب", count: data.calls.officeInterested },
-      { category: "مهتمين مشاريع", count: data.calls.projectsInterested },
-      { category: "عملاء مهتمين", count: data.calls.customersInterested }
-    ];
-    setCallsData(newCallsData);
+      console.log('تم حفظ بيانات خدمة العملاء بنجاح في Supabase');
+      
+      toast({
+        title: "تم بنجاح",
+        description: "تم حفظ بيانات خدمة العملاء بنجاح",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('خطأ في حفظ بيانات خدمة العملاء:', error);
+      
+      // إعادة تحميل البيانات في حالة الخطأ
+      await loadData();
+      
+      toast({
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حفظ بيانات خدمة العملاء",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateMaintenanceSatisfactionData = async (data: MaintenanceSatisfactionData) => {
-    setMaintenanceSatisfaction(data);
+    try {
+      setMaintenanceSatisfaction(data);
 
-    // حفظ في localStorage مع مراعاة الفترة
-    const savedData = localStorage.getItem('metrics_data') || '{}';
-    const currentData = JSON.parse(savedData);
+      // حفظ بيانات الرضا في Supabase
+      await DataService.saveSatisfaction(currentPeriod, data);
 
-    localStorage.setItem('metrics_data', JSON.stringify({
-      ...currentData,
-      [currentPeriod]: {
-        ...currentData[currentPeriod],
-        maintenanceSatisfaction: data
-      }
-    }));
+      console.log('تم حفظ بيانات رضا العملاء بنجاح في Supabase');
+      
+      toast({
+        title: "تم بنجاح",
+        description: "تم حفظ بيانات رضا العملاء بنجاح",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('خطأ في حفظ بيانات رضا العملاء:', error);
+      
+      // إعادة تحميل البيانات في حالة الخطأ
+      await loadData();
+      
+      toast({
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حفظ بيانات رضا العملاء",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -758,7 +770,8 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         customerServiceData,
         maintenanceSatisfaction,
         updateCustomerServiceData,
-        updateMaintenanceSatisfactionData
+        updateMaintenanceSatisfactionData,
+        loadData
       }}
     >
       {children}
