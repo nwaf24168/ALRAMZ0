@@ -146,11 +146,11 @@ export default function DataEntry() {
       try {
         // تحميل بيانات خدمة العملاء
         const customerServiceFromDB = await DataService.getCustomerService(currentPeriod);
-
+        
         // تحميل بيانات الرضا والتعليقات
         const satisfactionFromDB = await DataService.getSatisfaction(currentPeriod);
         const commentsFromDB = await DataService.getComments(currentPeriod);
-
+        
         const fullSatisfactionData = {
           ...satisfactionFromDB,
           comments: commentsFromDB
@@ -161,12 +161,12 @@ export default function DataEntry() {
           ...customerServiceFromDB,
           _period: currentPeriod
         });
-
+        
         await updateMaintenanceSatisfactionData({
           ...fullSatisfactionData,
           _period: currentPeriod
         });
-
+        
       } catch (error) {
         console.error("خطأ في تحميل البيانات من Supabase:", error);
         addNotification({
@@ -183,12 +183,12 @@ export default function DataEntry() {
   const handleMetricChange = async (index: number, value: string) => {
     const cleanValue = value.replace(/[^0-9.-]/g, '');
     const numValue = parseFloat(cleanValue);
-
+    
     if (isNaN(numValue) && value !== '' && value !== '-') return;
 
     const metric = metrics[index];
     const targetValue = parseFloat(metric.target.replace(/[^0-9.-]/g, '') || '0');
-
+    
     const updatedMetric = {
       ...metric,
       value: cleanValue + '%',
@@ -234,7 +234,7 @@ export default function DataEntry() {
   const handleServiceChange = async (section: string, field: string, value: string) => {
     const cleanValue = value.replace(/[^0-9]/g, '');
     const numValue = cleanValue === '' ? 0 : parseInt(cleanValue, 10);
-
+    
     try {
       const updatedCustomerService = { ...formData.customerService };
 
@@ -243,11 +243,11 @@ export default function DataEntry() {
           ...updatedCustomerService.calls,
           [field]: numValue
         };
-
+        
         const total = Object.entries(updatedCustomerService.calls)
           .filter(([key]) => key !== 'total')
           .reduce((sum, [_, val]) => sum + (typeof val === 'number' ? val : 0), 0);
-
+        
         updatedCustomerService.calls.total = total;
       } 
       else if (section === 'inquiries') {
@@ -296,11 +296,11 @@ export default function DataEntry() {
   const handleSatisfactionChange = async (category: SatisfactionKey, field: keyof SatisfactionCategory, value: string) => {
     const cleanValue = value.replace(/[^0-9.-]/g, '');
     const numValue = parseFloat(cleanValue);
-
+    
     if (isNaN(numValue) && value !== '' && value !== '-') return;
 
     const currentCategory = formData.maintenanceSatisfaction[category] as SatisfactionCategory;
-
+    
     const updatedSatisfaction = {
       ...formData.maintenanceSatisfaction,
       [category]: {
@@ -342,7 +342,7 @@ export default function DataEntry() {
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
-
+    
     try {
       // حفظ التعليق في Supabase
       await DataService.saveComment(newComment.trim(), user?.username || 'مجهول', currentPeriod);
@@ -365,7 +365,7 @@ export default function DataEntry() {
       });
 
       setNewComment("");
-
+      
       addNotification({
         title: "تم الإضافة",
         message: "تم إضافة التعليق بنجاح في قاعدة البيانات",
@@ -380,14 +380,6 @@ export default function DataEntry() {
       });
     }
   };
-
-  // إضافة مؤشر للتحديثات الفورية
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const { metrics: currentMetrics, customerServiceData: currentCustomerService, maintenanceSatisfaction: currentMaintenanceSatisfaction } = useMetrics();
-
-  useEffect(() => {
-    setLastUpdate(new Date());
-  }, [currentMetrics, currentCustomerService, currentMaintenanceSatisfaction]);
 
   return (
     <Layout>
@@ -659,4 +651,4 @@ function getSatisfactionTitle(category: string): string {
     firstTimeResolution: 'الحل من أول مرة'
   };
   return titles[category] || category;
-}
+} 
