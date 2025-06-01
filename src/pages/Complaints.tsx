@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
-import { DataService, Complaint, ComplaintUpdate } from "@/lib/dataService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,8 +43,366 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Filter, Plus, Trash2, Edit, Eye, AlertCircle, FileText, User, Home, MapPin, Phone, Clock, Calendar, CheckCircle2, History, X } from "lucide-react";
 
-// تحديث واجهة الشكوى لتتوافق مع DataService
-  
+// بيانات تجريبية للشكاوى
+const complaintsDummyData: Complaint[] = [
+  {
+    id: "1001",
+    date: "2025-01-01",
+    customerName: "أحمد الصبياني",
+    project: "تل الرمال المالية",
+    unitNumber: "",
+    source: "الاستبيان",
+    status: "تم حلها",
+    description: "الشيك محرر للصندوق ولم نتلقى مبلغ الضريبة , تم التواصل مع الصندوق و رد الضريبة للعميل من قبلنا.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-01-01T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1002",
+    date: "2025-02-27",
+    customerName: "راشد المحنا",
+    project: "19",
+    unitNumber: "",
+    source: "المقر",
+    status: "تم حلها",
+    description: "رفع شكوى في 2022 عن تسريب في المكيف تم حلها على حسابه الخاص، أعاد التواصل في 2024 حول عودة المشكلة.",
+    action: "تم الانتهاء من العزل وتم اختباره وبانتظار تركيب البلاط بالشقة العلوية ، وفيما يتعلق بشكوى العميل متبقي دهان الاسقف في الشقة وبناء على طلب العميل بأن يكون الموعد للدهان بعد العيد",
+    duration: 365,
+    createdBy: "عدنان",
+    createdAt: "2025-02-27T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1003",
+    date: "2025-01-26",
+    customerName: "نورة المسفر",
+    project: "المعالي",
+    unitNumber: "",
+    source: "خدمة العملاء",
+    status: "تم حلها",
+    description: "تم إصلاح مشكلة الألمنيوم بسد الفجوات بالسيلكون والربل.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-01-26T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1004",
+    date: "2025-01-28",
+    customerName: "حمد الحسين",
+    project: "النخيل",
+    unitNumber: "فيلا 10",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "تم الضغط عليه من مهندس الجودة لقبول التسليم، بعد التسليم ظهر له بعض المشاكل،البوية،التشققات في الجدران، إطارات الأبواب.",
+    action: "آخر تحديث 25 مارس، باقي له فقط الخشب.",
+    duration: 60,
+    createdBy: "عدنان",
+    createdAt: "2025-01-28T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1005",
+    date: "2025-02-17",
+    customerName: "تركي السعيد",
+    project: "المعالي",
+    unitNumber: "و 26 / ع 26",
+    source: "الاستبيان",
+    status: "تم حلها",
+    description: "التـاخر في التسليم بسبب عدم حل الإصلاحات لدى العميل متبقى مشكلة ميلان البلاط.",
+    action: "تم التحديث من قبل المهندس سعود موصلي بأنتهاء جميع الاصلاحات، تم التواصل مع العميل وافاد بانه لم يتم اصلاح الميلان للان، تم التواصل مع سعود 25 مارس، وذكر بأن العميل تم اصلاح جميع مشاكله وتم الاتفاق ان التسليم 12 بالليل ولم يلتزم العميل، تم تحديد موعد جديد 25 مارس مساءً، تم التسليم في 26 مارس.",
+    duration: 37,
+    createdBy: "عدنان",
+    createdAt: "2025-02-17T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1006",
+    date: "2025-01-15",
+    customerName: "إيمان السيهاتي",
+    project: "",
+    unitNumber: "",
+    source: "المقر",
+    status: "تم حلها",
+    description: "مشكلة في رهن الصكوك / تم إبلاغ العميلة بمقدرتها بسحب مبلغ العربون او الانتظار وفي متابعة منع قسم المبيعات",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-01-15T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1007",
+    date: "2025-02-16",
+    customerName: "عبدالغني الحمدي",
+    project: "41",
+    unitNumber: "و4 / ع3",
+    source: "الاستبيان",
+    status: "لم يتم حلها",
+    description: "مشكلة تسريب من الجار بالإعلى وتم تحديد موعد فحص صيانة لمعرفة سبب التسريب من الشقه العلوية",
+    action: "تم الغاء الطلب من قبل الصيانة بسبب أن العميل يريد الغاء جرجور المطر وربطه علي خط الصرف وهذا يتنافي مع تعليمات البلديه بعدم ربط جرجور الامطار مع الصرف، تم التواصل مع العميل وذكر بأن الصيانة لم يعطونه حل وكلام الصيانة غير صحيح بأن المسألة سيتم تسويتها بينه وبين جاره، تمت مخاطبة الصيانة وذكروا انه لا يوجد حل الا الربط مع الصرف والذي لا يمكن ان يتم الا بموافقة البلدية، تم التواصل مع العميل وابلاغه بذلك 25 مارس.",
+    duration: 38,
+    createdBy: "عدنان",
+    createdAt: "2025-02-16T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1008",
+    date: "2025-01-19",
+    customerName: "سعد الهويش",
+    project: "",
+    unitNumber: "",
+    source: "خدمة العملاء",
+    status: "تم حلها",
+    description: "تضرر اجزاء من المنزل بسبب اعمال الرمز المجاورة له وتم التواصل معه لتعويضه وبأنتظار الرد من العميل",
+    action: "تم رفض مبلغ التعويض من العميل مطالبا بمبلغ اعلى من ما طرح عليه",
+    duration: 65,
+    createdBy: "عدنان",
+    createdAt: "2025-01-19T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1009",
+    date: "2025-02-19",
+    customerName: "عمر المبرزي",
+    project: "النخيل",
+    unitNumber: "فيلا 12",
+    source: "المقر",
+    status: "لازالت قائمة",
+    description: "شكوى بوجود اسمنت في المواصير وانتفاخات بالبويه",
+    action: "بأنتظار رد العميل للاتفاق على محضر التصليح، العميل ذكر للصيانة بأن موعد الاصلاحات المناسب له بعد العيد.",
+    duration: 35,
+    createdBy: "عدنان",
+    createdAt: "2025-02-19T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1010",
+    date: "2025-03-06",
+    customerName: "عبدالرحمن العيسى",
+    project: "تل الرمال",
+    unitNumber: "",
+    source: "خدمة العملاء",
+    status: "تم حلها",
+    description: "تجمع مائي في دورة المياة ،تأخر وصول الصيانه أدى إلى تفاقم المشكله.",
+    action: "تم التواصل معه من قبل فريق الصيانة وتم حل المشكلةفي نفس اليوم.",
+    duration: 1,
+    createdBy: "عدنان",
+    createdAt: "2025-03-06T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1021",
+    date: "2025-02-25",
+    customerName: "ابراهيم",
+    project: "ستون كومبليكس",
+    unitNumber: "",
+    source: "خدمة العملاء",
+    status: "تم حلها",
+    description: "شكوى من العملاء المجاورين للعميل ابراهيم بسبب ازاله البلاط في الحمام",
+    action: "حضور شركة مختصة لمعالجة المشكلة وسيتم إجراء اختبار لضمان عدم وجود تسريبات خلال 15 يومًا من تاريخ الإصلاح 7/3/2025",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-02-25T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1022",
+    date: "2025-03-13",
+    customerName: "مشعل العنزي",
+    project: "تل الرمال المالية",
+    unitNumber: "",
+    source: "خدمة العملاء",
+    status: "تم حلها",
+    description: "تأخر في تلبية طلبه لمحضر الفرز",
+    action: "تم التواصل مع الأستاذ مشاري الرويجح وتم تزويدنا بالمحضر.",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-13T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1023",
+    date: "2025-03-13",
+    customerName: "امين العلقم",
+    project: "النخيل",
+    unitNumber: "فيلا 6",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "لديه مشكلة في ماسورة التصريف لمكيف إحدى غرف النوم، التذكرة لها الآن أكثر من 4 أشهر من غير إجابة.",
+    action: "تم إرسال إيميل للصيانة بكامل تفاصيل الشكوى،بانتظار تجاوبهم، تم طلب مستجدات من الصيانة 24 مارس بلا رد، جاء الرد 25 مارس طلب إجراء الاصلاحات بعد العيد.",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-13T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1024",
+    date: "2025-02-14",
+    customerName: "عبدالرحمن الشيمي",
+    project: "45",
+    unitNumber: "-",
+    source: "الاستبيان",
+    status: "لازالت قائمة",
+    description: "تأخر فى الإفراغ رغم سداد كامل ثمن الوحده من ٤ شهور ومشكله فى شبكه الجوال داخل المبنى وعدم استجابه الصيانه لمشاكل ما بعد الاستلام للوحده.",
+    action: "تم التواصل مع العميل والصيانة، التأخير كان من الطرفين كلاهما، العميل حول من حساب شركته من ثم رفض الطلب من وزارة العدل وأخذت المسألة وقت لإسترجاع المبلغ ثم تقديم شيك مصدق من حسابه الشخصي، وأحد الوثائق المطلوبة للإفراغ من وزارة العدل كانت خاطئة فإضطر يكلم صندوق الرمز لتعديلها ولم يتجاوبوا معه في الوقت المطلوب، والآن تم تعديل كل شي فقط انتهى طلب التملك للعميل من وزارة الداخلية ويحتاج تجديده للإنتهاء من الإفراغ، تم التجديد وتم التواصل مع عبدالله العمري وتم رفع الطلب مرة أخرى، ، تم رفضه 26 مارس وتم التواصل مع عبدالله العمري للدعم.",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-02-14T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1025",
+    date: "2025-03-20",
+    customerName: "امل عبداللة الغامدي",
+    project: "تل الرمال",
+    unitNumber: "و 7 / ع A7",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "العميلة تشكي من مشكلة تسريب في سقف دورة المياة مع مشكلة في تمديدات التكييف، تذكر العميلة زيارة للصيانة لها ذكرو فيها ان المشكلة من الجار العلوي، ولا تعلم الى الآن هل تواصلوا معه للإصلاح وانتهاء شكواها أم لا لاسيما أن مسؤولي الصيانة الذين حضروا لها لايردون على استفساراتها.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-20T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1026",
+    date: "2025-03-20",
+    customerName: "سعد وصل الاحمدي",
+    project: "المعالي",
+    unitNumber: "و 10",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "انسداد مجرى المياة ف البلكونه بالغرفة الرئيسية وتجمع كمية من المياة تسريبات ب سقف الصاله، تواصل مع مهندس الجودة ولم تحل، تواصل مع ابوبكر من فريق الصيانة بلا حل، رقم التذكرة 2933.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-20T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1027",
+    date: "2025-03-22",
+    customerName: "عبدالعزيز المنصور",
+    project: "41",
+    unitNumber: "و5 / ع7",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "العميل مستاء من التسريبات التي تحدث بعد الامطار، العميل افاد انه تمت معالجة الاسقف قبل سنة لنفس المشكلة والان عادت من جديد ، رفع طلب بالرقم 2984، تم الغاءه من الصيانة بعد ساعة دون توضيح.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-22T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1028",
+    date: "2025-03-23",
+    customerName: "عبدالاله العرف",
+    project: "نَقْش فيلا",
+    unitNumber: "و 2",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "عميل مستاء جداً من عدم إكتمال الصيانة لوحدتة من وقت التسليم كما أنه أشتكى من سوء معاملة المهندس أبوبكر معه.",
+    action: "",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-23T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1029",
+    date: "2025-03-24",
+    customerName: "سعود الحماد",
+    project: "تل الرمال",
+    unitNumber: "و1 / ع 4A",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "الشخص اللي يتواصل معه بشأن طلبات الصيانة عبدالرؤوف، المشاكل اللي كان يواجهها كانت الترويبه، تصدعات داخل وخارج الشقة ، مشكلة في قياسات شبك الالمنيوم، في رمضان العام الماضي جاء شخص يمني مع عبدالرؤوف لأخذ القياسات ووعدوه بإتمام الإصلاحات بعد العيد، تواصلوا معه بعد عيد الأضحى أخذوا منه الشبك وإلى الآن لم يتم إرجاعه ولم يتم حل الطلبات المذكورة.",
+    action: "تم التواصل مع العميل وأخذ كافة التفاصيل، تم تزويد الصيانة بها 24 مارس، تم التواصل مع العميل 25 مارس وابلاغه برفع طلب يتضمن كافة التفاصيل التي يملكها مع صور للأمور المطلوبة صيانتها في أتار لمتابعتها مع فريق الصيانة.",
+    duration: 0,
+    createdBy: "عدنان",
+    createdAt: "2025-03-24T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1030",
+    date: "2025-03-24",
+    customerName: "يحيى الذكير",
+    project: "النخيل",
+    unitNumber: "و3 / ع7",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "تم الضغط على العميل من قبل الجودة للاستلام، الوحدة فيها تصدعات في الجدران وكانت تحتاج إلى دهان للسقف، مشكلة التصدعات ذكرو له انها مشكلة دهان فقط وتم الدهان ولا زالت التصدعات موجودة، وعده المسؤول بحل المشاكل بعد قبول التسليم بعد ذلك ظهرة مشاكل في حنفية دورة المياه تهرب وبدأت تتسبب بصدأ للمنطقة التي حولها، الفاصل في دورة المياة مكسور، طلب من الصيانة اكثر من مرة الاصلاح بشكل مباشر بلا حل، للمراجعة يوم26 مارس.",
+    action: "تم التواصل مع العميل وسيتم رفع ايميل للصيانة، بانتظار تزويدنا من قبل العميل بالمحادثات مع الصيانة لارفاقها.",
+    duration: 0,
+    createdBy: "موظف خدمة العملاء",
+    createdAt: "2025-03-24T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  },
+  {
+    id: "1031",
+    date: "2025-03-24",
+    customerName: "عبدالله العبدالقادر",
+    project: "النخيل",
+    unitNumber: "و10 / ع 4",
+    source: "خدمة العملاء",
+    status: "لازالت قائمة",
+    description: "تنظيف بقايا الترويبة الموجودة في البلاط رفع العميل طلب وتم إلغاءة من قبل الصيانة وتم الرد عليه بإن البلاط يحتاج فقط تنظيف رقم الطلب: 1591، العميل رفع طلب بخصوص الخدوش الموجودة في زجاجة البلكونة وتم إنشاء الطلب من تاريخ 14/12/2024 ولم تتم معالجة الطلب ولا التواصل مع العميل مرفق لكم صورة الطلب أعلاه حتى الأن رقم الطلب 1592",
+    action: "تم تزويد الصيانة بكافة التفاصيل، جاء رد الصيانة 25 مارس أن المشكلة فقط تحتاج تنظيف للارضية فقط في ما يتعلق بالترويبة، أما الزجاج فقط أبلغت الصيانة أن المسألة لا تتعدا كونها سوء استخدام، الصيانة لم تبلغ العميل بالمستجدات ولازال الطلب 1592 للزجاج مفتوحًا.",
+    duration: 0,
+    createdBy: "موظف خدمة العملاء",
+    createdAt: "2025-03-24T10:00:00",
+    updatedBy: null,
+    updatedAt: null,
+    updates: []
+  }
+];
 
 // حالات الشكاوى
 const complaintStatuses = [
@@ -66,11 +423,40 @@ const complaintSources = [
 ];
 
 
+// تعديل واجهة الشكوى لتشمل تتبع التغييرات
+interface ComplaintUpdate {
+  field: string;
+  oldValue: string;
+  newValue: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+interface Complaint {
+  id: string;
+  date: string;
+  customerName: string;
+  project: string;
+  unitNumber: string;
+  source: string;
+  status: string;
+  description: string;
+  action: string;
+  duration: number;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  updates: ComplaintUpdate[];
+}
+
 export default function Complaints() {
   const { user } = useAuth();
   const { addNotification } = useNotification();
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    const savedComplaints = localStorage.getItem('complaints');
+    return savedComplaints ? JSON.parse(savedComplaints) : complaintsDummyData;
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -89,30 +475,6 @@ export default function Complaints() {
     description: "",
     action: ""
   });
-
-  // تحميل البيانات من Supabase
-  const loadComplaints = async () => {
-    try {
-      setIsLoading(true);
-      const complaintsData = await DataService.getComplaints();
-      setComplaints(complaintsData);
-      console.log(`تم تحميل ${complaintsData.length} شكوى من Supabase`);
-    } catch (error) {
-      console.error('خطأ في تحميل الشكاوى:', error);
-      addNotification({
-        title: "خطأ",
-        message: "حدث خطأ أثناء تحميل الشكاوى من قاعدة البيانات",
-        type: "error"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // تحميل البيانات عند بدء التشغيل
-  useEffect(() => {
-    loadComplaints();
-  }, []);
 
   const filteredComplaints = complaints.filter((complaint) => {
     const matchesSearch = 
@@ -159,92 +521,134 @@ export default function Complaints() {
   };
 
   const handleAddComplaint = async () => {
-    if (!user) return;
+    const newId = (1000 + complaints.length + 1).toString();
+    const now = new Date().toISOString();
 
+    const complaint: Complaint = {
+      ...newComplaint,
+      id: newId,
+      createdBy: user?.username || "مستخدم النظام",
+      duration: 0,
+      createdAt: now,
+      updatedBy: null,
+      updatedAt: null,
+      updates: []
+    };
+
+    const updatedComplaints = [complaint, ...complaints];
+    setComplaints(updatedComplaints);
+    localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
+
+    // Send email notification
     try {
-      const newId = (1000 + complaints.length + 1).toString();
-      const complaintData = {
-        ...newComplaint,
-        id: newId,
-        createdBy: user.username,
-        duration: 0
-      };
+      const { success } = await sendComplaintEmail({
+        type: 'new',
+        complaint: {
+          id: complaint.id,
+          customerName: complaint.customerName,
+          status: complaint.status,
+          description: complaint.description,
+          project: complaint.project,
+          unitNumber: complaint.unitNumber
+        }
+      });
 
-      // حفظ في Supabase
-      await DataService.addComplaint(complaintData);
-
-      // إعادة تحميل البيانات
-      await loadComplaints();
-
+      if (success) {
+        addNotification({
+          title: "تمت الإضافة",
+          message: `تم إضافة الشكوى رقم ${newId} بنجاح وإرسال الإشعارات`,
+          type: "success"
+        });
+      } else {
+        addNotification({
+          title: "تمت الإضافة",
+          message: `تم إضافة الشكوى رقم ${newId} بنجاح ولكن فشل إرسال الإشعارات`,
+          type: "warning"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
       addNotification({
         title: "تمت الإضافة",
-        message: `تم إضافة الشكوى رقم ${newId} بنجاح`,
-        type: "success"
-      });
-
-      setIsAddDialogOpen(false);
-      setNewComplaint({
-        date: new Date().toISOString().split("T")[0],
-        customerName: "",
-        project: "",
-        unitNumber: "",
-        source: "",
-        status: "جديدة",
-        description: "",
-        action: ""
-      });
-    } catch (error) {
-      console.error('خطأ في إضافة الشكوى:', error);
-      addNotification({
-        title: "خطأ",
-        message: error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الشكوى",
-        type: "error"
+        message: `تم إضافة الشكوى رقم ${newId} بنجاح ولكن فشل إرسال الإشعارات`,
+        type: "warning"
       });
     }
+
+    setIsAddDialogOpen(false);
+
+    setNewComplaint({
+      date: new Date().toISOString().split("T")[0],
+      customerName: "",
+      project: "",
+      unitNumber: "",
+      source: "",
+      status: "جديدة",
+      description: "",
+      action: ""
+    });
   };
 
   const handleUpdateComplaint = async () => {
     if (!selectedComplaint || !user) return;
 
+    const now = new Date().toISOString();
+    const updates: ComplaintUpdate[] = [];
+
+    // تتبع التغييرات في كل الحقول
+    const fieldsToCheck = {
+      customerName: 'اسم العميل',
+      project: 'المشروع',
+      unitNumber: 'رقم الوحدة',
+      source: 'مصدر الشكوى',
+      status: 'الحالة',
+      description: 'تفاصيل الشكوى',
+      action: 'الإجراء المتخذ'
+    };
+
+    Object.entries(fieldsToCheck).forEach(([field, label]) => {
+      if (selectedComplaint[field] !== newComplaint[field]) {
+        updates.push({
+          field,
+          oldValue: selectedComplaint[field] || '',
+          newValue: newComplaint[field] || '',
+          updatedBy: user.username,
+          updatedAt: now
+        });
+      }
+    });
+
+    const updatedComplaints = complaints.map(complaint => {
+      if (complaint.id === selectedComplaint.id) {
+        return {
+          ...complaint,
+          ...newComplaint,
+          updatedBy: user.username,
+          updatedAt: now,
+          updates: [...complaint.updates, ...updates]
+        };
+      }
+      return complaint;
+    });
+
+    setComplaints(updatedComplaints);
+    localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
+    setIsEditDialogOpen(false);
+
+    // Send email notification for update
     try {
-      const now = new Date().toISOString();
-      const updates: ComplaintUpdate[] = [];
-
-      // تتبع التغييرات في كل الحقول
-      const fieldsToCheck = {
-        customerName: 'اسم العميل',
-        project: 'المشروع',
-        unitNumber: 'رقم الوحدة',
-        source: 'مصدر الشكوى',
-        status: 'الحالة',
-        description: 'تفاصيل الشكوى',
-        action: 'الإجراء المتخذ'
-      };
-
-      Object.entries(fieldsToCheck).forEach(([field, label]) => {
-        if (selectedComplaint[field] !== newComplaint[field]) {
-          updates.push({
-            field,
-            oldValue: selectedComplaint[field] || '',
-            newValue: newComplaint[field] || '',
-            updatedBy: user.username,
-            updatedAt: now
-          });
+      const { success } = await sendComplaintEmail({
+        type: 'update',
+        complaint: {
+          id: selectedComplaint.id,
+          customerName: newComplaint.customerName,
+          status: newComplaint.status,
+          description: newComplaint.description,
+          project: newComplaint.project,
+          unitNumber: newComplaint.unitNumber,
+          updatedBy: user.username
         }
       });
-
-      const updatedComplaintData = {
-        ...newComplaint,
-        updates: [...selectedComplaint.updates, ...updates]
-      };
-
-      // تحديث في Supabase
-      await DataService.updateComplaint(selectedComplaint.id, updatedComplaintData, user.username);
-
-      // إعادة تحميل البيانات
-      await loadComplaints();
-
-      setIsEditDialogOpen(false);
 
       // إظهار إشعار لكل تحديث
       updates.forEach(update => {
@@ -255,48 +659,39 @@ export default function Complaints() {
         });
       });
 
-      if (updates.length === 0) {
+      if (!success) {
         addNotification({
-          title: "لا توجد تغييرات",
-          message: "لم يتم إجراء أي تعديلات على الشكوى",
-          type: "info"
+          title: "تنبيه",
+          message: "تم حفظ التحديثات ولكن فشل إرسال الإشعارات",
+          type: "warning"
         });
       }
     } catch (error) {
-      console.error('خطأ في تحديث الشكوى:', error);
+      console.error('Error sending notification:', error);
       addNotification({
-        title: "خطأ",
-        message: error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الشكوى",
-        type: "error"
+        title: "تنبيه",
+        message: "تم حفظ التحديثات ولكن فشل إرسال الإشعارات",
+        type: "warning"
       });
     }
   };
 
-  const handleDeleteComplaint = async () => {
+  const handleDeleteComplaint = () => {
     if (!selectedComplaint) return;
 
-    try {
-      // حذف من Supabase
-      await DataService.deleteComplaint(selectedComplaint.id);
+    const filteredComplaints = complaints.filter(
+      complaint => complaint.id !== selectedComplaint.id
+    );
 
-      // إعادة تحميل البيانات
-      await loadComplaints();
+    setComplaints(filteredComplaints);
+    localStorage.setItem('complaints', JSON.stringify(filteredComplaints));
+    setIsDeleteDialogOpen(false);
 
-      setIsDeleteDialogOpen(false);
-
-      addNotification({
-        title: "تم الحذف",
-        message: `تم حذف الشكوى رقم ${selectedComplaint.id} بنجاح`,
-        type: "success"
-      });
-    } catch (error) {
-      console.error('خطأ في حذف الشكوى:', error);
-      addNotification({
-        title: "خطأ",
-        message: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الشكوى",
-        type: "error"
-      });
-    }
+    addNotification({
+      title: "تم الحذف",
+      message: `تم حذف الشكوى رقم ${selectedComplaint.id} بنجاح`,
+      type: "success"
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -518,13 +913,7 @@ export default function Complaints() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
-                        جارٍ تحميل الشكاوى...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredComplaints.length === 0 ? (
+                  {filteredComplaints.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-6">
                         لا توجد شكاوى متطابقة مع معايير البحث
