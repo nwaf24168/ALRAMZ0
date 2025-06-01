@@ -1,6 +1,13 @@
 
+-- حذف الجداول إذا كانت موجودة (لضمان إعادة الإنشاء الصحيح)
+DROP TABLE IF EXISTS public.comments CASCADE;
+DROP TABLE IF EXISTS public.satisfaction CASCADE;
+DROP TABLE IF EXISTS public.customer_service CASCADE;
+DROP TABLE IF EXISTS public.metrics CASCADE;
+DROP TABLE IF EXISTS public.complaints CASCADE;
+
 -- إنشاء جدول المؤشرات
-CREATE TABLE IF NOT EXISTS public.metrics (
+CREATE TABLE public.metrics (
     id BIGSERIAL PRIMARY KEY,
     period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
     metric_index INTEGER NOT NULL,
@@ -17,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.metrics (
 );
 
 -- إنشاء جدول خدمة العملاء
-CREATE TABLE IF NOT EXISTS public.customer_service (
+CREATE TABLE public.customer_service (
     id BIGSERIAL PRIMARY KEY,
     period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
     complaints INTEGER NOT NULL DEFAULT 0,
@@ -42,7 +49,7 @@ CREATE TABLE IF NOT EXISTS public.customer_service (
 );
 
 -- إنشاء جدول رضا العملاء
-CREATE TABLE IF NOT EXISTS public.satisfaction (
+CREATE TABLE public.satisfaction (
     id BIGSERIAL PRIMARY KEY,
     period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
     category VARCHAR(50) NOT NULL CHECK (category IN ('serviceQuality', 'closureTime', 'firstTimeResolution')),
@@ -57,7 +64,7 @@ CREATE TABLE IF NOT EXISTS public.satisfaction (
 );
 
 -- إنشاء جدول التعليقات
-CREATE TABLE IF NOT EXISTS public.comments (
+CREATE TABLE public.comments (
     id BIGSERIAL PRIMARY KEY,
     period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
     text TEXT NOT NULL,
@@ -65,89 +72,8 @@ CREATE TABLE IF NOT EXISTS public.comments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- إنشاء الفهارس لتحسين الأداء
-CREATE INDEX IF NOT EXISTS idx_metrics_period ON public.metrics(period);
-CREATE INDEX IF NOT EXISTS idx_customer_service_period ON public.customer_service(period);
-CREATE INDEX IF NOT EXISTS idx_satisfaction_period_category ON public.satisfaction(period, category);
-CREATE INDEX IF NOT EXISTS idx_comments_period ON public.comments(period);
-
--- إدراج بيانات تجريبية للمؤشرات الأسبوعية
-INSERT INTO public.metrics (period, metric_index, title, value, target, change, is_positive, reached_target, is_lower_better) VALUES
-('weekly', 0, 'معدل رضا العملاء', '85%', '90%', -5.56, false, false, false),
-('weekly', 1, 'وقت الاستجابة', '2.5ساعة', '2ساعة', 25.0, false, false, true),
-('weekly', 2, 'نسبة الحل من أول مرة', '75%', '80%', -6.25, false, false, false),
-('weekly', 3, 'عدد الشكاوى المحلولة', '45', '50', -10.0, false, false, false),
-('weekly', 4, 'معدل الجودة', '88%', '85%', 3.53, true, true, false),
-('weekly', 5, 'نسبة التجديد', '92%', '90%', 2.22, true, true, false),
-('weekly', 6, 'رضا فريق العمل', '78%', '80%', -2.5, false, false, false),
-('weekly', 7, 'معدل الحضور', '95%', '98%', -3.06, false, false, false),
-('weekly', 8, 'عدد التدريبات', '12', '15', -20.0, false, false, false),
-('weekly', 9, 'معدل الإنتاجية', '82%', '85%', -3.53, false, false, false),
-('weekly', 10, 'وقت التسليم', '3.2يوم', '3يوم', 6.67, false, false, true),
-('weekly', 11, 'نسبة الأخطاء', '2.1%', '2%', 5.0, false, false, true),
-('weekly', 12, 'معدل الابتكار', '15', '20', -25.0, false, false, false),
-('weekly', 13, 'رضا الشركاء', '87%', '85%', 2.35, true, true, false),
-('weekly', 14, 'معدل النمو', '5.2%', '6%', -13.33, false, false, false)
-ON CONFLICT (period, metric_index) DO NOTHING;
-
--- إدراج بيانات تجريبية للمؤشرات السنوية
-INSERT INTO public.metrics (period, metric_index, title, value, target, change, is_positive, reached_target, is_lower_better) VALUES
-('yearly', 0, 'معدل رضا العملاء', '88%', '90%', -2.22, false, false, false),
-('yearly', 1, 'وقت الاستجابة', '2.2ساعة', '2ساعة', 10.0, false, false, true),
-('yearly', 2, 'نسبة الحل من أول مرة', '78%', '80%', -2.5, false, false, false),
-('yearly', 3, 'عدد الشكاوى المحلولة', '2340', '2500', -6.4, false, false, false),
-('yearly', 4, 'معدل الجودة', '89%', '85%', 4.71, true, true, false),
-('yearly', 5, 'نسبة التجديد', '94%', '90%', 4.44, true, true, false),
-('yearly', 6, 'رضا فريق العمل', '81%', '80%', 1.25, true, true, false),
-('yearly', 7, 'معدل الحضور', '96%', '98%', -2.04, false, false, false),
-('yearly', 8, 'عدد التدريبات', '580', '600', -3.33, false, false, false),
-('yearly', 9, 'معدل الإنتاجية', '85%', '85%', 0.0, true, true, false),
-('yearly', 10, 'وقت التسليم', '3.1يوم', '3يوم', 3.33, false, false, true),
-('yearly', 11, 'نسبة الأخطاء', '1.8%', '2%', -10.0, true, true, true),
-('yearly', 12, 'معدل الابتكار', '780', '800', -2.5, false, false, false),
-('yearly', 13, 'رضا الشركاء', '89%', '85%', 4.71, true, true, false),
-('yearly', 14, 'معدل النمو', '6.1%', '6%', 1.67, true, true, false)
-ON CONFLICT (period, metric_index) DO NOTHING;
-
--- إدراج بيانات تجريبية لخدمة العملاء
-INSERT INTO public.customer_service (period, complaints, contact_requests, maintenance_requests, inquiries, office_interested, projects_interested, customers_interested, total, general_inquiries, document_requests, deed_inquiries, apartment_rentals, sold_projects, cancelled_maintenance, resolved_maintenance, in_progress_maintenance) VALUES
-('weekly', 58, 34, 38, 42, 310, 20, 10, 512, 8, 12, 8, 5, 45, 15, 30, 8),
-('yearly', 2890, 1720, 1950, 2180, 15600, 1040, 520, 26900, 420, 630, 420, 260, 2340, 780, 1560, 420)
-ON CONFLICT (period) DO UPDATE SET
-complaints = EXCLUDED.complaints,
-contact_requests = EXCLUDED.contact_requests,
-maintenance_requests = EXCLUDED.maintenance_requests,
-inquiries = EXCLUDED.inquiries,
-office_interested = EXCLUDED.office_interested,
-projects_interested = EXCLUDED.projects_interested,
-customers_interested = EXCLUDED.customers_interested,
-total = EXCLUDED.total,
-general_inquiries = EXCLUDED.general_inquiries,
-document_requests = EXCLUDED.document_requests,
-deed_inquiries = EXCLUDED.deed_inquiries,
-apartment_rentals = EXCLUDED.apartment_rentals,
-sold_projects = EXCLUDED.sold_projects,
-cancelled_maintenance = EXCLUDED.cancelled_maintenance,
-resolved_maintenance = EXCLUDED.resolved_maintenance,
-in_progress_maintenance = EXCLUDED.in_progress_maintenance;
-
--- إدراج بيانات تجريبية لرضا العملاء
-INSERT INTO public.satisfaction (period, category, very_happy, happy, neutral, unhappy, very_unhappy) VALUES
-('weekly', 'serviceQuality', 30, 40, 20, 8, 2),
-('weekly', 'closureTime', 25, 45, 20, 7, 3),
-('weekly', 'firstTimeResolution', 35, 38, 18, 6, 3),
-('yearly', 'serviceQuality', 32, 42, 18, 6, 2),
-('yearly', 'closureTime', 28, 47, 18, 5, 2),
-('yearly', 'firstTimeResolution', 38, 40, 16, 4, 2)
-ON CONFLICT (period, category) DO UPDATE SET
-very_happy = EXCLUDED.very_happy,
-happy = EXCLUDED.happy,
-neutral = EXCLUDED.neutral,
-unhappy = EXCLUDED.unhappy,
-very_unhappy = EXCLUDED.very_unhappy;
-
 -- إنشاء جدول الشكاوى
-CREATE TABLE IF NOT EXISTS public.complaints (
+CREATE TABLE public.complaints (
     id BIGSERIAL PRIMARY KEY,
     complaint_id VARCHAR(20) NOT NULL UNIQUE,
     date DATE NOT NULL,
@@ -166,11 +92,65 @@ CREATE TABLE IF NOT EXISTS public.complaints (
     updates JSONB DEFAULT '[]'::jsonb
 );
 
--- إنشاء فهرس للبحث
-CREATE INDEX IF NOT EXISTS idx_complaints_complaint_id ON public.complaints(complaint_id);
-CREATE INDEX IF NOT EXISTS idx_complaints_customer_name ON public.complaints(customer_name);
-CREATE INDEX IF NOT EXISTS idx_complaints_status ON public.complaints(status);
-CREATE INDEX IF NOT EXISTS idx_complaints_date ON public.complaints(date);
+-- إنشاء الفهارس لتحسين الأداء
+CREATE INDEX idx_metrics_period ON public.metrics(period);
+CREATE INDEX idx_customer_service_period ON public.customer_service(period);
+CREATE INDEX idx_satisfaction_period_category ON public.satisfaction(period, category);
+CREATE INDEX idx_comments_period ON public.comments(period);
+CREATE INDEX idx_complaints_complaint_id ON public.complaints(complaint_id);
+CREATE INDEX idx_complaints_customer_name ON public.complaints(customer_name);
+CREATE INDEX idx_complaints_status ON public.complaints(status);
+CREATE INDEX idx_complaints_date ON public.complaints(date);
+
+-- إدراج بيانات تجريبية للمؤشرات مع الأسماء الصحيحة
+INSERT INTO public.metrics (period, metric_index, title, value, target, change, is_positive, reached_target, is_lower_better) VALUES
+-- المؤشرات الأسبوعية
+('weekly', 0, 'نسبة الترشيح للعملاء الجدد', '60%', '65%', -7.69, false, false, false),
+('weekly', 1, 'نسبة الترشيح بعد السنة', '62%', '65%', -4.62, false, false, false),
+('weekly', 2, 'نسبة الترشيح للعملاء القدامى', '28%', '30%', -6.67, false, false, false),
+('weekly', 3, 'جودة التسليم', '98%', '100%', -2.0, false, false, false),
+('weekly', 4, 'جودة الصيانة', '95%', '100%', -5.0, false, false, false),
+('weekly', 5, 'عدد الثواني للرد', '3.5', '< 3', 16.67, false, false, true),
+('weekly', 6, 'معدل الرد على المكالمات', '75%', '80%', -6.25, false, false, false),
+('weekly', 7, 'راحة العميل (CSAT)', '68%', '70%', -2.86, false, false, false),
+('weekly', 8, 'سرعة إغلاق طلبات الصيانة', '3.5', '< 3', 16.67, false, false, true),
+('weekly', 9, 'عدد إعادة فتح الطلب', '0.2', '< 0', 20.0, false, false, true),
+('weekly', 10, 'جودة إدارة المرافق', '78%', '80%', -2.5, false, false, false),
+('weekly', 11, 'معدل التحول', '2.2%', '2%', 10.0, false, false, true),
+('weekly', 12, 'نسبة الرضا عن التسليم', '78%', '80%', -2.5, false, false, false),
+('weekly', 13, 'عدد العملاء المرشحين', '580', '584', -0.68, false, false, false),
+('weekly', 14, 'المساهمة في المبيعات', '4.8%', '5%', -4.0, false, false, false),
+
+-- المؤشرات السنوية
+('yearly', 0, 'نسبة الترشيح للعملاء الجدد', '63%', '65%', -3.08, false, false, false),
+('yearly', 1, 'نسبة الترشيح بعد السنة', '64%', '65%', -1.54, false, false, false),
+('yearly', 2, 'نسبة الترشيح للعملاء القدامى', '29%', '30%', -3.33, false, false, false),
+('yearly', 3, 'جودة التسليم', '99%', '100%', -1.0, false, false, false),
+('yearly', 4, 'جودة الصيانة', '98%', '100%', -2.0, false, false, false),
+('yearly', 5, 'عدد الثواني للرد', '2.8', '< 3', -6.67, true, true, true),
+('yearly', 6, 'معدل الرد على المكالمات', '82%', '80%', 2.5, true, true, false),
+('yearly', 7, 'راحة العميل (CSAT)', '72%', '70%', 2.86, true, true, false),
+('yearly', 8, 'سرعة إغلاق طلبات الصيانة', '2.8', '< 3', -6.67, true, true, true),
+('yearly', 9, 'عدد إعادة فتح الطلب', '-0.1', '< 0', -10.0, true, true, true),
+('yearly', 10, 'جودة إدارة المرافق', '82%', '80%', 2.5, true, true, false),
+('yearly', 11, 'معدل التحول', '1.8%', '2%', -10.0, true, true, true),
+('yearly', 12, 'نسبة الرضا عن التسليم', '82%', '80%', 2.5, true, true, false),
+('yearly', 13, 'عدد العملاء المرشحين', '7000', '7004', -0.06, false, false, false),
+('yearly', 14, 'المساهمة في المبيعات', '5.2%', '5%', 4.0, true, true, false);
+
+-- إدراج بيانات تجريبية لخدمة العملاء
+INSERT INTO public.customer_service (period, complaints, contact_requests, maintenance_requests, inquiries, office_interested, projects_interested, customers_interested, total, general_inquiries, document_requests, deed_inquiries, apartment_rentals, sold_projects, cancelled_maintenance, resolved_maintenance, in_progress_maintenance) VALUES
+('weekly', 58, 34, 38, 42, 310, 20, 10, 512, 8, 12, 8, 5, 45, 15, 30, 8),
+('yearly', 2890, 1720, 1950, 2180, 15600, 1040, 520, 26900, 420, 630, 420, 260, 2340, 780, 1560, 420);
+
+-- إدراج بيانات تجريبية لرضا العملاء
+INSERT INTO public.satisfaction (period, category, very_happy, happy, neutral, unhappy, very_unhappy) VALUES
+('weekly', 'serviceQuality', 30, 40, 20, 8, 2),
+('weekly', 'closureTime', 25, 45, 20, 7, 3),
+('weekly', 'firstTimeResolution', 35, 38, 18, 6, 3),
+('yearly', 'serviceQuality', 32, 42, 18, 6, 2),
+('yearly', 'closureTime', 28, 47, 18, 5, 2),
+('yearly', 'firstTimeResolution', 38, 40, 16, 4, 2);
 
 -- إدراج بيانات تجريبية للشكاوى
 INSERT INTO public.complaints (complaint_id, date, customer_name, project, unit_number, source, status, description, action, duration, created_by) VALUES
@@ -178,8 +158,7 @@ INSERT INTO public.complaints (complaint_id, date, customer_name, project, unit_
 ('1002', '2025-02-27', 'راشد المحنا', '19', '', 'المقر', 'تم حلها', 'رفع شكوى في 2022 عن تسريب في المكيف تم حلها على حسابه الخاص، أعاد التواصل في 2024 حول عودة المشكلة.', 'تم الانتهاء من العزل وتم اختباره وبانتظار تركيب البلاط بالشقة العلوية ، وفيما يتعلق بشكوى العميل متبقي دهان الاسقف في الشقة وبناء على طلب العميل بأن يكون الموعد للدهان بعد العيد', 365, 'عدنان'),
 ('1003', '2025-01-26', 'نورة المسفر', 'المعالي', '', 'خدمة العملاء', 'تم حلها', 'تم إصلاح مشكلة الألمنيوم بسد الفجوات بالسيلكون والربل.', '', 0, 'عدنان'),
 ('1004', '2025-01-28', 'حمد الحسين', 'النخيل', 'فيلا 10', 'خدمة العملاء', 'لازالت قائمة', 'تم الضغط عليه من مهندس الجودة لقبول التسليم، بعد التسليم ظهر له بعض المشاكل،البوية،التشققات في الجدران، إطارات الأبواب.', 'آخر تحديث 25 مارس، باقي له فقط الخشب.', 60, 'عدنان'),
-('1005', '2025-02-17', 'تركي السعيد', 'المعالي', 'و 26 / ع 26', 'الاستبيان', 'تم حلها', 'التـاخر في التسليم بسبب عدم حل الإصلاحات لدى العميل متبقى مشكلة ميلان البلاط.', 'تم التحديث من قبل المهندس سعود موصلي بأنتهاء جميع الاصلاحات، تم التواصل مع العميل وافاد بانه لم يتم اصلاح الميلان للان، تم التواصل مع سعود 25 مارس، وذكر بأن العميل تم اصلاح جميع مشاكله وتم الاتفاق ان التسليم 12 بالليل ولم يلتزم العميل، تم تحديد موعد جديد 25 مارس مساءً، تم التسليم في 26 مارس.', 37, 'عدنان')
-ON CONFLICT (complaint_id) DO NOTHING;
+('1005', '2025-02-17', 'تركي السعيد', 'المعالي', 'و 26 / ع 26', 'الاستبيان', 'تم حلها', 'التـاخر في التسليم بسبب عدم حل الإصلاحات لدى العميل متبقى مشكلة ميلان البلاط.', 'تم التحديث من قبل المهندس سعود موصلي بأنتهاء جميع الاصلاحات، تم التواصل مع العميل وافاد بانه لم يتم اصلاح الميلان للان، تم التواصل مع سعود 25 مارس، وذكر بأن العميل تم اصلاح جميع مشاكله وتم الاتفاق ان التسليم 12 بالليل ولم يلتزم العميل، تم تحديد موعد جديد 25 مارس مساءً، تم التسليم في 26 مارس.', 37, 'عدنان');
 
 -- إضافة تعليقات تجريبية
 INSERT INTO public.comments (period, text, username) VALUES
@@ -188,6 +167,16 @@ INSERT INTO public.comments (period, text, username) VALUES
 ('yearly', 'الأداء العام جيد ولكن هناك مجال للتحسين في بعض المؤشرات', 'admin'),
 ('yearly', 'معدل رضا العملاء يحتاج إلى تركيز أكبر العام القادم', 'aljawhara');
 
--- تحديث الوقت
+-- تحديث الأوقات
 UPDATE public.metrics SET updated_at = NOW();
 UPDATE public.customer_service SET updated_at = NOW();
+
+-- إعطاء صلاحيات الوصول (اختياري - حسب إعدادات الأمان)
+-- ALTER TABLE public.metrics ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.customer_service ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.satisfaction ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+
+-- إظهار رسالة نجاح
+SELECT 'تم إنشاء جميع الجداول بنجاح!' as message;
