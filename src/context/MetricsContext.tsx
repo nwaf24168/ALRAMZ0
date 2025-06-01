@@ -132,24 +132,24 @@ export interface MetricsContextType {
   loadData: () => Promise<void>;
 }
 
-// البيانات الافتراضية
+// البيانات الافتراضية مع الأسماء والأهداف المحدثة
 const defaultMetrics = [
   {
     title: "نسبة الترشيح للعملاء الجدد",
     value: "65%",
     target: "65%",
     icon: null,
-    change: 2.4,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
   },
   {
     title: "نسبة الترشيح بعد السنة",
-    value: "67%",
+    value: "65%",
     target: "65%",
     icon: null,
-    change: 3.1,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -159,7 +159,7 @@ const defaultMetrics = [
     value: "30%",
     target: "30%",
     icon: null,
-    change: 1.8,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -169,8 +169,8 @@ const defaultMetrics = [
     value: "98%",
     target: "100%",
     icon: null,
-    change: 1.5,
-    isPositive: true,
+    change: -2,
+    isPositive: false,
     reachedTarget: false,
     isLowerBetter: false,
   },
@@ -179,8 +179,8 @@ const defaultMetrics = [
     value: "96%",
     target: "100%",
     icon: null,
-    change: 2.8,
-    isPositive: true,
+    change: -4,
+    isPositive: false,
     reachedTarget: false,
     isLowerBetter: false,
   },
@@ -189,20 +189,20 @@ const defaultMetrics = [
     value: "2.8 ثانية",
     target: "3 ثواني",
     icon: null,
-    change: 5.7,
-    isPositive: false,
+    change: -6.7,
+    isPositive: true,
     reachedTarget: true,
     isLowerBetter: true,
   },
   {
     title: "معدل الرد على المكالمات",
-    value: "18%",
+    value: "75%",
     target: "80%",
     icon: null,
-    change: 4.3,
+    change: -6.25,
     isPositive: false,
     reachedTarget: false,
-    isLowerBetter: true,
+    isLowerBetter: false,
   },
   {
     title: "راحة العميل (CSAT)",
@@ -219,13 +219,13 @@ const defaultMetrics = [
     value: "2.5 يوم",
     target: "3 أيام",
     icon: null,
-    change: 8.2,
-    isPositive: false,
+    change: -16.7,
+    isPositive: true,
     reachedTarget: true,
     isLowerBetter: true,
   },
   {
-    title: "عدد إعادة فتح طلب",
+    title: "عدد إعادة فتح الطلب",
     value: "0",
     target: "0",
     icon: null,
@@ -239,7 +239,7 @@ const defaultMetrics = [
     value: "80%",
     target: "80%",
     icon: null,
-    change: 1.8,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -249,7 +249,7 @@ const defaultMetrics = [
     value: "2%",
     target: "2%",
     icon: null,
-    change: 1.5,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -259,7 +259,7 @@ const defaultMetrics = [
     value: "80%",
     target: "80%",
     icon: null,
-    change: 2.3,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -279,7 +279,7 @@ const defaultMetrics = [
     value: "5%",
     target: "5%",
     icon: null,
-    change: 2.1,
+    change: 0,
     isPositive: true,
     reachedTarget: true,
     isLowerBetter: false,
@@ -322,8 +322,8 @@ const defaultYearlyMetrics = [
     value: "99%",
     target: "100%",
     icon: null,
-    change: 2.5,
-    isPositive: true,
+    change: -1,
+    isPositive: false,
     reachedTarget: false,
     isLowerBetter: false,
   },
@@ -332,8 +332,8 @@ const defaultYearlyMetrics = [
     value: "98%",
     target: "100%",
     icon: null,
-    change: 3.8,
-    isPositive: true,
+    change: -2,
+    isPositive: false,
     reachedTarget: false,
     isLowerBetter: false,
   },
@@ -342,20 +342,20 @@ const defaultYearlyMetrics = [
     value: "2.5 ثانية",
     target: "3 ثواني",
     icon: null,
-    change: 16.7,
-    isPositive: false,
+    change: -16.7,
+    isPositive: true,
     reachedTarget: true,
     isLowerBetter: true,
   },
   {
     title: "معدل الرد على المكالمات",
-    value: "16%",
+    value: "78%",
     target: "80%",
     icon: null,
-    change: 20.0,
+    change: -2.5,
     isPositive: false,
     reachedTarget: false,
-    isLowerBetter: true,
+    isLowerBetter: false,
   },
   {
     title: "راحة العميل (CSAT)",
@@ -372,13 +372,13 @@ const defaultYearlyMetrics = [
     value: "2.2 يوم",
     target: "3 أيام",
     icon: null,
-    change: 26.7,
-    isPositive: false,
+    change: -26.7,
+    isPositive: true,
     reachedTarget: true,
     isLowerBetter: true,
   },
   {
-    title: "عدد إعادة فتح طلب",
+    title: "عدد إعادة فتح الطلب",
     value: "2",
     target: "0",
     icon: null,
@@ -419,12 +419,12 @@ const defaultYearlyMetrics = [
   },
   {
     title: "عدد العملاء المرشحين",
-    value: "583",
-    target: "7008",
+    value: "7004",
+    target: "7004",
     icon: null,
-    change: -91.7,
-    isPositive: false,
-    reachedTarget: false,
+    change: 0,
+    isPositive: true,
+    reachedTarget: true,
     isLowerBetter: false,
   },
   {
@@ -467,24 +467,6 @@ const defaultYearlyNpsData = [
   { week: "الربع الرابع", newCustomers: 68, afterFirstYear: 69, longTerm: 39 },
 ];
 
-const defaultCallsData = [
-  { category: "مهتمين", count: 42 },
-  { category: "مهتمين مشاريع", count: 38 },
-  { category: "طلبات صيانة", count: 65 },
-  { category: "استفسارات", count: 58 },
-  { category: "مهتمين مكاتب", count: 34 },
-  { category: "شكاوى", count: 28 },
-];
-
-const defaultYearlyCallsData = [
-  { category: "مهتمين", count: 520 },
-  { category: "مهتمين مشاريع", count: 480 },
-  { category: "طلبات صيانة", count: 790 },
-  { category: "استفسارات", count: 680 },
-  { category: "مهتمين مكاتب", count: 410 },
-  { category: "شكاوى", count: 340 },
-];
-
 const MetricsContext = createContext<MetricsContextType | undefined>(undefined);
 
 export function MetricsProvider({ children }: { children: ReactNode }) {
@@ -492,7 +474,6 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   const [metrics, setMetrics] = useState<MetricData[]>(defaultMetrics);
   const [qualityData, setQualityData] = useState<QualityData[]>(defaultQualityData);
   const [npsData, setNPSData] = useState<NPSData[]>(defaultNpsData);
-  const [callsData, setCallsData] = useState<CallsData[]>(defaultCallsData);
   const [isLoading, setIsLoading] = useState(false);
   const [customerServiceData, setCustomerServiceData] = useState<CustomerServiceData>({
     _period: "weekly",
@@ -555,7 +536,17 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       // تحميل المؤشرات
       const loadedMetrics = await DataService.getMetrics(currentPeriod);
       if (loadedMetrics && loadedMetrics.length > 0) {
-        setMetrics(loadedMetrics);
+        const convertedMetrics = loadedMetrics.map(record => ({
+          title: record.title,
+          value: record.value,
+          target: record.target,
+          icon: null,
+          change: record.change,
+          isPositive: record.is_positive,
+          reachedTarget: record.reached_target,
+          isLowerBetter: record.is_lower_better
+        }));
+        setMetrics(convertedMetrics);
         console.log(`تم تحميل ${loadedMetrics.length} مؤشر من Supabase`);
       }
 
@@ -578,12 +569,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       if (loadedComments && loadedComments.length > 0) {
         setMaintenanceSatisfaction(prev => ({
           ...prev,
-          comments: loadedComments.map(comment => ({
-            text: comment.text,
-            date: new Date(comment.created_at || '').toLocaleDateString('ar-SA'),
-            time: new Date(comment.created_at || '').toLocaleTimeString('ar-SA'),
-            username: comment.username
-          }))
+          comments: loadedComments
         }));
         console.log(`تم تحميل ${loadedComments.length} تعليق من Supabase`);
       }
@@ -607,18 +593,23 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // إعداد real-time subscriptions
   useEffect(() => {
+    DataService.setupRealtimeSubscriptions();
+    
     const handleDataUpdate = () => {
       console.log('تم تحديث البيانات، إعادة التحميل...');
       loadData();
     };
 
-    // يمكن إضافة subscriptions هنا لاحقاً
+    DataService.addRealtimeCallback(handleDataUpdate);
+
+    // إعادة تحميل دوري كل 30 ثانية
     const interval = setInterval(() => {
       loadData();
-    }, 30000); // إعادة تحميل كل 30 ثانية
+    }, 30000);
 
     return () => {
       clearInterval(interval);
+      DataService.removeRealtimeCallback(handleDataUpdate);
     };
   }, [currentPeriod]);
 
@@ -632,7 +623,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       setMetrics(updatedMetrics);
 
       // حفظ في Supabase
-      await DataService.saveMetric(currentPeriod, index, updatedMetric);
+      await DataService.saveMetric(updatedMetric, index, currentPeriod);
 
       console.log(`تم حفظ المؤشر ${index} بنجاح في Supabase`);
       
@@ -671,32 +662,12 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateCallsData = (index: number, data: Partial<CallsData>) => {
-    setCallsData(prev => {
-      const newData = [...prev];
-      newData[index] = { ...newData[index], ...data };
-      return newData;
-    });
-  };
-
   const updateCustomerServiceData = async (data: CustomerServiceData) => {
     try {
       setCustomerServiceData(data);
 
       // حفظ في Supabase
-      await DataService.saveCustomerService(currentPeriod, data);
-
-      // تحديث بيانات المكالمات
-      const newCallsData = [
-        { category: "شكاوى", count: data.calls.complaints },
-        { category: "طلبات تواصل", count: data.calls.contactRequests },
-        { category: "طلبات صيانة", count: data.calls.maintenanceRequests },
-        { category: "استفسارات", count: data.calls.inquiries },
-        { category: "مهتمين مكاتب", count: data.calls.officeInterested },
-        { category: "مهتمين مشاريع", count: data.calls.projectsInterested },
-        { category: "عملاء مهتمين", count: data.calls.customersInterested }
-      ];
-      setCallsData(newCallsData);
+      await DataService.saveCustomerService(data, currentPeriod);
 
       console.log('تم حفظ بيانات خدمة العملاء بنجاح في Supabase');
       
@@ -724,7 +695,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       setMaintenanceSatisfaction(data);
 
       // حفظ بيانات الرضا في Supabase
-      await DataService.saveSatisfaction(currentPeriod, data);
+      await DataService.saveSatisfaction(data, currentPeriod);
 
       console.log('تم حفظ بيانات رضا العملاء بنجاح في Supabase');
       
@@ -746,6 +717,19 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       });
     }
   };
+
+  // تحديث البيانات عند تغيير الفترة
+  useEffect(() => {
+    if (currentPeriod === "yearly") {
+      setMetrics(defaultYearlyMetrics);
+      setQualityData(defaultYearlyQualityData);
+      setNPSData(defaultYearlyNpsData);
+    } else {
+      setMetrics(defaultMetrics);
+      setQualityData(defaultQualityData);
+      setNPSData(defaultNpsData);
+    }
+  }, [currentPeriod]);
 
   return (
     <MetricsContext.Provider 

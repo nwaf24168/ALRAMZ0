@@ -86,7 +86,7 @@ export class DataService {
     console.log('تم إعداد الاشتراكات الفورية بنجاح')
   }
   // حفظ وتحديث المؤشرات
-  static async saveMetric(metricData: MetricData, index: number, period: 'weekly' | 'yearly'): Promise<void> {
+  static async saveMetric(period: 'weekly' | 'yearly', index: number, metricData: MetricData): Promise<void> {
     const record: MetricRecord = {
       period,
       metric_index: index,
