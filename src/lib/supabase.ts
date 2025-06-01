@@ -47,6 +47,29 @@ export interface CustomerServiceRecord {
 
 export interface SatisfactionRecord {
   id?: number
+
+
+// دالة فحص الاتصال مع Supabase
+export async function testSupabaseConnection(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('metrics')
+      .select('count')
+      .limit(1)
+
+    if (error) {
+      console.error('خطأ في الاتصال مع Supabase:', error)
+      return false
+    }
+
+    console.log('تم الاتصال بنجاح مع Supabase')
+    return true
+  } catch (error) {
+    console.error('خطأ في اختبار الاتصال:', error)
+    return false
+  }
+}
+
   period: 'weekly' | 'yearly'
   category: 'serviceQuality' | 'closureTime' | 'firstTimeResolution'
   very_happy: number

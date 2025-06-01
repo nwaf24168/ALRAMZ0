@@ -22,7 +22,8 @@ export class DataService {
       .upsert(record, { onConflict: 'period,metric_index' })
 
     if (error) {
-      throw new Error(`خطأ في حفظ المؤشر: ${error.message}`)
+      console.error('خطأ Supabase في حفظ المؤشر:', error)
+      throw new Error(`خطأ في حفظ المؤشر: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
   }
 
@@ -35,7 +36,8 @@ export class DataService {
       .order('metric_index')
 
     if (error) {
-      throw new Error(`خطأ في جلب المؤشرات: ${error.message}`)
+      console.error('خطأ Supabase في جلب المؤشرات:', error)
+      throw new Error(`خطأ في جلب المؤشرات: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
 
     return data || []
@@ -68,7 +70,8 @@ export class DataService {
       .upsert(record, { onConflict: 'period' })
 
     if (error) {
-      throw new Error(`خطأ في حفظ بيانات خدمة العملاء: ${error.message}`)
+      console.error('خطأ Supabase في حفظ خدمة العملاء:', error)
+      throw new Error(`خطأ في حفظ بيانات خدمة العملاء: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
   }
 
@@ -81,7 +84,8 @@ export class DataService {
       .single()
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`خطأ في جلب بيانات خدمة العملاء: ${error.message}`)
+      console.error('خطأ Supabase في جلب خدمة العملاء:', error)
+      throw new Error(`خطأ في جلب بيانات خدمة العملاء: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
 
     if (!data) {
@@ -159,7 +163,8 @@ export class DataService {
         .upsert(record, { onConflict: 'period,category' })
 
       if (error) {
-        throw new Error(`خطأ في حفظ بيانات الرضا للفئة ${category}: ${error.message}`)
+        console.error(`خطأ Supabase في حفظ الرضا للفئة ${category}:`, error)
+        throw new Error(`خطأ في حفظ بيانات الرضا للفئة ${category}: ${error.message || error.details || 'خطأ غير معروف'}`)
       }
     }
   }
@@ -172,7 +177,8 @@ export class DataService {
       .eq('period', period)
 
     if (error) {
-      throw new Error(`خطأ في جلب بيانات الرضا: ${error.message}`)
+      console.error('خطأ Supabase في جلب بيانات الرضا:', error)
+      throw new Error(`خطأ في جلب بيانات الرضا: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
 
     const defaultCategoryData = {
@@ -218,7 +224,8 @@ export class DataService {
       .insert(record)
 
     if (error) {
-      throw new Error(`خطأ في حفظ التعليق: ${error.message}`)
+      console.error('خطأ Supabase في حفظ التعليق:', error)
+      throw new Error(`خطأ في حفظ التعليق: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
   }
 
@@ -236,7 +243,8 @@ export class DataService {
       .order('created_at', { ascending: false })
 
     if (error) {
-      throw new Error(`خطأ في جلب التعليقات: ${error.message}`)
+      console.error('خطأ Supabase في جلب التعليقات:', error)
+      throw new Error(`خطأ في جلب التعليقات: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
 
     return (data || []).map(comment => ({
@@ -255,7 +263,8 @@ export class DataService {
       .eq('id', commentId)
 
     if (error) {
-      throw new Error(`خطأ في حذف التعليق: ${error.message}`)
+      console.error('خطأ Supabase في حذف التعليق:', error)
+      throw new Error(`خطأ في حذف التعليق: ${error.message || error.details || 'خطأ غير معروف'}`)
     }
   }
 }
