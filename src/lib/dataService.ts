@@ -1,6 +1,33 @@
 
-import { supabase, MetricRecord, CustomerServiceRecord, SatisfactionRecord, CommentRecord } from './supabase'
+import { supabase, MetricRecord, CustomerServiceRecord, SatisfactionRecord, CommentRecord, ComplaintRecord } from './supabase'
 import { MetricData, CustomerServiceData, MaintenanceSatisfactionData } from '@/context/MetricsContext'
+
+// واجهة الشكوى
+export interface Complaint {
+  id: string;
+  date: string;
+  customerName: string;
+  project: string;
+  unitNumber: string;
+  source: string;
+  status: string;
+  description: string;
+  action: string;
+  duration: number;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  updates: ComplaintUpdate[];
+}
+
+export interface ComplaintUpdate {
+  field: string;
+  oldValue: string;
+  newValue: string;
+  updatedBy: string;
+  updatedAt: string;
+}
 
 // نوع البيانات للاشتراكات
 type RealtimeCallback = () => void
@@ -79,6 +106,19 @@ export class DataService {
         table: 'comments'
       }, () => {
         console.log('تم تحديث التعليقات في الوقت الفعلي')
+        this.triggerCallbacks()
+      })
+      .subscribe()
+
+    // الاشتراك في تحديثات الشكاوى
+    supabase
+      .channel('complaints_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'complaints'
+      }, () => {
+        console.log('تم تحديث الشكاوى في الوقت الفعلي')
         this.triggerCallbacks()
       })
       .subscribe()
@@ -347,6 +387,141 @@ export class DataService {
     if (error) {
       console.error('خطأ Supabase في حذف التعليق:', error)
       throw new Error(`خطأ في حذف التعليق: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+  }
+
+  // وظائف إدارة الشكاوى
+  
+  // جلب جميع الشكاوى
+  static async getComplaints(): Promise<Complaint[]> {
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('خطأ Supabase في جلب الشكاوى:', error)
+      throw new Error(`خطأ في جلب الشكاوى: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+
+    return (data || []).map(record => ({
+      id: record.complaint_id,
+      date: record.date,
+      customerName: record.customer_name,
+      project: record.project,
+      unitNumber: record.unit_number || '',
+      source: record.source,
+      status: record.status,
+      description: record.description,
+      action: record.action || '',
+      duration: record.duration,
+      createdBy: record.created_by,
+      createdAt: record.created_at!,
+      updatedBy: record.updated_by,
+      updatedAt: record.updated_at,
+      updates: record.updates || []
+    }))
+  }
+
+  // إضافة شكوى جديدة
+  static async addComplaint(complaint: Omit<Complaint, "id" | "createdAt" | "updatedBy" | "updatedAt" | "updates">): Promise<void> {
+    const record: ComplaintRecord = {
+      complaint_id: complaint.id,
+      date: complaint.date,
+      customer_name: complaint.customerName,
+      project: complaint.project,
+      unit_number: complaint.unitNumber,
+      source: complaint.source,
+      status: complaint.status,
+      description: complaint.description,
+      action: complaint.action,
+      duration: complaint.duration,
+      created_by: complaint.createdBy,
+      updates: []
+    }
+
+    const { error } = await supabase
+      .from('complaints')
+      .insert(record)
+
+    if (error) {
+      console.error('خطأ Supabase في إضافة الشكوى:', error)
+      throw new Error(`خطأ في إضافة الشكوى: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+  }
+
+  // تحديث شكوى
+  static async updateComplaint(complaintId: string, updates: Partial<Complaint>, updatedBy: string): Promise<void> {
+    const updateData: Partial<ComplaintRecord> = {
+      updated_by: updatedBy,
+      updated_at: new Date().toISOString()
+    }
+
+    if (updates.customerName) updateData.customer_name = updates.customerName
+    if (updates.project) updateData.project = updates.project
+    if (updates.unitNumber !== undefined) updateData.unit_number = updates.unitNumber
+    if (updates.source) updateData.source = updates.source
+    if (updates.status) updateData.status = updates.status
+    if (updates.description) updateData.description = updates.description
+    if (updates.action !== undefined) updateData.action = updates.action
+    if (updates.duration !== undefined) updateData.duration = updates.duration
+    if (updates.updates) updateData.updates = updates.updates
+
+    const { error } = await supabase
+      .from('complaints')
+      .update(updateData)
+      .eq('complaint_id', complaintId)
+
+    if (error) {
+      console.error('خطأ Supabase في تحديث الشكوى:', error)
+      throw new Error(`خطأ في تحديث الشكوى: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+  }
+
+  // حذف شكوى
+  static async deleteComplaint(complaintId: string): Promise<void> {
+    const { error } = await supabase
+      .from('complaints')
+      .delete()
+      .eq('complaint_id', complaintId)
+
+    if (error) {
+      console.error('خطأ Supabase في حذف الشكوى:', error)
+      throw new Error(`خطأ في حذف الشكوى: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+  }
+
+  // جلب شكوى واحدة
+  static async getComplaint(complaintId: string): Promise<Complaint | null> {
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('complaint_id', complaintId)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('خطأ Supabase في جلب الشكوى:', error)
+      throw new Error(`خطأ في جلب الشكوى: ${error.message || error.details || 'خطأ غير معروف'}`)
+    }
+
+    if (!data) return null
+
+    return {
+      id: data.complaint_id,
+      date: data.date,
+      customerName: data.customer_name,
+      project: data.project,
+      unitNumber: data.unit_number || '',
+      source: data.source,
+      status: data.status,
+      description: data.description,
+      action: data.action || '',
+      duration: data.duration,
+      createdBy: data.created_by,
+      createdAt: data.created_at!,
+      updatedBy: data.updated_by,
+      updatedAt: data.updated_at,
+      updates: data.updates || []
     }
   }
 }

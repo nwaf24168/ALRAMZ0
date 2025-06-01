@@ -146,6 +146,41 @@ neutral = EXCLUDED.neutral,
 unhappy = EXCLUDED.unhappy,
 very_unhappy = EXCLUDED.very_unhappy;
 
+-- إنشاء جدول الشكاوى
+CREATE TABLE IF NOT EXISTS public.complaints (
+    id BIGSERIAL PRIMARY KEY,
+    complaint_id VARCHAR(20) NOT NULL UNIQUE,
+    date DATE NOT NULL,
+    customer_name TEXT NOT NULL,
+    project TEXT NOT NULL,
+    unit_number TEXT,
+    source TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    action TEXT,
+    duration INTEGER NOT NULL DEFAULT 0,
+    created_by TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updates JSONB DEFAULT '[]'::jsonb
+);
+
+-- إنشاء فهرس للبحث
+CREATE INDEX IF NOT EXISTS idx_complaints_complaint_id ON public.complaints(complaint_id);
+CREATE INDEX IF NOT EXISTS idx_complaints_customer_name ON public.complaints(customer_name);
+CREATE INDEX IF NOT EXISTS idx_complaints_status ON public.complaints(status);
+CREATE INDEX IF NOT EXISTS idx_complaints_date ON public.complaints(date);
+
+-- إدراج بيانات تجريبية للشكاوى
+INSERT INTO public.complaints (complaint_id, date, customer_name, project, unit_number, source, status, description, action, duration, created_by) VALUES
+('1001', '2025-01-01', 'أحمد الصبياني', 'تل الرمال المالية', '', 'الاستبيان', 'تم حلها', 'الشيك محرر للصندوق ولم نتلقى مبلغ الضريبة , تم التواصل مع الصندوق و رد الضريبة للعميل من قبلنا.', '', 0, 'عدنان'),
+('1002', '2025-02-27', 'راشد المحنا', '19', '', 'المقر', 'تم حلها', 'رفع شكوى في 2022 عن تسريب في المكيف تم حلها على حسابه الخاص، أعاد التواصل في 2024 حول عودة المشكلة.', 'تم الانتهاء من العزل وتم اختباره وبانتظار تركيب البلاط بالشقة العلوية ، وفيما يتعلق بشكوى العميل متبقي دهان الاسقف في الشقة وبناء على طلب العميل بأن يكون الموعد للدهان بعد العيد', 365, 'عدنان'),
+('1003', '2025-01-26', 'نورة المسفر', 'المعالي', '', 'خدمة العملاء', 'تم حلها', 'تم إصلاح مشكلة الألمنيوم بسد الفجوات بالسيلكون والربل.', '', 0, 'عدنان'),
+('1004', '2025-01-28', 'حمد الحسين', 'النخيل', 'فيلا 10', 'خدمة العملاء', 'لازالت قائمة', 'تم الضغط عليه من مهندس الجودة لقبول التسليم، بعد التسليم ظهر له بعض المشاكل،البوية،التشققات في الجدران، إطارات الأبواب.', 'آخر تحديث 25 مارس، باقي له فقط الخشب.', 60, 'عدنان'),
+('1005', '2025-02-17', 'تركي السعيد', 'المعالي', 'و 26 / ع 26', 'الاستبيان', 'تم حلها', 'التـاخر في التسليم بسبب عدم حل الإصلاحات لدى العميل متبقى مشكلة ميلان البلاط.', 'تم التحديث من قبل المهندس سعود موصلي بأنتهاء جميع الاصلاحات، تم التواصل مع العميل وافاد بانه لم يتم اصلاح الميلان للان، تم التواصل مع سعود 25 مارس، وذكر بأن العميل تم اصلاح جميع مشاكله وتم الاتفاق ان التسليم 12 بالليل ولم يلتزم العميل، تم تحديد موعد جديد 25 مارس مساءً، تم التسليم في 26 مارس.', 37, 'عدنان')
+ON CONFLICT (complaint_id) DO NOTHING;
+
 -- إضافة تعليقات تجريبية
 INSERT INTO public.comments (period, text, username) VALUES
 ('weekly', 'تم تحسين وقت الاستجابة بشكل ملحوظ هذا الأسبوع', 'nawaf'),

@@ -66,6 +66,25 @@ export interface CommentRecord {
   created_at?: string
 }
 
+export interface ComplaintRecord {
+  id?: number
+  complaint_id: string
+  date: string
+  customer_name: string
+  project: string
+  unit_number?: string
+  source: string
+  status: string
+  description: string
+  action?: string
+  duration: number
+  created_by: string
+  created_at?: string
+  updated_by?: string
+  updated_at?: string
+  updates?: any[]
+}
+
 // دالة فحص الاتصال مع Supabase
 export async function testSupabaseConnection(): Promise<boolean> {
   try {
