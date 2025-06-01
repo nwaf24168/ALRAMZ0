@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { MaintenanceSatisfactionData } from "@/context/MetricsContext";
+import { DataService } from "@/lib/dataService";
 
 interface MetricData {
   displayValue: string;
@@ -139,6 +140,46 @@ export default function DataEntry() {
     });
   }, [metrics, customerServiceData, maintenanceSatisfaction, currentPeriod]);
 
+  // تحميل البيانات من Supabase عند تغيير الفترة
+  useEffect(() => {
+    const loadDataFromSupabase = async () => {
+      try {
+        // تحميل بيانات خدمة العملاء
+        const customerServiceFromDB = await DataService.getCustomerService(currentPeriod);
+        
+        // تحميل بيانات الرضا والتعليقات
+        const satisfactionFromDB = await DataService.getSatisfaction(currentPeriod);
+        const commentsFromDB = await DataService.getComments(currentPeriod);
+        
+        const fullSatisfactionData = {
+          ...satisfactionFromDB,
+          comments: commentsFromDB
+        };
+
+        // تحديث السياق بالبيانات المحملة
+        await updateCustomerServiceData({
+          ...customerServiceFromDB,
+          _period: currentPeriod
+        });
+        
+        await updateMaintenanceSatisfactionData({
+          ...fullSatisfactionData,
+          _period: currentPeriod
+        });
+        
+      } catch (error) {
+        console.error("خطأ في تحميل البيانات من Supabase:", error);
+        addNotification({
+          title: "خطأ",
+          message: error instanceof Error ? error.message : "حدث خطأ أثناء تحميل البيانات",
+          type: "error"
+        });
+      }
+    };
+
+    loadDataFromSupabase();
+  }, [currentPeriod]);
+
   const handleMetricChange = async (index: number, value: string) => {
     const cleanValue = value.replace(/[^0-9.-]/g, '');
     const numValue = parseFloat(cleanValue);
@@ -169,19 +210,22 @@ export default function DataEntry() {
         return { ...prev, metrics: newMetrics };
       });
 
+      // حفظ في Supabase
+      await DataService.saveMetric(updatedMetric, index, currentPeriod);
+
       // ثم تحديث السياق
       await updateMetric(index, updatedMetric);
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم تحديث المؤشر بنجاح",
+        message: "تم تحديث المؤشر بنجاح في قاعدة البيانات",
         type: "success"
       });
     } catch (error) {
       console.error("خطأ في تحديث المؤشر:", error);
       addNotification({
         title: "خطأ",
-        message: "حدث خطأ أثناء تحديث المؤشر",
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء تحديث المؤشر",
         type: "error"
       });
     }
@@ -225,6 +269,9 @@ export default function DataEntry() {
         customerService: updatedCustomerService
       }));
 
+      // حفظ في Supabase
+      await DataService.saveCustomerService(updatedCustomerService, currentPeriod);
+
       // ثم تحديث السياق
       await updateCustomerServiceData({
         ...updatedCustomerService,
@@ -233,14 +280,14 @@ export default function DataEntry() {
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم تحديث البيانات بنجاح",
+        message: "تم تحديث البيانات بنجاح في قاعدة البيانات",
         type: "success"
       });
     } catch (error) {
       console.error("خطأ في تحديث البيانات:", error);
       addNotification({
         title: "خطأ",
-        message: "حدث خطأ أثناء تحديث البيانات",
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء تحديث البيانات",
         type: "error"
       });
     }
@@ -269,6 +316,9 @@ export default function DataEntry() {
         maintenanceSatisfaction: updatedSatisfaction
       }));
 
+      // حفظ في Supabase
+      await DataService.saveSatisfaction(updatedSatisfaction, currentPeriod);
+
       // ثم تحديث السياق
       await updateMaintenanceSatisfactionData({
         ...updatedSatisfaction,
@@ -277,14 +327,14 @@ export default function DataEntry() {
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم تحديث بيانات الرضا بنجاح",
+        message: "تم تحديث بيانات الرضا بنجاح في قاعدة البيانات",
         type: "success"
       });
     } catch (error) {
       console.error("خطأ في تحديث بيانات الرضا:", error);
       addNotification({
         title: "خطأ",
-        message: "حدث خطأ أثناء تحديث بيانات الرضا",
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء تحديث بيانات الرضا",
         type: "error"
       });
     }
@@ -293,25 +343,22 @@ export default function DataEntry() {
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     
-    const currentDate = new Date();
-    const newCommentObj = {
-      text: newComment.trim(),
-      date: currentDate.toLocaleDateString(),
-      time: currentDate.toLocaleTimeString(),
-      username: user?.username || 'مجهول'
-    };
-
-    const updatedSatisfaction = {
-      ...formData.maintenanceSatisfaction,
-      comments: [...formData.maintenanceSatisfaction.comments, newCommentObj]
-    };
-
-    setFormData(prev => ({
-      ...prev,
-      maintenanceSatisfaction: updatedSatisfaction
-    }));
-
     try {
+      // حفظ التعليق في Supabase
+      await DataService.saveComment(newComment.trim(), user?.username || 'مجهول', currentPeriod);
+
+      // تحديث قائمة التعليقات المحلية
+      const updatedComments = await DataService.getComments(currentPeriod);
+      const updatedSatisfaction = {
+        ...formData.maintenanceSatisfaction,
+        comments: updatedComments
+      };
+
+      setFormData(prev => ({
+        ...prev,
+        maintenanceSatisfaction: updatedSatisfaction
+      }));
+
       await updateMaintenanceSatisfactionData({
         ...updatedSatisfaction,
         _period: currentPeriod
@@ -321,14 +368,14 @@ export default function DataEntry() {
       
       addNotification({
         title: "تم الإضافة",
-        message: "تم إضافة التعليق بنجاح",
+        message: "تم إضافة التعليق بنجاح في قاعدة البيانات",
         type: "success"
       });
     } catch (error) {
       console.error("خطأ في إضافة التعليق:", error);
       addNotification({
         title: "خطأ",
-        message: "حدث خطأ أثناء إضافة التعليق",
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء إضافة التعليق",
         type: "error"
       });
     }
