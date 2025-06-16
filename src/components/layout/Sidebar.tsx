@@ -26,89 +26,96 @@ export default function Sidebar() {
   const menuItems = [
     {
       title: "لوحة التحكم",
-      icon: <LayoutDashboard className="ml-2 h-5 w-5" />,
+      icon: <LayoutDashboard className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/dashboard",
     },
     {
       title: "إدخال البيانات",
-      icon: <FileInput className="ml-2 h-5 w-5" />,
+      icon: <FileInput className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/data-entry",
     },
     {
       title: "الشكاوى",
-      icon: <MessageSquare className="ml-2 h-5 w-5" />,
+      icon: <MessageSquare className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/complaints",
     },
     {
       title: "التحليلات",
-      icon: <LineChart className="ml-2 h-5 w-5" />,
+      icon: <LineChart className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/analytics",
     },
     {
       title: "الإعدادات",
-      icon: <Settings className="ml-2 h-5 w-5" />,
+      icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/settings",
     },
     {
       title: "قسم التسليم",
-      icon: <Package className="ml-2 h-5 w-5" />,
+      icon: <Package className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/delivery",
     },
   ];
 
   return (
-    <aside className="sticky top-0 right-0 h-screen w-64 bg-sidebar border-l overflow-y-auto">
+    <aside className="fixed md:sticky top-0 right-0 h-screen w-64 md:w-64 sm:w-56 bg-sidebar border-l overflow-y-auto z-50 transform md:transform-none transition-transform duration-300">
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
+        <div className="p-3 md:p-4 border-b">
           <div className="flex flex-col items-center justify-center p-2">
-            <h1 className="text-xl font-bold mb-1">شركة الرمز العقارية</h1>
-            <p className="text-sm text-muted-foreground">منصة إدارة راحة العملاء</p>
+            <h1 className="text-lg md:text-xl font-bold mb-1 text-center">
+              شركة الرمز العقارية
+            </h1>
+            <p className="text-xs md:text-sm text-muted-foreground text-center">
+              منصة إدارة راحة العملاء
+            </p>
           </div>
         </div>
 
-        <div className="p-4 border-b">
-          <div className="flex items-center space-x-4 space-x-reverse">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
+        <div className="p-3 md:p-4 border-b">
+          <div className="flex items-center space-x-3 md:space-x-4 space-x-reverse">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-4 w-4 md:h-6 md:w-6 text-primary" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-medium">{user?.username}</span>
-              <span className="text-sm text-muted-foreground">{user?.role}</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-medium text-sm md:text-base truncate">
+                {user?.username}
+              </span>
+              <span className="text-xs md:text-sm text-muted-foreground truncate">
+                {user?.role}
+              </span>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
+        <nav className="flex-1 p-3 md:p-4">
+          <ul className="space-y-1 md:space-y-2">
             {menuItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
                   className={cn(
-                    "flex items-center p-2 rounded-md transition-colors",
+                    "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
                     isActive(item.path)
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                      : "hover:bg-muted",
                   )}
                 >
                   {item.icon}
-                  <span>{item.title}</span>
+                  <span className="truncate">{item.title}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
 
-        <div className="p-4 border-t">
-          <div className="flex items-center justify-between">
+        <div className="p-3 md:p-4 border-t">
+          <div className="flex items-center justify-center">
             <button
               onClick={() => logout()}
-              className="flex items-center text-sm p-2 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="flex items-center text-xs md:text-sm p-2 rounded-md text-red-500 hover:bg-red-900/20 w-full justify-center"
             >
-              <LogOut className="ml-2 h-4 w-4" />
+              <LogOut className="ml-2 h-3 w-3 md:h-4 md:w-4" />
               <span>تسجيل الخروج</span>
             </button>
-            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -116,14 +123,16 @@ export default function Sidebar() {
   );
 }
 
-
 // Placeholder component for /delivery-analysis
 function DeliveryAnalysis() {
   return (
     <div>
       <h1>Delivery Analysis Page</h1>
       {/* Add your report and excel export functionality here */}
-      <p>This is a placeholder for the delivery analysis page.  Implement the required reporting and export functionality here.</p>
+      <p>
+        This is a placeholder for the delivery analysis page. Implement the
+        required reporting and export functionality here.
+      </p>
       <table>
         <thead>
           <tr>
