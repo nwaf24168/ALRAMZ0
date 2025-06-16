@@ -16,7 +16,7 @@ export default function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-4">
           <img
-            src="imag/3.svg"
+            src="/imag/3.svg"
             alt="شركة الرمز العقارية"
             className="h-8 w-auto"
           />
@@ -24,15 +24,11 @@ export default function Header() {
             منصة قسم إدارة راحة العملاء | التقرير الدوري
           </div>
         </div>
-        
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className="text-base"
-        >
+
+        <Button variant="ghost" onClick={handleLogout} className="text-base">
           تسجيل الخروج
         </Button>
       </div>
     </header>
   );
-} 
+}
