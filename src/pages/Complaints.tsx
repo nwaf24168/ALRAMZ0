@@ -813,9 +813,9 @@ export default function Complaints() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">سجل الشكاوى</h1>
+      <div className="space-y-4 md:space-y-6 p-3 md:p-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h1 className="text-xl md:text-2xl font-bold">سجل الشكاوى</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center">
@@ -984,7 +984,7 @@ export default function Complaints() {
             <CardTitle>سجل الشكاوى والطلبات</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <Filter className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1000,7 +1000,7 @@ export default function Complaints() {
                   value={selectedStatus}
                   onValueChange={setSelectedStatus}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="جميع الحالات" />
                   </SelectTrigger>
                   <SelectContent>

@@ -181,17 +181,21 @@ export default function Analytics() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">تحليلات الأداء والنتائج</h1>
-          <div className="flex gap-2">
+      <div className="container mx-auto p-3 md:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-4">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
+            تحليلات الأداء والنتائج
+          </h1>
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
+              className="flex-1 sm:flex-none"
               variant={currentPeriod === "weekly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("weekly")}
             >
               أسبوعي
             </Button>
             <Button
+              className="flex-1 sm:flex-none"
               variant={currentPeriod === "yearly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("yearly")}
             >
@@ -201,14 +205,20 @@ export default function Analytics() {
         </div>
 
         <Tabs defaultValue="nps" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="nps">تحليلات NPS والجودة</TabsTrigger>
-            <TabsTrigger value="service">تحليلات خدمة العملاء</TabsTrigger>
-            <TabsTrigger value="satisfaction">تحليلات رضا العملاء</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
+            <TabsTrigger value="nps" className="text-xs sm:text-sm">
+              تحليلات NPS والجودة
+            </TabsTrigger>
+            <TabsTrigger value="service" className="text-xs sm:text-sm">
+              تحليلات خدمة العملاء
+            </TabsTrigger>
+            <TabsTrigger value="satisfaction" className="text-xs sm:text-sm">
+              تحليلات رضا العملاء
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="nps">
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader>
@@ -333,7 +343,7 @@ export default function Analytics() {
           </TabsContent>
 
           <TabsContent value="service">
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
@@ -424,7 +434,7 @@ export default function Analytics() {
           </TabsContent>
 
           <TabsContent value="satisfaction">
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>

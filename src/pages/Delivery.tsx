@@ -276,10 +276,10 @@ export default function Delivery() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">قسم الحجز</h1>
+      <div className="space-y-4 md:space-y-6 p-3 md:p-0">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
+            <h1 className="text-xl md:text-2xl font-bold">قسم الحجز</h1>
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -336,59 +336,65 @@ export default function Delivery() {
                 }
               }}
             />
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById("excelFileInput")?.click()}
-            >
-              استيراد من إكسل
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                // تحضير البيانات للتصدير مع مراعاة الفلترة
-                const exportData = filteredBookings.map((booking) => ({
-                  "الرقم المتسلسل": booking.id,
-                  "تاريخ الحجز": booking.bookingDate,
-                  "اسم العميل": booking.customerName,
-                  المشروع: booking.project,
-                  العمارة: booking.building,
-                  الوحدة: booking.unit,
-                  "طريقة الدفع": booking.paymentMethod,
-                  "نوع البيع": booking.saleType,
-                  "قيمة الوحدة": booking.unitValue,
-                  "تاريخ الإفراغ": booking.transferDate,
-                  "موظف المبيعات": booking.salesEmployee,
-                  "تاريخ انتهاء البناء": booking.constructionEndDate || "",
-                  "تاريخ الاستلام النهائي": booking.finalReceiptDate || "",
-                  "تاريخ نقل عداد الكهرباء":
-                    booking.electricityTransferDate || "",
-                  "تاريخ نقل عداد المياه": booking.waterTransferDate || "",
-                  "تاريخ التسليم للعميل": booking.deliveryDate || "",
-                  "تم التقييم": booking.isEvaluated ? "نعم" : "لا",
-                  "درجة التقييم": booking.evaluationScore || "",
-                }));
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  document.getElementById("excelFileInput")?.click()
+                }
+              >
+                استيراد من إكسل
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // تحضير البيانات للتصدير مع مراعاة الفلترة
+                  const exportData = filteredBookings.map((booking) => ({
+                    "الرقم المتسلسل": booking.id,
+                    "تاريخ الحجز": booking.bookingDate,
+                    "اسم العميل": booking.customerName,
+                    المشروع: booking.project,
+                    العمارة: booking.building,
+                    الوحدة: booking.unit,
+                    "طريقة الدفع": booking.paymentMethod,
+                    "نوع البيع": booking.saleType,
+                    "قيمة الوحدة": booking.unitValue,
+                    "تاريخ الإفراغ": booking.transferDate,
+                    "موظف المبيعات": booking.salesEmployee,
+                    "تاريخ انتهاء البناء": booking.constructionEndDate || "",
+                    "تاريخ الاستلام النهائي": booking.finalReceiptDate || "",
+                    "تاريخ نقل عداد الكهرباء":
+                      booking.electricityTransferDate || "",
+                    "تاريخ نقل عداد المياه": booking.waterTransferDate || "",
+                    "تاريخ التسليم للعميل": booking.deliveryDate || "",
+                    "تم التقييم": booking.isEvaluated ? "نعم" : "لا",
+                    "درجة التقييم": booking.evaluationScore || "",
+                  }));
 
-                // إنشاء ورقة عمل Excel
-                const ws = XLSX.utils.json_to_sheet(exportData, {
-                  header: Object.keys(exportData[0]),
-                });
+                  // إنشاء ورقة عمل Excel
+                  const ws = XLSX.utils.json_to_sheet(exportData, {
+                    header: Object.keys(exportData[0]),
+                  });
 
-                // تنسيق عرض الأعمدة
-                const colWidths = Object.keys(exportData[0]).map(() => ({
-                  wch: 20,
-                }));
-                ws["!cols"] = colWidths;
+                  // تنسيق عرض الأعمدة
+                  const colWidths = Object.keys(exportData[0]).map(() => ({
+                    wch: 20,
+                  }));
+                  ws["!cols"] = colWidths;
 
-                // إنشاء مصنف عمل جديد وإضافة ورقة العمل
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "الحجوزات");
+                  // إنشاء مصنف عمل جديد وإضافة ورقة العمل
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "الحجوزات");
 
-                // تحميل الملف
-                XLSX.writeFile(wb, "تقرير_الحجوزات.xlsx");
-              }}
-            >
-              تحميل كملف إكسل
-            </Button>
+                  // تحميل الملف
+                  XLSX.writeFile(wb, "تقرير_الحجوزات.xlsx");
+                }}
+              >
+                تحميل كملف إكسل
+              </Button>
+            </div>
           </div>
           {(user?.role === "قسم المبيعات" || user?.role === "مدير النظام") && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -555,8 +561,8 @@ export default function Delivery() {
             <CardTitle>سجل الحجز</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="relative">
                 <Filter className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="بحث..."
@@ -565,9 +571,9 @@ export default function Delivery() {
                   className="pr-9"
                 />
               </div>
-              <div className="flex gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[250px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="فلتر حسب الحالة" />
                   </SelectTrigger>
                   <SelectContent>
@@ -580,7 +586,7 @@ export default function Delivery() {
                 </Select>
 
                 <Select value={monthFilter} onValueChange={setMonthFilter}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="الشهر" />
                   </SelectTrigger>
                   <SelectContent>
@@ -594,7 +600,7 @@ export default function Delivery() {
                 </Select>
 
                 <Select value={yearFilter} onValueChange={setYearFilter}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="السنة" />
                   </SelectTrigger>
                   <SelectContent>

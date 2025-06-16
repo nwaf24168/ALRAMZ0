@@ -228,8 +228,8 @@ export default function Settings() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">إعدادات النظام</h1>
+      <div className="space-y-4 md:space-y-6 p-3 md:p-0">
+        <h1 className="text-xl md:text-2xl font-bold">إعدادات النظام</h1>
 
         <Card>
           <CardHeader>
@@ -283,7 +283,7 @@ export default function Settings() {
 
             <div>
               <h3 className="text-lg font-semibold mb-4">إضافة مستخدم جديد</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">اسم المستخدم</Label>
                   <Input
