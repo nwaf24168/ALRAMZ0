@@ -582,8 +582,12 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadDataFromSupabase = async () => {
       try {
+        console.log(`تحميل البيانات للفترة: ${currentPeriod}`);
+
         // تحميل المؤشرات
         const metricsFromDB = await DataService.getMetrics(currentPeriod);
+        console.log("المؤشرات المحملة من قاعدة البيانات:", metricsFromDB);
+
         if (metricsFromDB.length > 0) {
           const formattedMetrics = metricsFromDB.map((record) => ({
             title: record.title,
@@ -596,17 +600,28 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
             isLowerBetter: record.is_lower_better,
           }));
           setMetrics(formattedMetrics);
+          console.log("تم تحديث المؤشرات:", formattedMetrics);
+        } else {
+          console.log(
+            "لا توجد مؤشرات في قاعدة البيانات، استخدام البيانات الافتراضية",
+          );
+          setMetrics(
+            currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics,
+          );
         }
 
         // تحميل بيانات خدمة العملاء
         const customerServiceFromDB =
           await DataService.getCustomerService(currentPeriod);
+        console.log("بيانات خدمة العملاء:", customerServiceFromDB);
         setCustomerServiceData(customerServiceFromDB);
 
         // تحميل بيانات الرضا والتعليقات
         const satisfactionFromDB =
           await DataService.getSatisfaction(currentPeriod);
         const commentsFromDB = await DataService.getComments(currentPeriod);
+        console.log("بيانات الرضا:", satisfactionFromDB);
+        console.log("التعليقات:", commentsFromDB);
 
         setMaintenanceSatisfaction({
           ...satisfactionFromDB,
@@ -639,6 +654,8 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   // إعداد الاشتراكات للوقت الفعلي
   useEffect(() => {
+    console.log("إعداد الاشتراكات للوقت الفعلي للفترة:", currentPeriod);
+
     // إزالة الاشتراكات السابقة
     realtimeChannels.forEach((channel) => {
       DataService.removeRealtimeSubscription(channel);
@@ -650,8 +667,9 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     const metricsChannel = DataService.setupRealtimeSubscription(
       "metrics",
       async (payload) => {
-        console.log("تحديث المؤشرات:", payload);
+        console.log("تحديث المؤشرات في الوقت الفعلي:", payload);
         try {
+          // إعادة تحميل البيانات فوراً عند التحديث
           const metricsFromDB = await DataService.getMetrics(currentPeriod);
           if (metricsFromDB.length > 0) {
             const formattedMetrics = metricsFromDB.map((record) => ({
@@ -665,6 +683,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
               isLowerBetter: record.is_lower_better,
             }));
             setMetrics(formattedMetrics);
+            console.log("تم تحديث المؤشرات في الوقت الفعلي");
           }
         } catch (error) {
           console.error("خطأ في تحديث المؤشرات:", error);
@@ -677,11 +696,12 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     const customerServiceChannel = DataService.setupRealtimeSubscription(
       "customer_service",
       async (payload) => {
-        console.log("تحديث خدمة العملاء:", payload);
+        console.log("تحديث خدمة العملاء في الوقت الفعلي:", payload);
         try {
           const customerServiceFromDB =
             await DataService.getCustomerService(currentPeriod);
           setCustomerServiceData(customerServiceFromDB);
+          console.log("تم تحديث بيانات خدمة العملاء في الوقت الفعلي");
         } catch (error) {
           console.error("خطأ في تحديث خدمة العملاء:", error);
         }
@@ -693,7 +713,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     const satisfactionChannel = DataService.setupRealtimeSubscription(
       "satisfaction",
       async (payload) => {
-        console.log("تحديث الرضا:", payload);
+        console.log("تحديث الرضا في الوقت الفعلي:", payload);
         try {
           const satisfactionFromDB =
             await DataService.getSatisfaction(currentPeriod);
@@ -702,6 +722,7 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
             ...satisfactionFromDB,
             comments: commentsFromDB,
           });
+          console.log("تم تحديث بيانات الرضا في الوقت الفعلي");
         } catch (error) {
           console.error("خطأ في تحديث الرضا:", error);
         }
@@ -713,13 +734,14 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     const commentsChannel = DataService.setupRealtimeSubscription(
       "comments",
       async (payload) => {
-        console.log("تحديث التعليقات:", payload);
+        console.log("تحديث التعليقات في الوقت الفعلي:", payload);
         try {
           const commentsFromDB = await DataService.getComments(currentPeriod);
           setMaintenanceSatisfaction((prev) => ({
             ...prev,
             comments: commentsFromDB,
           }));
+          console.log("تم تحديث التعليقات في الوقت الفعلي");
         } catch (error) {
           console.error("خطأ في تحديث التعليقات:", error);
         }
@@ -728,9 +750,11 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     newChannels.push(commentsChannel);
 
     setRealtimeChannels(newChannels);
+    console.log("تم إعداد", newChannels.length, "اشتراكات للوقت الفعلي");
 
     // تنظيف الاشتراكات عند إلغاء تحميل المكون
     return () => {
+      console.log("تنظيف الاشتراكات للوقت الفعلي");
       newChannels.forEach((channel) => {
         DataService.removeRealtimeSubscription(channel);
       });
@@ -816,12 +840,25 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     data: MaintenanceSatisfactionData,
   ) => {
     try {
+      console.log("تحديث بيانات الرضا:", data);
       setMaintenanceSatisfaction(data);
 
       // حفظ في Supabase
       await DataService.saveSatisfaction(data, currentPeriod);
+      console.log("تم حفظ بيانات الرضا في Supabase");
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم حفظ بيانات الرضا بنجاح",
+        variant: "default",
+      });
     } catch (error) {
       console.error("خطأ في حفظ بيانات الرضا:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ بيانات الرضا",
+        variant: "destructive",
+      });
       throw error;
     }
   };

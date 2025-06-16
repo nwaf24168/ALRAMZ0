@@ -324,6 +324,27 @@ export class DataService {
     }
   }
 
+  // حذف تعليق بالنص والمستخدم (للتوافق مع الواجهة الحالية)
+  static async deleteCommentByContent(
+    text: string,
+    username: string,
+    period: "weekly" | "yearly",
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("text", text)
+      .eq("username", username)
+      .eq("period", period);
+
+    if (error) {
+      console.error("خطأ Supabase في حذف التعليق:", error);
+      throw new Error(
+        `خطأ في حذف التعليق: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
   // إدارة الشكاوى
   static async saveComplaint(complaint: any): Promise<void> {
     const record: ComplaintRecord = {
