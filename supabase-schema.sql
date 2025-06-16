@@ -16,6 +16,76 @@ CREATE TABLE IF NOT EXISTS public.metrics (
     UNIQUE(period, metric_index)
 );
 
+-- إنشاء جدول الشكاوى
+CREATE TABLE IF NOT EXISTS public.complaints (
+    id BIGSERIAL PRIMARY KEY,
+    complaint_id VARCHAR(50) UNIQUE NOT NULL,
+    date DATE NOT NULL,
+    customer_name TEXT NOT NULL,
+    project TEXT NOT NULL,
+    unit_number TEXT,
+    source TEXT NOT NULL,
+    status TEXT NOT NULL,
+    description TEXT NOT NULL,
+    action TEXT,
+    duration INTEGER DEFAULT 0,
+    created_by TEXT NOT NULL,
+    updated_by TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء جدول تحديثات الشكاوى
+CREATE TABLE IF NOT EXISTS public.complaint_updates (
+    id BIGSERIAL PRIMARY KEY,
+    complaint_id VARCHAR(50) NOT NULL REFERENCES public.complaints(complaint_id) ON DELETE CASCADE,
+    field_name TEXT NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    updated_by TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء جدول الحجوزات والتسليم
+CREATE TABLE IF NOT EXISTS public.bookings (
+    id BIGSERIAL PRIMARY KEY,
+    booking_id VARCHAR(50) UNIQUE NOT NULL,
+    booking_date DATE NOT NULL,
+    customer_name TEXT NOT NULL,
+    project TEXT NOT NULL,
+    building TEXT,
+    unit TEXT NOT NULL,
+    payment_method TEXT NOT NULL,
+    sale_type TEXT NOT NULL,
+    unit_value DECIMAL(15,2) NOT NULL DEFAULT 0,
+    transfer_date DATE,
+    sales_employee TEXT NOT NULL,
+    construction_end_date DATE,
+    final_receipt_date DATE,
+    electricity_transfer_date DATE,
+    water_transfer_date DATE,
+    delivery_date DATE,
+    status TEXT NOT NULL DEFAULT 'بانتظار إدارة المشاريع وراحة العملاء',
+    status_sales_filled BOOLEAN DEFAULT true,
+    status_projects_filled BOOLEAN DEFAULT false,
+    status_customer_filled BOOLEAN DEFAULT false,
+    is_evaluated BOOLEAN DEFAULT false,
+    evaluation_score INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء جدول المستخدمين
+CREATE TABLE IF NOT EXISTS public.users (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(50) UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- إنشاء جدول خدمة العملاء
 CREATE TABLE IF NOT EXISTS public.customer_service (
     id BIGSERIAL PRIMARY KEY,
@@ -70,6 +140,21 @@ CREATE INDEX IF NOT EXISTS idx_metrics_period ON public.metrics(period);
 CREATE INDEX IF NOT EXISTS idx_customer_service_period ON public.customer_service(period);
 CREATE INDEX IF NOT EXISTS idx_satisfaction_period_category ON public.satisfaction(period, category);
 CREATE INDEX IF NOT EXISTS idx_comments_period ON public.comments(period);
+CREATE INDEX IF NOT EXISTS idx_complaints_status ON public.complaints(status);
+CREATE INDEX IF NOT EXISTS idx_complaints_date ON public.complaints(date);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON public.bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_date ON public.bookings(booking_date);
+CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
+
+-- تمكين الوقت الفعلي للجداول
+ALTER PUBLICATION supabase_realtime ADD TABLE public.metrics;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.customer_service;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.satisfaction;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.comments;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.complaints;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.complaint_updates;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.bookings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
 
 -- إدراج بيانات تجريبية للمؤشرات الأسبوعية
 INSERT INTO public.metrics (period, metric_index, title, value, target, change, is_positive, reached_target, is_lower_better) VALUES
