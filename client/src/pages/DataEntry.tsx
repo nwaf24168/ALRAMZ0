@@ -186,72 +186,66 @@ export default function DataEntry() {
     loadDataFromSupabase();
   }, [currentPeriod]);
 
-  const handleMetricChange = (index: number, value: string) => {
+  const handleMetricChange = async (index: number, value: string) => {
     const cleanValue = value.replace(/[^0-9.-]/g, "");
-    
-    // تحديث الحالة المحلية فقط
-    setFormData((prev) => {
-      const newMetrics = [...prev.metrics];
-      newMetrics[index] = {
-        ...newMetrics[index],
-        displayValue: cleanValue,
-      };
-      return { ...prev, metrics: newMetrics };
-    });
-  };
+    const numValue = parseFloat(cleanValue);
 
-  const saveMetrics = async () => {
+    if (isNaN(numValue) && value !== "" && value !== "-") return;
+
+    const metric = metrics[index];
+    const targetValue = parseFloat(
+      metric.target.replace(/[^0-9.-]/g, "") || "0",
+    );
+
+    const updatedMetric = {
+      ...metric,
+      value: cleanValue + "%",
+      change:
+        targetValue !== 0 ? ((numValue - targetValue) / targetValue) * 100 : 0,
+      isPositive: !metric.isLowerBetter
+        ? numValue >= targetValue
+        : numValue <= targetValue,
+      reachedTarget: !metric.isLowerBetter
+        ? numValue >= targetValue
+        : numValue <= targetValue,
+      _period: currentPeriod,
+    };
+
     try {
-      for (let index = 0; index < formData.metrics.length; index++) {
-        const metric = formData.metrics[index];
-        const cleanValue = metric.displayValue;
-        const numValue = parseFloat(cleanValue);
-
-        if (isNaN(numValue) && cleanValue !== "" && cleanValue !== "-") continue;
-
-        const originalMetric = metrics[index];
-        const targetValue = parseFloat(
-          originalMetric.target.replace(/[^0-9.-]/g, "") || "0",
-        );
-
-        const updatedMetric = {
-          ...originalMetric,
-          value: cleanValue + "%",
-          change:
-            targetValue !== 0 ? ((numValue - targetValue) / targetValue) * 100 : 0,
-          isPositive: !originalMetric.isLowerBetter
-            ? numValue >= targetValue
-            : numValue <= targetValue,
-          reachedTarget: !originalMetric.isLowerBetter
-            ? numValue >= targetValue
-            : numValue <= targetValue,
-          _period: currentPeriod,
+      // تحديث الحالة المحلية أولاً
+      setFormData((prev) => {
+        const newMetrics = [...prev.metrics];
+        newMetrics[index] = {
+          ...newMetrics[index],
+          ...updatedMetric,
+          displayValue: cleanValue,
         };
+        return { ...prev, metrics: newMetrics };
+      });
 
-        // حفظ في Supabase
-        await DataService.saveMetric(updatedMetric, index, currentPeriod);
+      // حفظ في Supabase
+      await DataService.saveMetric(updatedMetric, index, currentPeriod);
 
-        // تحديث السياق
-        await updateMetric(index, updatedMetric);
-      }
+      // ثم تحديث السياق
+      await updateMetric(index, updatedMetric);
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم حفظ جميع المؤشرات بنجاح في قاعدة البيانات",
+        message: "تم تحديث المؤشر بنجاح في قاعدة البيانات",
         type: "success",
       });
     } catch (error) {
-      console.error("خطأ في حفظ المؤشرات:", error);
+      console.error("خطأ في تحديث المؤشر:", error);
       addNotification({
         title: "خطأ",
         message:
-          error instanceof Error ? error.message : "حدث خطأ أثناء حفظ المؤشرات",
+          error instanceof Error ? error.message : "حدث خطأ أثناء تحديث المؤشر",
         type: "error",
       });
     }
   };
 
-  const handleServiceChange = (
+  const handleServiceChange = async (
     section: string,
     field: string,
     value: string,
@@ -259,74 +253,72 @@ export default function DataEntry() {
     const cleanValue = value.replace(/[^0-9]/g, "");
     const numValue = cleanValue === "" ? 0 : parseInt(cleanValue, 10);
 
-    const updatedCustomerService = { ...formData.customerService };
-
-    if (section === "calls") {
-      updatedCustomerService.calls = {
-        ...updatedCustomerService.calls,
-        [field]: numValue,
-      };
-
-      const total = Object.entries(updatedCustomerService.calls)
-        .filter(([key]) => key !== "total")
-        .reduce(
-          (sum, [_, val]) => sum + (typeof val === "number" ? val : 0),
-          0,
-        );
-
-      updatedCustomerService.calls.total = total;
-    } else if (section === "inquiries") {
-      updatedCustomerService.inquiries = {
-        ...updatedCustomerService.inquiries,
-        [field]: numValue,
-      };
-    } else if (section === "maintenance") {
-      updatedCustomerService.maintenance = {
-        ...updatedCustomerService.maintenance,
-        [field]: numValue,
-      };
-    }
-
-    // تحديث الحالة المحلية فقط
-    setFormData((prev) => ({
-      ...prev,
-      customerService: updatedCustomerService,
-    }));
-  };
-
-  const saveCustomerService = async () => {
     try {
+      const updatedCustomerService = { ...formData.customerService };
+
+      if (section === "calls") {
+        updatedCustomerService.calls = {
+          ...updatedCustomerService.calls,
+          [field]: numValue,
+        };
+
+        const total = Object.entries(updatedCustomerService.calls)
+          .filter(([key]) => key !== "total")
+          .reduce(
+            (sum, [_, val]) => sum + (typeof val === "number" ? val : 0),
+            0,
+          );
+
+        updatedCustomerService.calls.total = total;
+      } else if (section === "inquiries") {
+        updatedCustomerService.inquiries = {
+          ...updatedCustomerService.inquiries,
+          [field]: numValue,
+        };
+      } else if (section === "maintenance") {
+        updatedCustomerService.maintenance = {
+          ...updatedCustomerService.maintenance,
+          [field]: numValue,
+        };
+      }
+
+      // تحديث الحالة المحلية أولاً
+      setFormData((prev) => ({
+        ...prev,
+        customerService: updatedCustomerService,
+      }));
+
       // حفظ في Supabase
       await DataService.saveCustomerService(
-        formData.customerService,
+        updatedCustomerService,
         currentPeriod,
       );
 
-      // تحديث السياق
+      // ثم تحديث السياق
       await updateCustomerServiceData({
-        ...formData.customerService,
+        ...updatedCustomerService,
         _period: currentPeriod,
       });
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم حفظ بيانات خدمة العملاء بنجاح في قاعدة البيانات",
+        message: "تم تحديث البيانات بنجاح في قاعدة البيانات",
         type: "success",
       });
     } catch (error) {
-      console.error("خطأ في حفظ البيانات:", error);
+      console.error("خطأ في تحديث البيانات:", error);
       addNotification({
         title: "خطأ",
         message:
           error instanceof Error
             ? error.message
-            : "حدث خطأ أثناء حفظ البيانات",
+            : "حدث خطأ أثناء تحديث البيانات",
         type: "error",
       });
     }
   };
 
-  const handleSatisfactionChange = (
+  const handleSatisfactionChange = async (
     category: SatisfactionKey,
     field: keyof SatisfactionCategory,
     value: string,
@@ -348,37 +340,35 @@ export default function DataEntry() {
       },
     };
 
-    // تحديث الحالة المحلية فقط
-    setFormData((prev) => ({
-      ...prev,
-      maintenanceSatisfaction: updatedSatisfaction,
-    }));
-  };
-
-  const saveSatisfactionData = async () => {
     try {
-      // حفظ في Supabase
-      await DataService.saveSatisfaction(formData.maintenanceSatisfaction, currentPeriod);
+      // تحديث الحالة المحلية أولاً
+      setFormData((prev) => ({
+        ...prev,
+        maintenanceSatisfaction: updatedSatisfaction,
+      }));
 
-      // تحديث السياق
+      // حفظ في Supabase
+      await DataService.saveSatisfaction(updatedSatisfaction, currentPeriod);
+
+      // ثم تحديث السياق
       await updateMaintenanceSatisfactionData({
-        ...formData.maintenanceSatisfaction,
+        ...updatedSatisfaction,
         _period: currentPeriod,
       });
 
       addNotification({
         title: "تم الحفظ",
-        message: "تم حفظ بيانات الرضا بنجاح في قاعدة البيانات",
+        message: "تم تحديث بيانات الرضا بنجاح في قاعدة البيانات",
         type: "success",
       });
     } catch (error) {
-      console.error("خطأ في حفظ بيانات الرضا:", error);
+      console.error("خطأ في تحديث بيانات الرضا:", error);
       addNotification({
         title: "خطأ",
         message:
           error instanceof Error
             ? error.message
-            : "حدث خطأ أثناء حفظ بيانات الرضا",
+            : "حدث خطأ أثناء تحديث بيانات الرضا",
         type: "error",
       });
     }
@@ -515,11 +505,6 @@ export default function DataEntry() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-6 flex justify-end">
-                    <Button onClick={saveMetrics} className="bg-blue-600 hover:bg-blue-700">
-                      حفظ المؤشرات
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -644,11 +629,6 @@ export default function DataEntry() {
                 </CardContent>
               </Card>
             </div>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={saveCustomerService} className="bg-blue-600 hover:bg-blue-700">
-                حفظ بيانات خدمة العملاء
-              </Button>
-            </div>
           </TabsContent>
 
           <TabsContent value="satisfaction">
@@ -726,11 +706,6 @@ export default function DataEntry() {
                 </div>
               </CardContent>
             </Card>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={saveSatisfactionData} className="bg-blue-600 hover:bg-blue-700">
-                حفظ بيانات الرضا
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
