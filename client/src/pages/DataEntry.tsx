@@ -515,6 +515,11 @@ export default function DataEntry() {
                       </div>
                     ))}
                   </div>
+                  <div className="mt-6 flex justify-end">
+                    <Button onClick={saveMetrics} className="bg-blue-600 hover:bg-blue-700">
+                      حفظ المؤشرات
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -639,6 +644,11 @@ export default function DataEntry() {
                 </CardContent>
               </Card>
             </div>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={saveCustomerService} className="bg-blue-600 hover:bg-blue-700">
+                حفظ بيانات خدمة العملاء
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="satisfaction">
@@ -716,6 +726,11 @@ export default function DataEntry() {
                 </div>
               </CardContent>
             </Card>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={saveSatisfactionData} className="bg-blue-600 hover:bg-blue-700">
+                حفظ بيانات الرضا
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
