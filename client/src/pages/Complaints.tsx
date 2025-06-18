@@ -696,11 +696,13 @@ export default function Complaints() {
     };
 
     Object.entries(fieldsToCheck).forEach(([field, label]) => {
-      if (selectedComplaint[field] !== newComplaint[field]) {
+      const oldValue = (selectedComplaint as any)[field];
+      const newValue = (newComplaint as any)[field];
+      if (oldValue !== newValue) {
         updates.push({
           field,
-          oldValue: selectedComplaint[field] || "",
-          newValue: newComplaint[field] || "",
+          oldValue: oldValue || "",
+          newValue: newValue || "",
           updatedBy: user.username,
           updatedAt: now,
         });
