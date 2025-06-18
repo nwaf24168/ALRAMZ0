@@ -235,11 +235,7 @@ export default function DataEntry() {
         await updateMetric(index, updatedMetric);
       }
 
-      addNotification({
-        title: "تم الحفظ",
-        message: "تم حفظ جميع المؤشرات بنجاح في قاعدة البيانات",
-        type: "success",
-      });
+      // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ المؤشرات:", error);
       addNotification({
@@ -308,11 +304,7 @@ export default function DataEntry() {
         _period: currentPeriod,
       });
 
-      addNotification({
-        title: "تم الحفظ",
-        message: "تم حفظ بيانات خدمة العملاء بنجاح في قاعدة البيانات",
-        type: "success",
-      });
+      // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ البيانات:", error);
       addNotification({
@@ -366,11 +358,7 @@ export default function DataEntry() {
         _period: currentPeriod,
       });
 
-      addNotification({
-        title: "تم الحفظ",
-        message: "تم حفظ بيانات الرضا بنجاح في قاعدة البيانات",
-        type: "success",
-      });
+      // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ بيانات الرضا:", error);
       addNotification({
@@ -414,11 +402,7 @@ export default function DataEntry() {
 
       setNewComment("");
 
-      addNotification({
-        title: "تم الإضافة",
-        message: "تم إضافة التعليق بنجاح في قاعدة البيانات",
-        type: "success",
-      });
+      // تم إضافة التعليق بنجاح
     } catch (error) {
       console.error("خطأ في إضافة التعليق:", error);
       addNotification({
