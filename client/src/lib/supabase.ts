@@ -96,6 +96,7 @@ export interface ComplaintUpdateRecord {
 
 export interface BookingRecord {
   id?: number;
+  id?: number;
   booking_id: string;
   booking_date: string;
   customer_name: string;
@@ -123,13 +124,9 @@ export interface BookingRecord {
 }
 
 export interface UserRecord {
-  id?: number;
-  user_id: string;
   username: string;
-  password_hash: string;
+  password: string;
   role: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 // دالة فحص الاتصال مع Supabase

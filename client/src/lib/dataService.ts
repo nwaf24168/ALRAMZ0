@@ -362,15 +362,38 @@ export class DataService {
       updated_by: complaint.updatedBy,
     };
 
-    const { error } = await supabase
+    // التحقق إذا كانت الشكوى موجودة مسبقاً
+    const { data: existingComplaint } = await supabase
       .from("complaints")
-      .upsert(record, { onConflict: "complaint_id" });
+      .select("id")
+      .eq("complaint_id", complaint.id)
+      .single();
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ الشكوى:", error);
-      throw new Error(
-        `خطأ في حفظ الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+    if (existingComplaint) {
+      // تحديث الشكوى الموجودة
+      const { error } = await supabase
+        .from("complaints")
+        .update(record)
+        .eq("complaint_id", complaint.id);
+
+      if (error) {
+        console.error("خطأ Supabase في تحديث الشكوى:", error);
+        throw new Error(
+          `خطأ في تحديث الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+    } else {
+      // إضافة شكوى جديدة
+      const { error } = await supabase
+        .from("complaints")
+        .insert(record);
+
+      if (error) {
+        console.error("خطأ Supabase في إضافة الشكوى:", error);
+        throw new Error(
+          `خطأ في إضافة الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
     }
   }
 
@@ -447,15 +470,38 @@ export class DataService {
       evaluation_score: booking.evaluationScore,
     };
 
-    const { error } = await supabase
+    // التحقق إذا كان الحجز موجود مسبقاً
+    const { data: existingBooking } = await supabase
       .from("bookings")
-      .upsert(record, { onConflict: "booking_id" });
+      .select("id")
+      .eq("booking_id", booking.id)
+      .single();
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ الحجز:", error);
-      throw new Error(
-        `خطأ في حفظ الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+    if (existingBooking) {
+      // تحديث الحجز الموجود
+      const { error } = await supabase
+        .from("bookings")
+        .update(record)
+        .eq("booking_id", booking.id);
+
+      if (error) {
+        console.error("خطأ Supabase في تحديث الحجز:", error);
+        throw new Error(
+          `خطأ في تحديث الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+    } else {
+      // إضافة حجز جديد
+      const { error } = await supabase
+        .from("bookings")
+        .insert(record);
+
+      if (error) {
+        console.error("خطأ Supabase في إضافة الحجز:", error);
+        throw new Error(
+          `خطأ في إضافة الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
     }
   }
 
@@ -515,21 +561,43 @@ export class DataService {
   // إدارة المستخدمين
   static async saveUser(user: any): Promise<void> {
     const record: UserRecord = {
-      user_id: user.id,
       username: user.username,
-      password_hash: user.password,
+      password: user.password,
       role: user.role,
     };
 
-    const { error } = await supabase
+    // التحقق إذا كان المستخدم موجود مسبقاً
+    const { data: existingUser } = await supabase
       .from("users")
-      .upsert(record, { onConflict: "user_id" });
+      .select("id")
+      .eq("username", user.username)
+      .single();
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ المستخدم:", error);
-      throw new Error(
-        `خطأ في حفظ المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+    if (existingUser) {
+      // تحديث المستخدم الموجود
+      const { error } = await supabase
+        .from("users")
+        .update(record)
+        .eq("username", user.username);
+
+      if (error) {
+        console.error("خطأ Supabase في تحديث المستخدم:", error);
+        throw new Error(
+          `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+    } else {
+      // إضافة مستخدم جديد
+      const { error } = await supabase
+        .from("users")
+        .insert(record);
+
+      if (error) {
+        console.error("خطأ Supabase في إضافة المستخدم:", error);
+        throw new Error(
+          `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
     }
   }
 
