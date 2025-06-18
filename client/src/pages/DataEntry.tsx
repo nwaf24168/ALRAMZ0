@@ -117,7 +117,7 @@ export default function DataEntry() {
     setCurrentPeriod,
   } = useMetrics();
 
-
+  const { addNotification } = useNotification();
   const [newComment, setNewComment] = useState("");
   const [formData, setFormData] = useState<FormDataState>({
     metrics: metrics.map((metric) => ({
@@ -172,7 +172,14 @@ export default function DataEntry() {
         });
       } catch (error) {
         console.error("خطأ في تحميل البيانات من Supabase:", error);
-        console.error("خطأ في تحميل البيانات:", error);
+        addNotification({
+          title: "خطأ",
+          message:
+            error instanceof Error
+              ? error.message
+              : "حدث خطأ أثناء تحميل البيانات",
+          type: "error",
+        });
       }
     };
 
@@ -228,10 +235,19 @@ export default function DataEntry() {
         await updateMetric(index, updatedMetric);
       }
 
-      // تم الحفظ بنجاح
+      addNotification({
+        title: "تم الحفظ",
+        message: "تم حفظ جميع المؤشرات بنجاح في قاعدة البيانات",
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في حفظ المؤشرات:", error);
-      console.error("خطأ في حفظ المؤشرات:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء حفظ المؤشرات",
+        type: "error",
+      });
     }
   };
 
@@ -292,10 +308,21 @@ export default function DataEntry() {
         _period: currentPeriod,
       });
 
-      // تم الحفظ بنجاح
+      addNotification({
+        title: "تم الحفظ",
+        message: "تم حفظ بيانات خدمة العملاء بنجاح في قاعدة البيانات",
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في حفظ البيانات:", error);
-      console.error("خطأ في حفظ البيانات:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء حفظ البيانات",
+        type: "error",
+      });
     }
   };
 
@@ -339,10 +366,21 @@ export default function DataEntry() {
         _period: currentPeriod,
       });
 
-      // تم الحفظ بنجاح
+      addNotification({
+        title: "تم الحفظ",
+        message: "تم حفظ بيانات الرضا بنجاح في قاعدة البيانات",
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في حفظ بيانات الرضا:", error);
-      console.error("خطأ في حفظ بيانات الرضا:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء حفظ بيانات الرضا",
+        type: "error",
+      });
     }
   };
 
@@ -376,10 +414,21 @@ export default function DataEntry() {
 
       setNewComment("");
 
-      // تم إضافة التعليق بنجاح
+      addNotification({
+        title: "تم الإضافة",
+        message: "تم إضافة التعليق بنجاح في قاعدة البيانات",
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في إضافة التعليق:", error);
-      console.error("خطأ في إضافة التعليق:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء إضافة التعليق",
+        type: "error",
+      });
     }
   };
 

@@ -498,7 +498,7 @@ interface Complaint {
 
 export default function Complaints() {
   const { user } = useAuth();
-
+  const { addNotification } = useNotification();
   const [complaints, setComplaints] =
     useState<Complaint[]>(complaintsDummyData);
   const [realtimeChannel, setRealtimeChannel] =
@@ -545,6 +545,11 @@ export default function Complaints() {
         }
       } catch (error) {
         console.error("خطأ في تحميل الشكاوى:", error);
+        addNotification({
+          title: "خطأ",
+          message: "حدث خطأ أثناء تحميل الشكاوى",
+          type: "error",
+        });
       }
     };
 
@@ -643,8 +648,19 @@ export default function Complaints() {
       const updatedComplaints = [complaint, ...complaints];
       setComplaints(updatedComplaints);
 
+      addNotification({
+        title: "تمت الإضافة",
+        message: `تم إضافة الشكوى رقم ${newId} بنجاح في قاعدة البيانات`,
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في إضافة الشكوى:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الشكوى",
+        type: "error",
+      });
       return;
     }
 
@@ -716,10 +732,26 @@ export default function Complaints() {
 
       // إظهار إشعار لكل تحديث
       updates.forEach((update) => {
+        addNotification({
+          title: "تم التحديث",
+          message: `تم تحديث ${fieldsToCheck[update.field]} من "${update.oldValue}" إلى "${update.newValue}" بواسطة ${user.username}`,
+          type: "success",
+        });
       });
 
+      addNotification({
+        title: "تم التحديث",
+        message: "تم حفظ التحديثات بنجاح في قاعدة البيانات",
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في تحديث الشكوى:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الشكوى",
+        type: "error",
+      });
     }
   };
 
@@ -738,8 +770,19 @@ export default function Complaints() {
       setComplaints(filteredComplaints);
       setIsDeleteDialogOpen(false);
 
+      addNotification({
+        title: "تم الحذف",
+        message: `تم حذف الشكوى رقم ${selectedComplaint.id} بنجاح من قاعدة البيانات`,
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في حذف الشكوى:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء حذف الشكوى",
+        type: "error",
+      });
     }
   };
 

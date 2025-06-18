@@ -74,7 +74,7 @@ const statusFilters = [
 
 export default function Delivery() {
   const { user } = useAuth();
-
+  const { addNotification } = useNotification();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);
@@ -110,6 +110,11 @@ export default function Delivery() {
         setBookings(bookingsFromDB);
       } catch (error) {
         console.error("خطأ في تحميل الحجوزات:", error);
+        addNotification({
+          title: "خطأ",
+          message: "حدث خطأ أثناء تحميل الحجوزات",
+          type: "error",
+        });
       }
     };
 
@@ -178,8 +183,19 @@ export default function Delivery() {
         status_customer_filled: false,
       });
 
+      addNotification({
+        title: "تمت الإضافة",
+        message: `تم إضافة حجز جديد برقم ${newId} بنجاح في قاعدة البيانات`,
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في إضافة الحجز:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الحجز",
+        type: "error",
+      });
     }
   };
 
@@ -220,8 +236,19 @@ export default function Delivery() {
       setBookings(bookings.map((b) => (b.id === updated.id ? updated : b)));
       setSelectedBooking(null);
 
+      addNotification({
+        title: "تم التحديث",
+        message: `تم تحديث الحجز رقم ${updated.id} بنجاح في قاعدة البيانات`,
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في تحديث الحجز:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الحجز",
+        type: "error",
+      });
     }
   };
 
@@ -299,6 +326,11 @@ export default function Delivery() {
                     );
 
                     setBookings([...importedBookings, ...bookings]);
+                    addNotification({
+                      title: "تم الاستيراد",
+                      message: `تم استيراد ${importedBookings.length} حجز بنجاح`,
+                      type: "success",
+                    });
                   };
                   reader.readAsBinaryString(file);
                 }
@@ -985,8 +1017,21 @@ export default function Delivery() {
                                         (b) => b.id !== booking.id,
                                       ),
                                     );
+                                    addNotification({
+                                      title: "تم الحذف",
+                                      message: `تم حذف الحجز رقم ${booking.id} بنجاح من قاعدة البيانات`,
+                                      type: "success",
+                                    });
                                   } catch (error) {
                                     console.error("خطأ في حذف الحجز:", error);
+                                    addNotification({
+                                      title: "خطأ",
+                                      message:
+                                        error instanceof Error
+                                          ? error.message
+                                          : "حدث خطأ أثناء حذف الحجز",
+                                      type: "error",
+                                    });
                                   }
                                 }
                               }}

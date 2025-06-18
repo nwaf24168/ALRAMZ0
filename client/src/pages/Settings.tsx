@@ -32,7 +32,7 @@ import {
 import { Edit2, Trash2, UserPlus } from "lucide-react";
 
 export default function Settings() {
-
+  const { addNotification } = useNotification();
   const { users, addUser, deleteUser, resetUserPassword } = useAuth();
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);
@@ -59,11 +59,21 @@ export default function Settings() {
   // إضافة مستخدم جديد
   const handleAddUser = async () => {
     if (!newUser.username || !newUser.role || !newUser.password) {
+      addNotification({
+        title: "تنبيه",
+        message: "يرجى تعبئة جميع الحقول المطلوبة",
+        type: "warning",
+      });
       return;
     }
 
     // التحقق من عدم وجود مستخدم باسم المستخدم نفسه
     if (users.some((user) => user.username === newUser.username)) {
+      addNotification({
+        title: "خطأ",
+        message: "اسم المستخدم موجود بالفعل، يرجى اختيار اسم آخر",
+        type: "error",
+      });
       return;
     }
 
@@ -78,6 +88,11 @@ export default function Settings() {
       };
       await DataService.saveUser(userWithId);
 
+      addNotification({
+        title: "تمت الإضافة",
+        message: `تم إضافة المستخدم ${newUser.username} بنجاح في قاعدة البيانات`,
+        type: "success",
+      });
 
       console.log("تمت إضافة مستخدم جديد:", newUser.username);
 
@@ -89,6 +104,14 @@ export default function Settings() {
       });
     } catch (error) {
       console.error("خطأ في إضافة المستخدم:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء إضافة المستخدم",
+        type: "error",
+      });
     }
   };
 
@@ -104,8 +127,19 @@ export default function Settings() {
       // حذف من Supabase
       await DataService.deleteUser(id);
 
+      addNotification({
+        title: "تم الحذف",
+        message: `تم حذف المستخدم ${userToDelete.username} بنجاح من قاعدة البيانات`,
+        type: "success",
+      });
     } catch (error) {
       console.error("خطأ في حذف المستخدم:", error);
+      addNotification({
+        title: "خطأ",
+        message:
+          error instanceof Error ? error.message : "حدث خطأ أثناء حذف المستخدم",
+        type: "error",
+      });
     }
   };
 
@@ -129,8 +163,21 @@ export default function Settings() {
         };
         await DataService.saveUser(updatedUser);
 
+        addNotification({
+          title: "تم التحديث",
+          message: `تم إعادة تعيين كلمة مرور المستخدم ${userToReset.username} بنجاح في قاعدة البيانات`,
+          type: "success",
+        });
       } catch (error) {
         console.error("خطأ في تحديث كلمة المرور:", error);
+        addNotification({
+          title: "خطأ",
+          message:
+            error instanceof Error
+              ? error.message
+              : "حدث خطأ أثناء تحديث كلمة المرور",
+          type: "error",
+        });
       }
     }
   };
