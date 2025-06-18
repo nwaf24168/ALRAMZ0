@@ -36,7 +36,7 @@ export default function Login() {
         <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6">
           <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 flex items-center justify-center">
             <img
-              src="imag/3.svg"
+              src="/images/logo.svg"
               alt="شركة الرمز العقارية"
               className="w-full h-full object-contain drop-shadow-2xl"
             />

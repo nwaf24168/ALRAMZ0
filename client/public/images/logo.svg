@@ -1,0 +1,41 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#blueGradient)" stroke="#ffffff" stroke-width="3"/>
+  
+  <!-- Building Structure -->
+  <rect x="60" y="80" width="80" height="90" fill="url(#goldGradient)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Building Windows -->
+  <rect x="70" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="90" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="110" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
+  
+  <rect x="70" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="90" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="110" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
+  
+  <rect x="70" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="90" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <rect x="110" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
+  
+  <!-- Door -->
+  <rect x="90" y="150" width="20" height="20" fill="#1E40AF" rx="2"/>
+  
+  <!-- Arabic Text الرمز (Al-Ramz) -->
+  <text x="100" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff">الرمز</text>
+  
+  <!-- English Text -->
+  <text x="100" y="190" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">AL-RAMZ REAL ESTATE</text>
+</svg>
