@@ -814,24 +814,47 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
 
   const updateCustomerServiceData = async (data: CustomerServiceData) => {
     try {
-      setCustomerServiceData(data);
+      console.log("تحديث بيانات خدمة العملاء:", data);
 
-      // حفظ في Supabase
+      // حفظ في Supabase أولاً
       await DataService.saveCustomerService(data, currentPeriod);
+      console.log("تم حفظ بيانات خدمة العملاء في Supabase");
+
+      // إعادة تحميل البيانات من قاعدة البيانات للتأكد من التحديث
+      const updatedData = await DataService.getCustomerService(currentPeriod);
+      setCustomerServiceData(updatedData);
 
       // تحديث بيانات المكالمات
       const newCallsData = [
-        { category: "شكاوى", count: data.calls.complaints },
-        { category: "طلبات تواصل", count: data.calls.contactRequests },
-        { category: "طلبات صيانة", count: data.calls.maintenanceRequests },
-        { category: "استفسارات", count: data.calls.inquiries },
-        { category: "مهتمين مكاتب", count: data.calls.officeInterested },
-        { category: "مهتمين مشاريع", count: data.calls.projectsInterested },
-        { category: "عملاء مهتمين", count: data.calls.customersInterested },
+        { category: "شكاوى", count: updatedData.calls.complaints },
+        { category: "طلبات تواصل", count: updatedData.calls.contactRequests },
+        {
+          category: "طلبات صيانة",
+          count: updatedData.calls.maintenanceRequests,
+        },
+        { category: "استفسارات", count: updatedData.calls.inquiries },
+        { category: "مهتمين مكاتب", count: updatedData.calls.officeInterested },
+        {
+          category: "مهتمين مشاريع",
+          count: updatedData.calls.projectsInterested,
+        },
+        {
+          category: "عملاء مهتمين",
+          count: updatedData.calls.customersInterested,
+        },
       ];
       setCallsData(newCallsData);
     } catch (error) {
       console.error("خطأ في حفظ بيانات خدمة العملاء:", error);
+
+      // إعادة تحميل البيانات حتى في حالة الخطأ للتأكد من التزامن
+      try {
+        const updatedData = await DataService.getCustomerService(currentPeriod);
+        setCustomerServiceData(updatedData);
+      } catch (reloadError) {
+        console.error("خطأ في إعادة تحميل البيانات:", reloadError);
+      }
+
       throw error;
     }
   };
@@ -841,11 +864,20 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       console.log("تحديث بيانات الرضا:", data);
-      setMaintenanceSatisfaction(data);
 
-      // حفظ في Supabase
+      // حفظ في Supabase أولاً
       await DataService.saveSatisfaction(data, currentPeriod);
       console.log("تم حفظ بيانات الرضا في Supabase");
+
+      // إعادة تحميل البيانات من قاعدة البيانات للتأكد من التحديث
+      const updatedSatisfaction =
+        await DataService.getSatisfaction(currentPeriod);
+      const updatedComments = await DataService.getComments(currentPeriod);
+
+      setMaintenanceSatisfaction({
+        ...updatedSatisfaction,
+        comments: updatedComments,
+      });
 
       toast({
         title: "تم بنجاح",
@@ -854,6 +886,20 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       console.error("خطأ في حفظ بيانات الرضا:", error);
+
+      // إعادة تحميل البيانات حتى في حالة الخطأ للتأكد من التزامن
+      try {
+        const updatedSatisfaction =
+          await DataService.getSatisfaction(currentPeriod);
+        const updatedComments = await DataService.getComments(currentPeriod);
+        setMaintenanceSatisfaction({
+          ...updatedSatisfaction,
+          comments: updatedComments,
+        });
+      } catch (reloadError) {
+        console.error("خطأ في إعادة تحميل البيانات:", reloadError);
+      }
+
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء حفظ بيانات الرضا",

@@ -229,6 +229,8 @@ const CustomerServiceStats = () => {
         : null;
 
       if (commentToDelete) {
+        console.log("محاولة حذف التعليق:", commentToDelete);
+
         // حذف من Supabase أولاً
         await DataService.deleteCommentByContent(
           commentToDelete.text,
@@ -236,20 +238,33 @@ const CustomerServiceStats = () => {
           currentPeriod,
         );
 
-        // تحديث الحالة المحلية
-        const updatedComments = maintenanceSatisfaction.comments.filter(
-          (_, index) => index !== indexToDelete,
-        );
+        // إعادة تحميل البيانات من قاعدة البيانات للتأكد من الحذف
+        const updatedComments = await DataService.getComments(currentPeriod);
+        const updatedSatisfaction =
+          await DataService.getSatisfaction(currentPeriod);
 
-        setMaintenanceSatisfaction((prev) => ({
-          ...prev,
+        // استخدام updateMaintenanceSatisfactionData لضمان التحديث الصحيح
+        updateMaintenanceSatisfactionData({
+          ...updatedSatisfaction,
           comments: updatedComments,
-        }));
+        });
 
-        console.log("تم حذف التعليق بنجاح");
+        console.log("تم حذف التعليق وإعادة تحميل البيانات بنجاح");
       }
     } catch (error) {
       console.error("خطأ في حذف التعليق:", error);
+      // إعادة تحميل البيانات حتى في حالة الخطأ للتأكد من التزامن
+      try {
+        const updatedComments = await DataService.getComments(currentPeriod);
+        const updatedSatisfaction =
+          await DataService.getSatisfaction(currentPeriod);
+        updateMaintenanceSatisfactionData({
+          ...updatedSatisfaction,
+          comments: updatedComments,
+        });
+      } catch (reloadError) {
+        console.error("خطأ في إعادة تحميل البيانات:", reloadError);
+      }
     }
   };
 

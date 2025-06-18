@@ -17,7 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
-import Analytics from "./pages/Analytics";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import Delivery from "@/pages/Delivery";
 import routes from "tempo-routes";
@@ -98,10 +98,10 @@ const AppRoutes = () => {
           }
         />
         <Route
-          path="/analytics"
+          path="/reports"
           element={
             <ProtectedRoute>
-              <Analytics />
+              <Reports />
             </ProtectedRoute>
           }
         />

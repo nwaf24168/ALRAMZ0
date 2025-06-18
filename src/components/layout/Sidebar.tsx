@@ -40,9 +40,9 @@ export default function Sidebar() {
       path: "/complaints",
     },
     {
-      title: "التحليلات",
-      icon: <LineChart className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
-      path: "/analytics",
+      title: "التقارير",
+      icon: <BarChart3 className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
+      path: "/reports",
     },
     {
       title: "الإعدادات",

@@ -62,7 +62,7 @@
 
 @layer components {
   .metric-card {
-    @apply relative rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md;
+    @apply relative rounded-xl border bg-card p-3 sm:p-4 shadow-sm transition-all hover:shadow-md;
   }
 
   .metric-card-success {
@@ -82,19 +82,19 @@
   }
 
   .dashboard-grid {
-    @apply grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5;
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5;
   }
 
   .chart-container {
-    @apply rounded-xl border bg-card p-4 shadow-sm;
+    @apply rounded-xl border bg-card p-3 sm:p-4 shadow-sm;
   }
 
   .form-container {
-    @apply rounded-xl border bg-card p-6 shadow-sm;
+    @apply rounded-xl border bg-card p-4 sm:p-6 shadow-sm;
   }
 
   .form-grid {
-    @apply grid grid-cols-1 gap-6 md:grid-cols-2;
+    @apply grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2;
   }
 
   .tab-active {

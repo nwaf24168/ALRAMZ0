@@ -119,7 +119,7 @@ export default function Delivery() {
     };
 
     loadBookings();
-  }, []);
+  }, [addNotification]);
 
   // إعداد الاشتراك للوقت الفعلي
   useEffect(() => {
@@ -153,7 +153,16 @@ export default function Delivery() {
   };
 
   const handleAddBooking = async () => {
-    const newId = (bookings.length + 1).toString();
+    if (!newBooking.customerName || !newBooking.project || !newBooking.unit) {
+      addNotification({
+        title: "خطأ",
+        message: "يرجى ملء جميع الحقول المطلوبة",
+        type: "error",
+      });
+      return;
+    }
+
+    const newId = Date.now().toString();
     const booking = {
       id: newId,
       ...(newBooking as Booking),
@@ -163,8 +172,10 @@ export default function Delivery() {
       // حفظ في Supabase
       await DataService.saveBooking(booking);
 
-      // تحديث الحالة المحلية
-      setBookings([booking, ...bookings]);
+      // إعادة تحميل البيانات من قاعدة البيانات
+      const updatedBookings = await DataService.getBookings();
+      setBookings(updatedBookings);
+
       setIsAddDialogOpen(false);
       setNewBooking({
         bookingDate: new Date().toISOString().split("T")[0],
@@ -232,8 +243,10 @@ export default function Delivery() {
       // حفظ في Supabase
       await DataService.saveBooking(updated);
 
-      // تحديث الحالة المحلية
-      setBookings(bookings.map((b) => (b.id === updated.id ? updated : b)));
+      // إعادة تحميل البيانات من قاعدة البيانات
+      const updatedBookings = await DataService.getBookings();
+      setBookings(updatedBookings);
+
       setSelectedBooking(null);
 
       addNotification({
@@ -1008,15 +1021,26 @@ export default function Delivery() {
                                 );
                                 if (confirmed) {
                                   try {
+                                    console.log(
+                                      "محاولة حذف الحجز:",
+                                      booking.id,
+                                    );
+
                                     // حذف من Supabase
                                     await DataService.deleteBooking(booking.id);
-
-                                    // تحديث الحالة المحلية
-                                    setBookings(
-                                      bookings.filter(
-                                        (b) => b.id !== booking.id,
-                                      ),
+                                    console.log(
+                                      "تم حذف الحجز من قاعدة البيانات",
                                     );
+
+                                    // إعادة تحميل البيانات من قاعدة البيانات للتأكد من الحذف
+                                    const updatedBookings =
+                                      await DataService.getBookings();
+                                    console.log(
+                                      "تم إعادة تحميل الحجوزات:",
+                                      updatedBookings.length,
+                                    );
+                                    setBookings(updatedBookings);
+
                                     addNotification({
                                       title: "تم الحذف",
                                       message: `تم حذف الحجز رقم ${booking.id} بنجاح من قاعدة البيانات`,
@@ -1024,6 +1048,19 @@ export default function Delivery() {
                                     });
                                   } catch (error) {
                                     console.error("خطأ في حذف الحجز:", error);
+
+                                    // إعادة تحميل البيانات حتى في حالة الخطأ للتأكد من التزامن
+                                    try {
+                                      const updatedBookings =
+                                        await DataService.getBookings();
+                                      setBookings(updatedBookings);
+                                    } catch (reloadError) {
+                                      console.error(
+                                        "خطأ في إعادة تحميل البيانات:",
+                                        reloadError,
+                                      );
+                                    }
+
                                     addNotification({
                                       title: "خطأ",
                                       message:

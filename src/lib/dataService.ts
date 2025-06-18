@@ -311,10 +311,13 @@ export class DataService {
 
   // حذف تعليق
   static async deleteComment(commentId: number): Promise<void> {
-    const { error } = await supabase
+    console.log("DataService.deleteComment called with ID:", commentId);
+
+    const { data, error } = await supabase
       .from("comments")
       .delete()
-      .eq("id", commentId);
+      .eq("id", commentId)
+      .select();
 
     if (error) {
       console.error("خطأ Supabase في حذف التعليق:", error);
@@ -322,6 +325,8 @@ export class DataService {
         `خطأ في حذف التعليق: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    console.log("تم حذف التعليق بنجاح:", data);
   }
 
   // حذف تعليق بالنص والمستخدم (للتوافق مع الواجهة الحالية)
@@ -330,12 +335,19 @@ export class DataService {
     username: string,
     period: "weekly" | "yearly",
   ): Promise<void> {
-    const { error } = await supabase
+    console.log("DataService.deleteCommentByContent called with:", {
+      text,
+      username,
+      period,
+    });
+
+    const { data, error } = await supabase
       .from("comments")
       .delete()
       .eq("text", text)
       .eq("username", username)
-      .eq("period", period);
+      .eq("period", period)
+      .select();
 
     if (error) {
       console.error("خطأ Supabase في حذف التعليق:", error);
@@ -343,38 +355,74 @@ export class DataService {
         `خطأ في حذف التعليق: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    console.log("تم حذف التعليق بنجاح:", data);
   }
 
   // إدارة الشكاوى
   static async saveComplaint(complaint: any): Promise<void> {
-    const record: ComplaintRecord = {
-      complaint_id: complaint.id,
-      date: complaint.date,
-      customer_name: complaint.customerName,
-      project: complaint.project,
-      unit_number: complaint.unitNumber,
-      source: complaint.source,
-      status: complaint.status,
-      description: complaint.description,
-      action: complaint.action,
-      duration: complaint.duration || 0,
-      created_by: complaint.createdBy,
-      updated_by: complaint.updatedBy,
-    };
+    console.log("DataService.saveComplaint called with:", complaint);
 
-    const { error } = await supabase
-      .from("complaints")
-      .upsert(record, { onConflict: "complaint_id" });
+    try {
+      // التحقق من وجود الشكوى أولاً
+      const { data: existingComplaint } = await supabase
+        .from("complaints")
+        .select("id")
+        .eq("complaint_id", complaint.id)
+        .single();
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ الشكوى:", error);
-      throw new Error(
-        `خطأ في حفظ الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+      const record: Omit<ComplaintRecord, "id"> = {
+        complaint_id: complaint.id,
+        date: complaint.date,
+        customer_name: complaint.customerName,
+        project: complaint.project,
+        unit_number: complaint.unitNumber || null,
+        source: complaint.source,
+        status: complaint.status,
+        description: complaint.description,
+        action: complaint.action || null,
+        duration: complaint.duration || 0,
+        created_by: complaint.createdBy,
+        updated_by: complaint.updatedBy || null,
+      };
+
+      console.log("Prepared record for Supabase:", record);
+
+      let result;
+      if (existingComplaint) {
+        // تحديث الشكوى الموجودة
+        result = await supabase
+          .from("complaints")
+          .update({
+            ...record,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("complaint_id", complaint.id)
+          .select();
+      } else {
+        // إضافة شكوى جديدة
+        result = await supabase.from("complaints").insert(record).select();
+      }
+
+      const { data, error } = result;
+
+      if (error) {
+        console.error("خطأ Supabase في حفظ الشكوى:", error);
+        throw new Error(
+          `خطأ في حفظ الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+
+      console.log("تم حفظ الشكوى بنجاح:", data);
+    } catch (error) {
+      console.error("خطأ في حفظ الشكوى:", error);
+      throw error;
     }
   }
 
   static async getComplaints(): Promise<any[]> {
+    console.log("DataService.getComplaints called");
+
     const { data, error } = await supabase
       .from("complaints")
       .select("*")
@@ -387,7 +435,9 @@ export class DataService {
       );
     }
 
-    return (data || []).map((record) => ({
+    console.log("Raw data from Supabase:", data);
+
+    const mappedData = (data || []).map((record) => ({
       id: record.complaint_id,
       date: record.date,
       customerName: record.customer_name,
@@ -404,13 +454,19 @@ export class DataService {
       updatedAt: record.updated_at,
       updates: [],
     }));
+
+    console.log("Mapped complaints data:", mappedData);
+    return mappedData;
   }
 
   static async deleteComplaint(complaintId: string): Promise<void> {
-    const { error } = await supabase
+    console.log("DataService.deleteComplaint called with ID:", complaintId);
+
+    const { data, error } = await supabase
       .from("complaints")
       .delete()
-      .eq("complaint_id", complaintId);
+      .eq("complaint_id", complaintId)
+      .select();
 
     if (error) {
       console.error("خطأ Supabase في حذف الشكوى:", error);
@@ -418,44 +474,63 @@ export class DataService {
         `خطأ في حذف الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    if (!data || data.length === 0) {
+      console.warn("لم يتم العثور على الشكوى للحذف:", complaintId);
+      throw new Error("لم يتم العثور على الشكوى للحذف");
+    }
+
+    console.log("تم حذف الشكوى بنجاح:", data);
   }
 
   // إدارة الحجوزات والتسليم
   static async saveBooking(booking: any): Promise<void> {
-    const record: BookingRecord = {
-      booking_id: booking.id,
-      booking_date: booking.bookingDate,
-      customer_name: booking.customerName,
-      project: booking.project,
-      building: booking.building,
-      unit: booking.unit,
-      payment_method: booking.paymentMethod,
-      sale_type: booking.saleType,
-      unit_value: booking.unitValue,
-      transfer_date: booking.transferDate,
-      sales_employee: booking.salesEmployee,
-      construction_end_date: booking.constructionEndDate,
-      final_receipt_date: booking.finalReceiptDate,
-      electricity_transfer_date: booking.electricityTransferDate,
-      water_transfer_date: booking.waterTransferDate,
-      delivery_date: booking.deliveryDate,
-      status: booking.status,
-      status_sales_filled: booking.status_sales_filled,
-      status_projects_filled: booking.status_projects_filled,
-      status_customer_filled: booking.status_customer_filled,
-      is_evaluated: booking.isEvaluated || false,
-      evaluation_score: booking.evaluationScore,
-    };
+    try {
+      console.log("DataService.saveBooking called with:", booking);
 
-    const { error } = await supabase
-      .from("bookings")
-      .upsert(record, { onConflict: "booking_id" });
+      const record: BookingRecord = {
+        booking_id: booking.id,
+        booking_date: booking.bookingDate,
+        customer_name: booking.customerName,
+        project: booking.project,
+        building: booking.building || "",
+        unit: booking.unit,
+        payment_method: booking.paymentMethod,
+        sale_type: booking.saleType,
+        unit_value: booking.unitValue || 0,
+        transfer_date: booking.transferDate || null,
+        sales_employee: booking.salesEmployee,
+        construction_end_date: booking.constructionEndDate || null,
+        final_receipt_date: booking.finalReceiptDate || null,
+        electricity_transfer_date: booking.electricityTransferDate || null,
+        water_transfer_date: booking.waterTransferDate || null,
+        delivery_date: booking.deliveryDate || null,
+        status: booking.status,
+        status_sales_filled: booking.status_sales_filled,
+        status_projects_filled: booking.status_projects_filled,
+        status_customer_filled: booking.status_customer_filled,
+        is_evaluated: booking.isEvaluated || false,
+        evaluation_score: booking.evaluationScore || null,
+      };
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ الحجز:", error);
-      throw new Error(
-        `خطأ في حفظ الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+      console.log("Prepared booking record for Supabase:", record);
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .upsert(record, { onConflict: "booking_id" })
+        .select();
+
+      if (error) {
+        console.error("خطأ Supabase في حفظ الحجز:", error);
+        throw new Error(
+          `خطأ في حفظ الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+
+      console.log("تم حفظ الحجز بنجاح:", data);
+    } catch (error) {
+      console.error("خطأ في حفظ الحجز:", error);
+      throw error;
     }
   }
 
@@ -499,10 +574,13 @@ export class DataService {
   }
 
   static async deleteBooking(bookingId: string): Promise<void> {
-    const { error } = await supabase
+    console.log("DataService.deleteBooking called with ID:", bookingId);
+
+    const { data, error } = await supabase
       .from("bookings")
       .delete()
-      .eq("booking_id", bookingId);
+      .eq("booking_id", bookingId)
+      .select();
 
     if (error) {
       console.error("خطأ Supabase في حذف الحجز:", error);
@@ -510,6 +588,13 @@ export class DataService {
         `خطأ في حذف الحجز: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    if (!data || data.length === 0) {
+      console.warn("لم يتم العثور على الحجز للحذف:", bookingId);
+      throw new Error("لم يتم العثور على الحجز للحذف");
+    }
+
+    console.log("تم حذف الحجز بنجاح:", data);
   }
 
   // إدارة المستخدمين
@@ -549,16 +634,19 @@ export class DataService {
     return (data || []).map((record) => ({
       id: record.user_id,
       username: record.username,
-      password: record.password_hash,
+      password: record.password,
       role: record.role,
     }));
   }
 
   static async deleteUser(userId: string): Promise<void> {
-    const { error } = await supabase
+    console.log("DataService.deleteUser called with ID:", userId);
+
+    const { data, error } = await supabase
       .from("users")
       .delete()
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .select();
 
     if (error) {
       console.error("خطأ Supabase في حذف المستخدم:", error);
@@ -566,6 +654,13 @@ export class DataService {
         `خطأ في حذف المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    if (!data || data.length === 0) {
+      console.warn("لم يتم العثور على المستخدم للحذف:", userId);
+      throw new Error("لم يتم العثور على المستخدم للحذف");
+    }
+
+    console.log("تم حذف المستخدم بنجاح:", data);
   }
 
   // إعداد الاشتراكات للوقت الفعلي
