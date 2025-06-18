@@ -32,7 +32,7 @@ import {
 import { Edit2, Trash2, UserPlus } from "lucide-react";
 
 export default function Settings() {
-  const { addNotification } = useNotification();
+
   const { users, addUser, deleteUser, resetUserPassword } = useAuth();
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);

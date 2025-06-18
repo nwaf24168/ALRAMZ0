@@ -74,7 +74,7 @@ const statusFilters = [
 
 export default function Delivery() {
   const { user } = useAuth();
-  const { addNotification } = useNotification();
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);

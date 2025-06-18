@@ -498,7 +498,7 @@ interface Complaint {
 
 export default function Complaints() {
   const { user } = useAuth();
-  const { addNotification } = useNotification();
+
   const [complaints, setComplaints] =
     useState<Complaint[]>(complaintsDummyData);
   const [realtimeChannel, setRealtimeChannel] =
