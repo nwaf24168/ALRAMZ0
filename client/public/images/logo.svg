@@ -1,41 +1,57 @@
-<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#C9B037;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1E40AF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0F172A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E293B;stop-opacity:1" />
     </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="4" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
   </defs>
   
-  <!-- Background Circle -->
-  <circle cx="100" cy="100" r="95" fill="url(#blueGradient)" stroke="#ffffff" stroke-width="3"/>
+  <!-- Background -->
+  <rect width="300" height="300" fill="transparent"/>
   
-  <!-- Building Structure -->
-  <rect x="60" y="80" width="80" height="90" fill="url(#goldGradient)" stroke="#ffffff" stroke-width="2"/>
+  <!-- Main Shield Shape -->
+  <path d="M150 20 L230 60 L230 180 Q230 220 150 280 Q70 220 70 180 L70 60 Z" 
+        fill="url(#blueGradient)" stroke="url(#goldGradient)" stroke-width="4" filter="url(#shadow)"/>
   
-  <!-- Building Windows -->
-  <rect x="70" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="90" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="110" y="90" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <!-- Inner decorative border -->
+  <path d="M150 35 L215 70 L215 175 Q215 205 150 255 Q85 205 85 175 L85 70 Z" 
+        fill="none" stroke="url(#goldGradient)" stroke-width="2" opacity="0.7"/>
   
-  <rect x="70" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="90" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="110" y="110" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <!-- Central Building -->
+  <rect x="130" y="120" width="40" height="80" fill="url(#goldGradient)" rx="3" filter="url(#shadow)"/>
   
-  <rect x="70" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="90" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
-  <rect x="110" y="130" width="12" height="12" fill="#1E40AF" rx="2"/>
+  <!-- Side Buildings -->
+  <rect x="105" y="140" width="20" height="60" fill="url(#goldGradient)" rx="2" opacity="0.8"/>
+  <rect x="175" y="140" width="20" height="60" fill="url(#goldGradient)" rx="2" opacity="0.8"/>
+  
+  <!-- Building Details -->
+  <rect x="135" y="130" width="8" height="8" fill="#0F172A" rx="1"/>
+  <rect x="157" y="130" width="8" height="8" fill="#0F172A" rx="1"/>
+  <rect x="135" y="150" width="8" height="8" fill="#0F172A" rx="1"/>
+  <rect x="157" y="150" width="8" height="8" fill="#0F172A" rx="1"/>
+  <rect x="135" y="170" width="8" height="8" fill="#0F172A" rx="1"/>
+  <rect x="157" y="170" width="8" height="8" fill="#0F172A" rx="1"/>
   
   <!-- Door -->
-  <rect x="90" y="150" width="20" height="20" fill="#1E40AF" rx="2"/>
+  <rect x="142" y="185" width="16" height="15" fill="#0F172A" rx="2"/>
   
-  <!-- Arabic Text الرمز (Al-Ramz) -->
-  <text x="100" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff">الرمز</text>
+  <!-- Arabic Text الرمز -->
+  <text x="150" y="90" font-family="Arial, sans-serif" font-size="28" font-weight="bold" 
+        text-anchor="middle" fill="url(#goldGradient)" filter="url(#shadow)">الرمز</text>
   
-  <!-- English Text -->
-  <text x="100" y="190" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">AL-RAMZ REAL ESTATE</text>
+  <!-- Subtitle -->
+  <text x="150" y="240" font-family="Arial, sans-serif" font-size="14" font-weight="bold" 
+        text-anchor="middle" fill="#FFD700">العقارية</text>
+        
+  <!-- English subtitle -->
+  <text x="150" y="260" font-family="Arial, sans-serif" font-size="10" font-weight="normal" 
+        text-anchor="middle" fill="#C9B037">REAL ESTATE</text>
 </svg>
