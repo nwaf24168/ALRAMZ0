@@ -117,7 +117,7 @@ export default function DataEntry() {
     setCurrentPeriod,
   } = useMetrics();
 
-  const { addNotification } = useNotification();
+
   const [newComment, setNewComment] = useState("");
   const [formData, setFormData] = useState<FormDataState>({
     metrics: metrics.map((metric) => ({
@@ -172,14 +172,7 @@ export default function DataEntry() {
         });
       } catch (error) {
         console.error("خطأ في تحميل البيانات من Supabase:", error);
-        addNotification({
-          title: "خطأ",
-          message:
-            error instanceof Error
-              ? error.message
-              : "حدث خطأ أثناء تحميل البيانات",
-          type: "error",
-        });
+        console.error("خطأ في تحميل البيانات:", error);
       }
     };
 
@@ -238,12 +231,7 @@ export default function DataEntry() {
       // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ المؤشرات:", error);
-      addNotification({
-        title: "خطأ",
-        message:
-          error instanceof Error ? error.message : "حدث خطأ أثناء حفظ المؤشرات",
-        type: "error",
-      });
+      console.error("خطأ في حفظ المؤشرات:", error);
     }
   };
 
@@ -307,14 +295,7 @@ export default function DataEntry() {
       // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ البيانات:", error);
-      addNotification({
-        title: "خطأ",
-        message:
-          error instanceof Error
-            ? error.message
-            : "حدث خطأ أثناء حفظ البيانات",
-        type: "error",
-      });
+      console.error("خطأ في حفظ البيانات:", error);
     }
   };
 
@@ -361,14 +342,7 @@ export default function DataEntry() {
       // تم الحفظ بنجاح
     } catch (error) {
       console.error("خطأ في حفظ بيانات الرضا:", error);
-      addNotification({
-        title: "خطأ",
-        message:
-          error instanceof Error
-            ? error.message
-            : "حدث خطأ أثناء حفظ بيانات الرضا",
-        type: "error",
-      });
+      console.error("خطأ في حفظ بيانات الرضا:", error);
     }
   };
 
@@ -405,14 +379,7 @@ export default function DataEntry() {
       // تم إضافة التعليق بنجاح
     } catch (error) {
       console.error("خطأ في إضافة التعليق:", error);
-      addNotification({
-        title: "خطأ",
-        message:
-          error instanceof Error
-            ? error.message
-            : "حدث خطأ أثناء إضافة التعليق",
-        type: "error",
-      });
+      console.error("خطأ في إضافة التعليق:", error);
     }
   };
 
