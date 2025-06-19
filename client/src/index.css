@@ -6,49 +6,49 @@
 
 @layer base {
   :root {
-    --background: 220 25% 3%;
-    --foreground: 210 40% 95%;
+    --background: 222.2 21% 10%;
+    --foreground: 210 40% 98%;
 
-    --card: 220 30% 6%;
-    --card-foreground: 210 40% 95%;
+    --card: 222.2 25% 12%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 25% 3%;
-    --popover-foreground: 210 40% 95%;
+    --popover: 222.2 21% 10%;
+    --popover-foreground: 210 40% 98%;
 
     --primary: 221.2 83% 53.3%;
-    --primary-foreground: 220 47.4% 11.2%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 8%;
-    --secondary-foreground: 210 40% 95%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 8%;
-    --muted-foreground: 215 20.2% 70%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 8%;
-    --accent-foreground: 210 40% 95%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 210 40% 95%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 12%;
-    --input: 217.2 32.6% 8%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 220 30% 4%;
+    --sidebar-background: 222.2 25% 12%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 8%;
+    --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 12%;
+    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --success: 142 76% 45%;
+    --success: 142 76% 36%;
     --danger: 0 84% 60%;
-    --warning: 38 92% 60%;
-    --info: 199 89% 58%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
   }
 
   * {
@@ -62,65 +62,28 @@
   body {
     @apply bg-background text-foreground font-tajawal;
     direction: rtl;
-    background-color: hsl(220, 25%, 3%) !important;
-  }
-
-  /* إزالة أي خلفيات بيضاء */
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
-  input, textarea, select {
-    background-color: hsl(217, 32%, 8%) !important;
-    color: hsl(210, 40%, 95%) !important;
-    border-color: hsl(217, 32%, 12%) !important;
-  }
-
-  button {
-    background-color: hsl(221, 83%, 53%) !important;
-    color: hsl(0, 0%, 100%) !important;
-  }
-
-  button[variant="outline"], button.outline {
-    background-color: transparent !important;
-    border-color: hsl(217, 32%, 12%) !important;
-    color: hsl(210, 40%, 95%) !important;
-  }
-
-  .bg-white, .bg-gray-50, .bg-gray-100 {
-    background-color: hsl(220, 30%, 6%) !important;
-  }
-
-  .text-black, .text-gray-900 {
-    color: hsl(210, 40%, 95%) !important;
   }
 }
 
 @layer components {
   .metric-card {
     @apply relative rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md;
-    background: hsl(var(--card));
-    border-color: hsl(var(--border));
   }
 
   .metric-card-success {
     @apply border-l-4 border-l-success;
-    border-left-color: hsl(var(--success));
   }
 
   .metric-card-danger {
     @apply border-l-4 border-l-danger;
-    border-left-color: hsl(var(--danger));
   }
 
   .metric-card-info {
     @apply border-l-4 border-l-info;
-    border-left-color: hsl(var(--info));
   }
 
   .metric-card-warning {
     @apply border-l-4 border-l-warning;
-    border-left-color: hsl(var(--warning));
   }
 
   .dashboard-grid {
@@ -129,14 +92,10 @@
 
   .chart-container {
     @apply rounded-xl border bg-card p-4 shadow-sm;
-    background: hsl(var(--card));
-    border-color: hsl(var(--border));
   }
 
   .form-container {
     @apply rounded-xl border bg-card p-6 shadow-sm;
-    background: hsl(var(--card));
-    border-color: hsl(var(--border));
   }
 
   .form-grid {
@@ -145,69 +104,9 @@
 
   .tab-active {
     @apply bg-primary text-white rounded-md;
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
   }
 
   .tab-inactive {
     @apply hover:bg-secondary rounded-md;
-  }
-
-  /* تحسينات إضافية للوضع الداكن */
-  .dark-card {
-    background: hsl(220, 30%, 6%) !important;
-    border: 1px solid hsl(217, 32%, 12%) !important;
-  }
-
-  .dark-text {
-    color: hsl(210, 40%, 95%) !important;
-  }
-
-  .dark-muted-text {
-    color: hsl(215, 20%, 70%) !important;
-  }
-
-  .dark-border {
-    border-color: hsl(217, 32%, 12%) !important;
-  }
-
-  .dark-input {
-    background: hsl(217, 32%, 8%) !important;
-    border-color: hsl(217, 32%, 12%) !important;
-    color: hsl(210, 40%, 95%) !important;
-  }
-
-  .dark-button {
-    background: hsl(221, 83%, 53%) !important;
-    color: hsl(0, 0%, 100%) !important;
-  }
-
-  .dark-button:hover {
-    background: hsl(221, 83%, 48%) !important;
-  }
-
-  /* إصلاح العناصر البيضاء المتبقية */
-  .progress, .progress-bar {
-    background-color: hsl(220, 30%, 6%) !important;
-  }
-
-  .chart-background, svg rect[fill="white"], svg rect[fill="#ffffff"] {
-    fill: hsl(220, 30%, 6%) !important;
-  }
-
-  /* تحسين النصوص والأيقونات */
-  .lucide, .icon {
-    color: hsl(210, 40%, 95%) !important;
-  }
-
-  /* تحسين التبويبات */
-  .tabs-list {
-    background-color: hsl(220, 30%, 6%) !important;
-  }
-
-  /* تحسين القوائم المنسدلة */
-  .dropdown-content, .select-content, .popover-content {
-    background-color: hsl(220, 30%, 6%) !important;
-    border-color: hsl(217, 32%, 12%) !important;
   }
 }
