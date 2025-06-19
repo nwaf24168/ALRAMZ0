@@ -753,3 +753,28 @@ function getSatisfactionTitle(category: string): string {
   };
   return titles[category] || category;
 }
+const handleMetricChange = (index: number, value: string) => {
+    const cleanValue = value.replace(/[^\d.,-]/g, "");
+    const numericValue = parseFloat(cleanValue) || 0;
+
+    // قائمة المؤشرات التي لا تحتاج علامة النسبة المئوية
+    const nonPercentageMetrics = [
+      "عدد الثواني للرد",
+      "سرعة إغلاق طلبات الصيانة", 
+      "عدد إعادة فتح طلب",
+      "عدد العملاء المرشحين"
+    ];
+
+    const currentMetric = metrics[index];
+    const isNonPercentage = nonPercentageMetrics.includes(currentMetric.title);
+
+    setMetrics((prev) => {
+      const newMetrics = [...prev];
+      newMetrics[index] = {
+        ...newMetrics[index],
+        value: isNonPercentage ? cleanValue : cleanValue + "%",
+        displayValue: value,
+      };
+      return newMetrics;
+    });
+  };
