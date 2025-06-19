@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useMetrics } from "@/context/MetricsContext";
 import Layout from "@/components/layout/Layout";
@@ -24,8 +23,6 @@ import {
   AreaChart,
   Area,
   ComposedChart,
-  RadialBarChart,
-  RadialBar,
 } from "recharts";
 import {
   TrendingUp,
@@ -41,7 +38,6 @@ import {
   XCircle,
   Activity,
   BarChart3,
-  PieChart as PieChartIcon,
   Target,
   Award,
   Zap,
@@ -56,9 +52,7 @@ export default function Analytics() {
     setCurrentPeriod,
   } = useMetrics();
 
-  // تم إزالة كود الاشتراكات من هنا لأن MetricsContext يتولى هذا الأمر
-
-  // تحضير البيانات للرسوم البيانية المحسنة
+  // تحضير البيانات للرسوم البيانية من البيانات الفعلية
   const performanceData = metrics.slice(0, 8).map((metric, index) => ({
     name: metric.title.length > 15 ? metric.title.substring(0, 15) + "..." : metric.title,
     fullName: metric.title,
@@ -74,14 +68,14 @@ export default function Analytics() {
     change: metric.change,
   }));
 
-  // بيانات التوزيع المحسنة
+  // بيانات التوزيع من البيانات الفعلية
   const serviceCallsDistribution = [
-    { name: "شكاوى", value: customerServiceData.calls.complaints, color: "#ef4444", icon: "❌" },
-    { name: "طلبات تواصل", value: customerServiceData.calls.contactRequests, color: "#3b82f6", icon: "📞" },
-    { name: "طلبات صيانة", value: customerServiceData.calls.maintenanceRequests, color: "#f59e0b", icon: "🔧" },
-    { name: "استفسارات", value: customerServiceData.calls.inquiries, color: "#10b981", icon: "❓" },
-    { name: "مهتمين مكاتب", value: customerServiceData.calls.officeInterested, color: "#8b5cf6", icon: "🏢" },
-    { name: "مهتمين مشاريع", value: customerServiceData.calls.projectsInterested, color: "#ec4899", icon: "🏗️" },
+    { name: "شكاوى", value: customerServiceData.calls.complaints, color: "#ef4444" },
+    { name: "طلبات تواصل", value: customerServiceData.calls.contactRequests, color: "#3b82f6" },
+    { name: "طلبات صيانة", value: customerServiceData.calls.maintenanceRequests, color: "#f59e0b" },
+    { name: "استفسارات", value: customerServiceData.calls.inquiries, color: "#10b981" },
+    { name: "مهتمين مكاتب", value: customerServiceData.calls.officeInterested, color: "#8b5cf6" },
+    { name: "مهتمين مشاريع", value: customerServiceData.calls.projectsInterested, color: "#ec4899" },
   ];
 
   const maintenanceStatusData = [
@@ -96,16 +90,16 @@ export default function Analytics() {
     item.percentage = maintenanceTotal > 0 ? (item.value / maintenanceTotal) * 100 : 0;
   });
 
-  // بيانات الرضا المحسنة
+  // بيانات الرضا من البيانات الفعلية
   const satisfactionData = [
-    { name: "راضي جداً", value: maintenanceSatisfaction.serviceQuality.veryHappy, color: "#059669", emoji: "😍" },
-    { name: "راضي", value: maintenanceSatisfaction.serviceQuality.happy, color: "#10b981", emoji: "😊" },
-    { name: "محايد", value: maintenanceSatisfaction.serviceQuality.neutral, color: "#f59e0b", emoji: "😐" },
-    { name: "غير راضي", value: maintenanceSatisfaction.serviceQuality.unhappy, color: "#f97316", emoji: "😞" },
-    { name: "غير راضي جداً", value: maintenanceSatisfaction.serviceQuality.veryUnhappy, color: "#dc2626", emoji: "😡" },
+    { name: "راضي جداً", value: maintenanceSatisfaction.serviceQuality.veryHappy, color: "#059669" },
+    { name: "راضي", value: maintenanceSatisfaction.serviceQuality.happy, color: "#10b981" },
+    { name: "محايد", value: maintenanceSatisfaction.serviceQuality.neutral, color: "#f59e0b" },
+    { name: "غير راضي", value: maintenanceSatisfaction.serviceQuality.unhappy, color: "#f97316" },
+    { name: "غير راضي جداً", value: maintenanceSatisfaction.serviceQuality.veryUnhappy, color: "#dc2626" },
   ];
 
-  // حساب نسب الرضا المحسنة
+  // حساب نسب الرضا من البيانات الفعلية
   const calculateSatisfactionPercentage = (data: Record<string, number>) => {
     const total = Object.values(data).reduce((sum, val) => sum + val, 0);
     if (total === 0) return 0;
@@ -122,684 +116,582 @@ export default function Analytics() {
   const closureTimeScore = calculateSatisfactionPercentage(maintenanceSatisfaction.closureTime);
   const firstTimeResolutionScore = calculateSatisfactionPercentage(maintenanceSatisfaction.firstTimeResolution);
 
-  // بيانات الرادار للمقاييس المتقدمة
-  const radarData = [
-    { metric: "جودة الخدمة", value: serviceQualityScore, fullMark: 100 },
-    { metric: "سرعة الإغلاق", value: closureTimeScore, fullMark: 100 },
-    { metric: "الحل الأول", value: firstTimeResolutionScore, fullMark: 100 },
-    { metric: "رضا العملاء", value: Math.round((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3), fullMark: 100 },
-  ];
-
-  // إحصائيات سريعة محسنة
+  // إحصائيات سريعة من البيانات الفعلية
   const quickStats = [
     {
       title: "إجمالي المكالمات",
       value: customerServiceData.calls.total.toLocaleString(),
-      icon: <Phone className="h-6 w-6" />,
-      color: "from-blue-500 to-blue-600",
-      textColor: "text-blue-700",
-      bgColor: "bg-blue-50",
-      change: "+12%",
-      positive: true,
+      icon: <Phone className="h-5 w-5" />,
+      color: "bg-blue-100 text-blue-800"
     },
     {
       title: "طلبات الصيانة النشطة",
       value: customerServiceData.maintenance.inProgress.toLocaleString(),
-      icon: <Wrench className="h-6 w-6" />,
-      color: "from-orange-500 to-orange-600",
-      textColor: "text-orange-700",
-      bgColor: "bg-orange-50",
-      change: "-8%",
-      positive: false,
+      icon: <Wrench className="h-5 w-5" />,
+      color: "bg-orange-100 text-orange-800"
     },
     {
       title: "معدل رضا العملاء",
       value: `${serviceQualityScore}%`,
-      icon: <ThumbsUp className="h-6 w-6" />,
-      color: "from-green-500 to-green-600",
-      textColor: "text-green-700",
-      bgColor: "bg-green-50",
-      change: "+5%",
-      positive: true,
+      icon: <ThumbsUp className="h-5 w-5" />,
+      color: "bg-green-100 text-green-800"
     },
     {
       title: "عدد التعليقات",
       value: maintenanceSatisfaction.comments.length.toLocaleString(),
-      icon: <FileText className="h-6 w-6" />,
-      color: "from-purple-500 to-purple-600",
-      textColor: "text-purple-700",
-      bgColor: "bg-purple-50",
-      change: "+3",
-      positive: true,
+      icon: <FileText className="h-5 w-5" />,
+      color: "bg-purple-100 text-purple-800"
     },
   ];
 
-  // مؤشرات الأداء الرئيسية
+  // مؤشرات الأداء الرئيسية من البيانات الفعلية
   const kpiData = [
     {
       title: "الأهداف المحققة",
       value: metrics.filter(m => m.reachedTarget).length,
       total: metrics.length,
       percentage: Math.round((metrics.filter(m => m.reachedTarget).length / metrics.length) * 100),
-      color: "bg-gradient-to-r from-green-500 to-emerald-500",
-      icon: <Target className="h-5 w-5" />,
+      color: "bg-green-500",
+      icon: <Target className="h-4 w-4" />,
     },
     {
       title: "معدل تحسن الأداء",
       value: metrics.filter(m => m.change > 0).length,
       total: metrics.length,
       percentage: Math.round((metrics.filter(m => m.change > 0).length / metrics.length) * 100),
-      color: "bg-gradient-to-r from-blue-500 to-cyan-500",
-      icon: <TrendingUp className="h-5 w-5" />,
+      color: "bg-blue-500",
+      icon: <TrendingUp className="h-4 w-4" />,
     },
     {
       title: "مستوى الخدمة",
       value: Math.round((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3),
       total: 100,
       percentage: Math.round((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3),
-      color: "bg-gradient-to-r from-purple-500 to-pink-500",
-      icon: <Award className="h-5 w-5" />,
+      color: "bg-purple-500",
+      icon: <Award className="h-4 w-4" />,
     },
   ];
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto p-3 md:p-6 space-y-8">
-          {/* Header المحسن */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
-                    <BarChart3 className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      تحليلات الأداء المتقدمة
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400 text-lg">
-                      نظرة شاملة على أداء النظام ورضا العملاء
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button
-                  variant={currentPeriod === "weekly" ? "default" : "outline"}
-                  onClick={() => setCurrentPeriod("weekly")}
-                  className="px-6 py-3"
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  أسبوعي
-                </Button>
-                <Button
-                  variant={currentPeriod === "yearly" ? "default" : "outline"}
-                  onClick={() => setCurrentPeriod("yearly")}
-                  className="px-6 py-3"
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  سنوي
-                </Button>
-              </div>
-            </div>
-
-            {/* مؤشرات الأداء الرئيسية */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              {kpiData.map((kpi, index) => (
-                <div key={index} className="relative overflow-hidden rounded-xl bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{kpi.title}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {kpi.value}
-                        </span>
-                        <span className="text-sm text-gray-500">/ {kpi.total}</span>
-                      </div>
-                      <Progress value={kpi.percentage} className="h-2" />
-                    </div>
-                    <div className={`p-3 rounded-full ${kpi.color} text-white`}>
-                      {kpi.icon}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <BarChart3 className="h-6 w-6" />
+              تحليلات الأداء المتقدمة
+            </h1>
+            <p className="text-muted-foreground">
+              نظرة شاملة على أداء النظام ورضا العملاء
+            </p>
           </div>
 
-          {/* احصائيات سريعة محسنة */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickStats.map((stat, index) => (
-              <Card key={index} className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5`}></div>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-3">
-                      <p className={`text-sm font-medium ${stat.textColor}`}>
-                        {stat.title}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                          {stat.value}
-                        </p>
-                        <Badge variant={stat.positive ? "default" : "destructive"} className="flex items-center gap-1">
-                          {stat.positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                          {stat.change}
-                        </Badge>
-                      </div>
+          <div className="flex gap-2">
+            <Button
+              variant={currentPeriod === "weekly" ? "default" : "outline"}
+              onClick={() => setCurrentPeriod("weekly")}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              أسبوعي
+            </Button>
+            <Button
+              variant={currentPeriod === "yearly" ? "default" : "outline"}
+              onClick={() => setCurrentPeriod("yearly")}
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              سنوي
+            </Button>
+          </div>
+        </div>
+
+        {/* مؤشرات الأداء الرئيسية */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {kpiData.map((kpi, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {kpi.value}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/ {kpi.total}</span>
                     </div>
-                    <div className={`p-4 rounded-full ${stat.bgColor}`}>
-                      <div className={`${stat.textColor}`}>
-                        {stat.icon}
-                      </div>
-                    </div>
+                    <Progress value={kpi.percentage} className="h-2" />
+                  </div>
+                  <div className={`p-3 rounded-full ${kpi.color} text-white`}>
+                    {kpi.icon}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* احصائيات سريعة */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickStats.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${stat.color}`}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* التبويبات */}
+        <Tabs defaultValue="performance" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              أداء المؤشرات
+            </TabsTrigger>
+            <TabsTrigger value="service" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              خدمة العملاء
+            </TabsTrigger>
+            <TabsTrigger value="satisfaction" className="flex items-center gap-2">
+              <ThumbsUp className="h-4 w-4" />
+              رضا العملاء
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              تحليلات متقدمة
+            </TabsTrigger>
+          </TabsList>
+
+          {/* تبويب أداء المؤشرات */}
+          <TabsContent value="performance" className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    أداء المؤشرات مقابل الأهداف
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={11}
+                        />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="قيمة_حالية" fill="#3b82f6" name="القيمة الحالية" />
+                        <Bar dataKey="الهدف" fill="#10b981" name="الهدف" />
+                        <Line 
+                          type="monotone" 
+                          dataKey="نسبة_الإنجاز" 
+                          stroke="#ef4444" 
+                          strokeWidth={2}
+                          name="نسبة الإنجاز %" 
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
 
-          {/* التبويبات المحسنة */}
-          <Tabs defaultValue="performance" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto bg-white dark:bg-gray-800 rounded-xl p-2 shadow-md">
-              <TabsTrigger value="performance" className="flex items-center gap-2 py-3">
-                <Target className="h-4 w-4" />
-                <span className="hidden sm:inline">أداء المؤشرات</span>
-              </TabsTrigger>
-              <TabsTrigger value="service" className="flex items-center gap-2 py-3">
-                <Phone className="h-4 w-4" />
-                <span className="hidden sm:inline">خدمة العملاء</span>
-              </TabsTrigger>
-              <TabsTrigger value="satisfaction" className="flex items-center gap-2 py-3">
-                <ThumbsUp className="h-4 w-4" />
-                <span className="hidden sm:inline">رضا العملاء</span>
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="flex items-center gap-2 py-3">
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">تحليلات متقدمة</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* تبويب أداء المؤشرات المحسن */}
-            <TabsContent value="performance" className="space-y-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-                        <BarChart3 className="h-5 w-5 text-white" />
-                      </div>
-                      أداء المؤشرات مقابل الأهداف
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[450px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis 
-                            dataKey="name" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            fontSize={11}
-                            tick={{ fill: '#6b7280' }}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    تفاصيل المؤشرات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                    {metrics.slice(0, 8).map((metric, index) => (
+                      <div key={index} className={`flex items-center justify-between p-3 rounded-lg border ${
+                        metric.reachedTarget 
+                          ? 'bg-green-50 border-green-200' 
+                          : 'bg-red-50 border-red-200'
+                      }`}>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{metric.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={metric.reachedTarget ? "default" : "destructive"}>
+                              {metric.value}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">الهدف: {metric.target}</span>
+                          </div>
+                          <Progress 
+                            value={Math.min((parseFloat(metric.value.replace(/[^0-9.-]/g, "")) / parseFloat(metric.target.replace(/[^0-9.-]/g, ""))) * 100, 100)} 
+                            className="mt-2 h-2"
                           />
-                          <YAxis tick={{ fill: '#6b7280' }} />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#fff', 
-                              border: '1px solid #e5e7eb', 
-                              borderRadius: '8px',
-                              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Legend />
-                          <Bar dataKey="قيمة_حالية" fill="url(#blueGradient)" name="القيمة الحالية" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="الهدف" fill="url(#greenGradient)" name="الهدف" radius={[4, 4, 0, 0]} />
-                          <Line 
-                            type="monotone" 
-                            dataKey="نسبة_الإنجاز" 
-                            stroke="#ef4444" 
-                            strokeWidth={3}
-                            name="نسبة الإنجاز %" 
-                            dot={{ r: 6, fill: '#ef4444' }}
-                          />
-                          <defs>
-                            <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                            </linearGradient>
-                            <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.3}/>
-                            </linearGradient>
-                          </defs>
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg">
-                        <Target className="h-5 w-5 text-white" />
-                      </div>
-                      تفاصيل المؤشرات
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4 max-h-[450px] overflow-y-auto">
-                      {metrics.slice(0, 8).map((metric, index) => (
-                        <div key={index} className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-md ${
-                          metric.reachedTarget 
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        </div>
+                        <div className={`flex items-center gap-2 ml-3 ${
+                          metric.reachedTarget ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">{metric.title}</p>
-                            <div className="flex items-center gap-3 mt-2">
-                              <Badge variant={metric.reachedTarget ? "default" : "destructive"}>
-                                {metric.value}
-                              </Badge>
-                              <span className="text-xs text-gray-500">الهدف: {metric.target}</span>
-                            </div>
-                            <Progress 
-                              value={Math.min((parseFloat(metric.value.replace(/[^0-9.-]/g, "")) / parseFloat(metric.target.replace(/[^0-9.-]/g, ""))) * 100, 100)} 
-                              className="mt-2 h-2"
-                            />
-                          </div>
-                          <div className={`flex items-center gap-2 ml-4 ${
-                            metric.reachedTarget ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {metric.reachedTarget ? 
-                              <CheckCircle className="h-5 w-5" /> : 
-                              <XCircle className="h-5 w-5" />
-                            }
-                            <div className="text-right">
-                              <span className="text-sm font-bold">
-                                {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                              </span>
-                            </div>
+                          {metric.reachedTarget ? 
+                            <CheckCircle className="h-4 w-4" /> : 
+                            <XCircle className="h-4 w-4" />
+                          }
+                          <span className="text-sm font-bold">
+                            {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* تبويب خدمة العملاء */}
+          <TabsContent value="service" className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="h-5 w-5" />
+                    توزيع المكالمات حسب النوع
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={serviceCallsDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {serviceCallsDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    حالة طلبات الصيانة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {maintenanceStatusData.map((item, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{item.value}</span>
+                            <Badge variant="outline">{item.percentage.toFixed(1)}%</Badge>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* تبويب خدمة العملاء المحسن */}
-            <TabsContent value="service" className="space-y-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg">
-                        <Phone className="h-5 w-5 text-white" />
+                        <Progress value={item.percentage} className="h-2" />
                       </div>
-                      توزيع المكالمات حسب النوع
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={serviceCallsDistribution}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={120}
-                            dataKey="value"
-                            label={({ name, percent, icon }) => `${icon} ${name}: ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {serviceCallsDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#fff', 
-                              border: 'none', 
-                              borderRadius: '8px',
-                              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg">
-                        <Wrench className="h-5 w-5 text-white" />
-                      </div>
-                      حالة طلبات الصيانة
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {maintenanceStatusData.map((item, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{item.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg">{item.value}</span>
-                              <Badge variant="outline">{item.percentage.toFixed(1)}%</Badge>
-                            </div>
-                          </div>
-                          <Progress value={item.percentage} className="h-3" />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg">
-                      <h4 className="font-semibold mb-2">ملخص الأداء</h4>
+                    ))}
+                    <div className="mt-4 p-3 bg-muted rounded-lg">
+                      <h4 className="font-medium mb-2">ملخص الأداء</h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-600 dark:text-gray-400">معدل الحل:</span>
+                          <span className="text-muted-foreground">معدل الحل:</span>
                           <span className="font-bold ml-2">
                             {maintenanceTotal > 0 ? ((customerServiceData.maintenance.resolved / maintenanceTotal) * 100).toFixed(1) : 0}%
                           </span>
                         </div>
                         <div>
-                          <span className="text-gray-600 dark:text-gray-400">إجمالي الطلبات:</span>
+                          <span className="text-muted-foreground">إجمالي الطلبات:</span>
                           <span className="font-bold ml-2">{maintenanceTotal}</span>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* تبويب رضا العملاء المحسن */}
-            <TabsContent value="satisfaction" className="space-y-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg">
-                        <ThumbsUp className="h-5 w-5 text-white" />
-                      </div>
-                      مستوى رضا العملاء
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={satisfactionData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={120}
-                            dataKey="value"
-                            label={({ name, percent, emoji }) => `${emoji} ${name}: ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {satisfactionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#fff', 
-                              border: 'none', 
-                              borderRadius: '8px',
-                              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg">
-                        <Award className="h-5 w-5 text-white" />
-                      </div>
-                      مقاييس الرضا المفصلة
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-blue-800 dark:text-blue-400">جودة الخدمة</h4>
-                            <Badge className="bg-blue-600">{serviceQualityScore}%</Badge>
-                          </div>
-                          <Progress value={serviceQualityScore} className="h-3" />
-                        </div>
-
-                        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-green-800 dark:text-green-400">سرعة الإغلاق</h4>
-                            <Badge className="bg-green-600">{closureTimeScore}%</Badge>
-                          </div>
-                          <Progress value={closureTimeScore} className="h-3" />
-                        </div>
-
-                        <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-purple-800 dark:text-purple-400">الحل من أول مرة</h4>
-                            <Badge className="bg-purple-600">{firstTimeResolutionScore}%</Badge>
-                          </div>
-                          <Progress value={firstTimeResolutionScore} className="h-3" />
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-xl">
-                        <h4 className="font-semibold mb-3">الرضا العام</h4>
-                        <div className="text-center">
-                          <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                            {Math.round((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3)}%
-                          </div>
-                          <p className="text-gray-600 dark:text-gray-400">متوسط درجة الرضا</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* التعليقات المحسنة */}
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <div className="p-2 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg">
-                      <FileText className="h-5 w-5 text-white" />
-                    </div>
-                    تعليقات وملاحظات العملاء
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
-                    {maintenanceSatisfaction.comments.map((comment, index) => (
-                      <div key={index} className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
-                        <p className="text-sm mb-3 leading-relaxed">{comment.text}</p>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                          <span className="font-medium">{comment.username}</span>
-                          <span>{comment.date} - {comment.time}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {maintenanceSatisfaction.comments.length === 0 && (
-                      <div className="col-span-full text-center py-12">
-                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500 text-lg">لا توجد تعليقات متاحة حالياً</p>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </div>
+          </TabsContent>
 
-            {/* تبويب التحليلات المتقدمة المحسن */}
-            <TabsContent value="insights" className="space-y-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg">
-                        <AlertTriangle className="h-5 w-5 text-white" />
+          {/* تبويب رضا العملاء */}
+          <TabsContent value="satisfaction" className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ThumbsUp className="h-5 w-5" />
+                    مستوى رضا العملاء
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={satisfactionData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {satisfactionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    مقاييس الرضا المفصلة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-blue-800">جودة الخدمة</h4>
+                        <Badge className="bg-blue-600">{serviceQualityScore}%</Badge>
                       </div>
-                      نقاط تحتاج تحسين
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {metrics
-                        .filter(metric => !metric.reachedTarget)
-                        .slice(0, 6)
-                        .map((metric, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{metric.title}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                الحالي: {metric.value} | الهدف: {metric.target}
-                              </p>
-                              <Progress value={Math.abs(metric.change)} className="mt-2 h-2" />
-                            </div>
-                            <div className="text-red-600 font-bold text-sm ml-4">
-                              {Math.abs(metric.change).toFixed(1)}% نقص
-                            </div>
-                          </div>
-                        ))}
+                      <Progress value={serviceQualityScore} className="h-2" />
                     </div>
-                  </CardContent>
-                </Card>
 
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg">
-                        <CheckCircle className="h-5 w-5 text-white" />
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-green-800">سرعة الإغلاق</h4>
+                        <Badge className="bg-green-600">{closureTimeScore}%</Badge>
                       </div>
-                      نقاط قوة النظام
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {metrics
-                        .filter(metric => metric.reachedTarget)
-                        .slice(0, 6)
-                        .map((metric, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{metric.title}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                الحالي: {metric.value} | الهدف: {metric.target}
-                              </p>
-                              <Progress value={100} className="mt-2 h-2" />
-                            </div>
-                            <div className="text-green-600 font-bold text-sm ml-4">
-                              {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                            </div>
-                          </div>
-                        ))}
+                      <Progress value={closureTimeScore} className="h-2" />
                     </div>
-                  </CardContent>
-                </Card>
 
-                {/* ملخص التحليلات المحسن */}
-                <Card className="xl:col-span-2 shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg">
-                        <Zap className="h-5 w-5 text-white" />
+                    <div className="p-3 bg-purple-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-purple-800">الحل من أول مرة</h4>
+                        <Badge className="bg-purple-600">{firstTimeResolutionScore}%</Badge>
                       </div>
-                      ملخص التحليلات والتوصيات
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg flex items-center gap-2">
-                          <BarChart3 className="h-5 w-5" />
-                          الإحصائيات العامة
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <span>عدد المؤشرات المحققة:</span>
-                            <Badge variant="default" className="text-lg px-3 py-1">
-                              {metrics.filter(m => m.reachedTarget).length} / {metrics.length}
-                            </Badge>
+                      <Progress value={firstTimeResolutionScore} className="h-2" />
+                    </div>
+
+                    <div className="p-3 bg-muted rounded-lg">
+                      <h4 className="font-medium mb-2">الرضا العام</h4>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold mb-1">
+                          {Math.round((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3)}%
+                        </div>
+                        <p className="text-muted-foreground">متوسط درجة الرضا</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* التعليقات */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  تعليقات وملاحظات العملاء
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto">
+                  {maintenanceSatisfaction.comments.map((comment, index) => (
+                    <div key={index} className="p-3 bg-muted rounded-lg border">
+                      <p className="text-sm mb-2">{comment.text}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium">{comment.username}</span>
+                        <span>{comment.date} - {comment.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {maintenanceSatisfaction.comments.length === 0 && (
+                    <div className="col-span-full text-center py-8">
+                      <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">لا توجد تعليقات متاحة حالياً</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* تبويب التحليلات المتقدمة */}
+          <TabsContent value="insights" className="space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    نقاط تحتاج تحسين
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {metrics
+                      .filter(metric => !metric.reachedTarget)
+                      .slice(0, 6)
+                      .map((metric, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{metric.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              الحالي: {metric.value} | الهدف: {metric.target}
+                            </p>
+                            <Progress value={Math.abs(metric.change)} className="mt-2 h-2" />
                           </div>
-                          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <span>معدل رضا العملاء العام:</span>
-                            <Badge variant="default" className="text-lg px-3 py-1">
-                              {((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3).toFixed(1)}%
-                            </Badge>
-                          </div>
-                          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <span>إجمالي المكالمات المعالجة:</span>
-                            <Badge variant="default" className="text-lg px-3 py-1">
-                              {customerServiceData.calls.total.toLocaleString()}
-                            </Badge>
+                          <div className="text-red-600 font-bold text-sm ml-3">
+                            {Math.abs(metric.change).toFixed(1)}% نقص
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg flex items-center gap-2">
-                          <Zap className="h-5 w-5" />
-                          التوصيات المقترحة
-                        </h4>
-                        <div className="space-y-3">
-                          {serviceQualityScore < 70 && (
-                            <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400">
-                              <div className="flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4" />
-                                <span className="font-medium">تحسين جودة الخدمة المقدمة للعملاء</span>
-                              </div>
-                            </div>
-                          )}
-                          {customerServiceData.maintenance.inProgress > customerServiceData.maintenance.resolved && (
-                            <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                <span className="font-medium">تسريع معالجة طلبات الصيانة المعلقة</span>
-                              </div>
-                            </div>
-                          )}
-                          {metrics.filter(m => !m.reachedTarget).length > metrics.length / 2 && (
-                            <div className="p-3 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400">
-                              <div className="flex items-center gap-2">
-                                <Target className="h-4 w-4" />
-                                <span className="font-medium">مراجعة استراتيجية تحقيق الأهداف</span>
-                              </div>
-                            </div>
-                          )}
-                          {serviceQualityScore >= 80 && (
-                            <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800 text-green-800 dark:text-green-400">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="font-medium">الحفاظ على مستوى الخدمة الممتاز</span>
-                              </div>
-                            </div>
-                          )}
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    نقاط قوة النظام
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {metrics
+                      .filter(metric => metric.reachedTarget)
+                      .slice(0, 6)
+                      .map((metric, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{metric.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              الحالي: {metric.value} | الهدف: {metric.target}
+                            </p>
+                            <Progress value={100} className="mt-2 h-2" />
+                          </div>
+                          <div className="text-green-600 font-bold text-sm ml-3">
+                            {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ملخص التحليلات */}
+              <Card className="xl:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    ملخص التحليلات والتوصيات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        الإحصائيات العامة
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center p-2 bg-muted rounded">
+                          <span>عدد المؤشرات المحققة:</span>
+                          <Badge variant="default">
+                            {metrics.filter(m => m.reachedTarget).length} / {metrics.length}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-muted rounded">
+                          <span>معدل رضا العملاء العام:</span>
+                          <Badge variant="default">
+                            {((serviceQualityScore + closureTimeScore + firstTimeResolutionScore) / 3).toFixed(1)}%
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-muted rounded">
+                          <span>إجمالي المكالمات المعالجة:</span>
+                          <Badge variant="default">
+                            {customerServiceData.calls.total.toLocaleString()}
+                          </Badge>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        التوصيات المقترحة
+                      </h4>
+                      <div className="space-y-2">
+                        {serviceQualityScore < 70 && (
+                          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="text-sm">تحسين جودة الخدمة المقدمة للعملاء</span>
+                            </div>
+                          </div>
+                        )}
+                        {customerServiceData.maintenance.inProgress > customerServiceData.maintenance.resolved && (
+                          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-sm">تسريع معالجة طلبات الصيانة المعلقة</span>
+                            </div>
+                          </div>
+                        )}
+                        {metrics.filter(m => !m.reachedTarget).length > metrics.length / 2 && (
+                          <div className="p-2 bg-red-50 rounded border border-red-200 text-red-800">
+                            <div className="flex items-center gap-2">
+                              <Target className="h-4 w-4" />
+                              <span className="text-sm">مراجعة استراتيجية تحقيق الأهداف</span>
+                            </div>
+                          </div>
+                        )}
+                        {serviceQualityScore >= 80 && (
+                          <div className="p-2 bg-green-50 rounded border border-green-200 text-green-800">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm">الحفاظ على مستوى الخدمة الممتاز</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
