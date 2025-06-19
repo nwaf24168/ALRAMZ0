@@ -143,7 +143,7 @@ export interface MetricsContextType {
 const defaultMetrics = [
   {
     title: "نسبة الترشيح للعملاء الجدد",
-    value: "65%",
+    value: "65",
     target: "65%",
     icon: null,
     change: 2.4,
@@ -153,7 +153,7 @@ const defaultMetrics = [
   },
   {
     title: "نسبة الترشيح بعد السنة",
-    value: "67%",
+    value: "67",
     target: "65%",
     icon: null,
     change: 3.1,
@@ -193,7 +193,7 @@ const defaultMetrics = [
   },
   {
     title: "عدد الثواني للرد",
-    value: "20 ثانية",
+    value: "20",
     target: "3 ثواني",
     icon: null,
     change: 566.7,
@@ -223,7 +223,7 @@ const defaultMetrics = [
   },
   {
     title: "سرعة إغلاق طلبات الصيانة",
-    value: "4.45 يوم",
+    value: "4.45",
     target: "5 أيام",
     icon: null,
     change: 48.3,
@@ -253,7 +253,7 @@ const defaultMetrics = [
   },
   {
     title: "معدل التحول",
-    value: "2%",
+    value: "2",
     target: "2%",
     icon: null,
     change: 1.5,
@@ -346,7 +346,7 @@ const defaultYearlyMetrics = [
   },
   {
     title: "عدد الثواني للرد",
-    value: "2.5 ثانية",
+    value: "2.5",
     target: "3 ثواني",
     icon: null,
     change: 16.7,
@@ -376,7 +376,7 @@ const defaultYearlyMetrics = [
   },
   {
     title: "سرعة إغلاق طلبات الصيانة",
-    value: "2.2 يوم",
+    value: "2.2",
     target: "3 أيام",
     icon: null,
     change: 26.7,
