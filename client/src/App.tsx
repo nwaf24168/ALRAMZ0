@@ -21,7 +21,6 @@ import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import Reception from "@/pages/Reception";
 
 
 const queryClient = new QueryClient({
@@ -119,14 +118,6 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/reception"
-          element={
-            <ProtectedRoute>
-              <Reception />
             </ProtectedRoute>
           }
         />
