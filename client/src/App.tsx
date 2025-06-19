@@ -21,6 +21,7 @@ import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import QualityCalls from "./pages/QualityCalls";
 
 
 const queryClient = new QueryClient({
@@ -102,6 +103,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <DeliveryAnalytics />
+            </ProtectedRoute>
+          }
+        />
+              <Route
+          path="/quality-calls"
+          element={
+            <ProtectedRoute>
+              <QualityCalls />
             </ProtectedRoute>
           }
         />
