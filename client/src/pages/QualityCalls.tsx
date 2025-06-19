@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,7 +126,7 @@ const QualityCalls = () => {
       }
     };
     reader.readAsArrayBuffer(file);
-    
+
     // إعادة تعيين قيمة الإدخال لإتاحة رفع نفس الملف مرة أخرى
     event.target.value = '';
   };
@@ -197,7 +196,7 @@ const QualityCalls = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "مكالمات الجودة");
     XLSX.writeFile(workbook, `quality_calls_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
+
     addNotification({
       title: "تم التصدير",
       message: "تم تصدير البيانات بنجاح",
@@ -515,7 +514,7 @@ const QualityCalls = () => {
                                     </SelectContent>
                                   </Select>
                                 </div>
-                                
+
                                 <div>
                                   <Label htmlFor="reason">سبب التأهيل</Label>
                                   <Input
