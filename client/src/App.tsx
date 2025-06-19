@@ -22,6 +22,7 @@ import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import QualityCalls from "./pages/QualityCalls";
+import Reception from "./pages/Reception";
 
 
 const queryClient = new QueryClient({
@@ -114,22 +115,8 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+            <Route path="/reception" element={<Reception />} />
+          
 
         {/* Add this before the catchall route */}
         {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}

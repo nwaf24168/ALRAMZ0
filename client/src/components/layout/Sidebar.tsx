@@ -15,6 +15,7 @@ import {
   BarChart3, // Added import for BarChart3 icon
   PackageCheck,
   Phone,
+  Headphones,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -65,6 +66,11 @@ export default function Sidebar() {
       title: "مكالمات الجودة",
       icon: <Phone className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/quality-calls",
+    },
+    {
+      title: "الاستقبال",
+      icon: <Headphones className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
+      path: "/reception",
     },
   ];
 
