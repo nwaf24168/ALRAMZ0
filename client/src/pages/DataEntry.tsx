@@ -193,13 +193,24 @@ export default function DataEntry() {
     if (isNaN(numValue) && value !== "" && value !== "-") return;
 
     const metric = metrics[index];
+    
+    // قائمة المؤشرات التي لا تحتاج علامة النسبة المئوية
+    const nonPercentageMetrics = [
+      "عدد الثواني للرد",
+      "سرعة إغلاق طلبات الصيانة", 
+      "عدد إعادة فتح طلب",
+      "عدد العملاء المرشحين"
+    ];
+
+    const isNonPercentage = nonPercentageMetrics.includes(metric.title);
+    
     const targetValue = parseFloat(
       metric.target.replace(/[^0-9.-]/g, "") || "0",
     );
 
     const updatedMetric = {
       ...metric,
-      value: cleanValue + "%",
+      value: isNonPercentage ? cleanValue : cleanValue + "%",
       change:
         targetValue !== 0 ? ((numValue - targetValue) / targetValue) * 100 : 0,
       isPositive: !metric.isLowerBetter
