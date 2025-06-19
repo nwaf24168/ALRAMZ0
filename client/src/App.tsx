@@ -107,6 +107,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
               <Route
           path="/quality-calls"
           element={
@@ -116,6 +124,14 @@ const AppRoutes = () => {
           }
         />
             <Route path="/reception" element={<Reception />} />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
           
 
         {/* Add this before the catchall route */}
