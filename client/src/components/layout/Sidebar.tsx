@@ -16,6 +16,7 @@ import {
   PackageCheck,
   Phone,
   TrendingUp,
+  Headphones,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -71,16 +72,6 @@ export default function Sidebar() {
       title: "الاستقبال",
       icon: <Headphones className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/reception",
-    },
-    {
-      title: "التحليلات",
-      icon: <TrendingUp className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
-      path: "/analytics",
-    },
-    {
-      title: "الإعدادات",
-      icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
-      path: "/settings",
     },
   ];
 
