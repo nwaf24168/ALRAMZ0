@@ -13,6 +13,7 @@ import {
   User,
   Package,
   BarChart3, // Added import for BarChart3 icon
+  PackageCheck,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -53,6 +54,11 @@ export default function Sidebar() {
       title: "قسم التسليم",
       icon: <Package className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/delivery",
+    },
+    {
+      title: "تحليل قسم التسليم",
+      icon: <PackageCheck className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
+      path: "/delivery-analytics",
     },
   ];
 

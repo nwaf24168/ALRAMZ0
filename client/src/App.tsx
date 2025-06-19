@@ -14,12 +14,13 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { MetricsProvider } from "@/context/MetricsContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
+import Delivery from "@/pages/Delivery";
+import DeliveryAnalytics from './pages/DeliveryAnalytics';
 import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
-import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Delivery from "@/pages/Delivery";
 
 
 const queryClient = new QueryClient({
@@ -93,6 +94,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Delivery />
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/delivery-analytics"
+          element={
+            <ProtectedRoute>
+              <DeliveryAnalytics />
             </ProtectedRoute>
           }
         />
