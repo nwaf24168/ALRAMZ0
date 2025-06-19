@@ -127,6 +127,54 @@ const QualityCalls = () => {
       }
     };
     reader.readAsArrayBuffer(file);
+    
+    // إعادة تعيين قيمة الإدخال لإتاحة رفع نفس الملف مرة أخرى
+    event.target.value = '';
+  };
+
+  // إضافة عميل جديد يدوياً
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    customerName: '',
+    phoneNumber: '',
+    salesEmployee: '',
+    salesResponse: ''
+  });
+
+  const addNewCustomer = () => {
+    if (!newCustomer.customerName.trim() || !newCustomer.phoneNumber.trim()) {
+      addNotification({
+        title: "بيانات ناقصة",
+        message: "يرجى إدخال اسم العميل ورقم الجوال على الأقل",
+        type: "error",
+      });
+      return;
+    }
+
+    const customer: Customer = {
+      id: `customer_${Date.now()}`,
+      customerName: newCustomer.customerName.trim(),
+      phoneNumber: newCustomer.phoneNumber.trim(),
+      salesEmployee: newCustomer.salesEmployee.trim(),
+      salesResponse: newCustomer.salesResponse.trim(),
+      status: "غير مؤهل",
+      callAttempts: 0,
+    };
+
+    setCustomers(prev => [...prev, customer]);
+    setNewCustomer({
+      customerName: '',
+      phoneNumber: '',
+      salesEmployee: '',
+      salesResponse: ''
+    });
+    setIsAddDialogOpen(false);
+
+    addNotification({
+      title: "تم الإضافة",
+      message: "تم إضافة العميل بنجاح",
+      type: "success",
+    });
   };
 
   // تصدير البيانات
@@ -242,6 +290,69 @@ const QualityCalls = () => {
                 رفع ملف
               </Button>
             </label>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  إضافة عميل
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>إضافة عميل جديد</DialogTitle>
+                  <DialogDescription>
+                    أدخل بيانات العميل الجديد
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="customerName">اسم العميل *</Label>
+                    <Input
+                      id="customerName"
+                      value={newCustomer.customerName}
+                      onChange={(e) => setNewCustomer(prev => ({ ...prev, customerName: e.target.value }))}
+                      placeholder="أدخل اسم العميل"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phoneNumber">رقم الجوال *</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={newCustomer.phoneNumber}
+                      onChange={(e) => setNewCustomer(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      placeholder="أدخل رقم الجوال"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="salesEmployee">موظف المبيعات</Label>
+                    <Input
+                      id="salesEmployee"
+                      value={newCustomer.salesEmployee}
+                      onChange={(e) => setNewCustomer(prev => ({ ...prev, salesEmployee: e.target.value }))}
+                      placeholder="أدخل اسم موظف المبيعات"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="salesResponse">رد موظف المبيعات</Label>
+                    <Textarea
+                      id="salesResponse"
+                      value={newCustomer.salesResponse}
+                      onChange={(e) => setNewCustomer(prev => ({ ...prev, salesResponse: e.target.value }))}
+                      placeholder="أدخل رد موظف المبيعات"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                    <Button onClick={addNewCustomer}>
+                      إضافة العميل
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button onClick={exportToExcel} variant="outline">
               <Download className="h-4 w-4 mr-2" />
               تصدير
