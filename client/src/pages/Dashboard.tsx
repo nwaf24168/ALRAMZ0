@@ -35,10 +35,18 @@ const MetricCard = ({
     isLowerBetter: boolean,
     title: string,
   ): string => {
+    // قائمة المؤشرات التي هي أرقام صحيحة وليست نسب مئوية
+    const nonPercentageMetrics = [
+      "عدد الثواني للرد",
+      "سرعة إغلاق طلبات الصيانة", 
+      "عدد إعادة فتح طلب",
+      "عدد العملاء المرشحين"
+    ];
+
     // Special handling for call response rate
     if (title === "معدل الرد على المكالمات") {
       const numValue = parseFloat(value.replace(/[^0-9.-]/g, ""));
-      if (numValue > 80) {
+      if (numValue >= 80) {
         return "bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 text-emerald-500 border-emerald-500/20";
       }
       return "bg-gradient-to-br from-red-500/20 to-red-500/10 text-red-500 border-red-500/20";

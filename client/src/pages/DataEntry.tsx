@@ -194,7 +194,7 @@ export default function DataEntry() {
 
     const metric = metrics[index];
     
-    // قائمة المؤشرات التي لا تحتاج علامة النسبة المئوية
+    // قائمة المؤشرات التي هي أرقام صحيحة وليست نسب مئوية
     const nonPercentageMetrics = [
       "عدد الثواني للرد",
       "سرعة إغلاق طلبات الصيانة", 
