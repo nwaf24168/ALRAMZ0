@@ -1611,3 +1611,102 @@ export default function Complaints() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="edit-description"
+                    className="text-xs text-gray-400"
+                  >
+                    تفاصيل الشكوى
+                  </Label>
+                  <div className="relative">
+                    <Textarea
+                      id="edit-description"
+                      value={newComplaint.description}
+                      onChange={(e) =>
+                        handleNewComplaintChange("description", e.target.value)
+                      }
+                      placeholder="أدخل تفاصيل الشكوى هنا..."
+                      className="min-h-[150px] bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white placeholder:text-gray-500 resize-y"
+                      required
+                    />
+                    <AlertCircle className="absolute right-3 top-3 h-4 w-4 text-yellow-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
+                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                  الإجراء المتخذ
+                </h3>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-action"
+                    className="text-xs text-gray-400"
+                  >
+                    الإجراء المتخذ
+                  </Label>
+                  <div className="relative">
+                    <Textarea
+                      id="edit-action"
+                      value={newComplaint.action}
+                      onChange={(e) =>
+                        handleNewComplaintChange("action", e.target.value)
+                      }
+                      placeholder="أدخل الإجراء المتخذ (إن وجد)"
+                      className="min-h-[120px] bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white placeholder:text-gray-500 resize-y"
+                    />
+                    <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-green-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-8 border-t border-gray-800/50 pt-6">
+            <Button
+              onClick={() => setIsEditDialogOpen(false)}
+              variant="outline"
+              className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleUpdateComplaint}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              حفظ التغييرات
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* مربع حوار تأكيد الحذف */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-[#1a1c23] border border-gray-800/50">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-400" />
+              تأكيد حذف الشكوى
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              هل أنت متأكد من رغبتك في حذف الشكوى رقم{" "}
+              <span className="font-bold text-white">
+                {selectedComplaint?.id}
+              </span>
+              ؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700">
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedComplaint && handleDelete(selectedComplaint.id)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              حذف الشكوى
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Layout>
+  );
+}
