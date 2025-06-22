@@ -262,15 +262,26 @@ const QualityCalls = () => {
         let savedCount = 0;
         let errorCount = 0;
 
-        for (const customer of validCustomers) {
+        // استخدام Promise.all لحفظ جميع العملاء
+        const savePromises = validCustomers.map(async (customer) => {
           try {
             await saveCustomerToDB(customer);
-            savedCount++;
+            return { success: true, customer };
           } catch (error) {
             console.error('خطأ في حفظ العميل:', customer.customerName, error);
+            return { success: false, customer, error };
+          }
+        });
+
+        const results = await Promise.all(savePromises);
+        
+        results.forEach(result => {
+          if (result.success) {
+            savedCount++;
+          } else {
             errorCount++;
           }
-        }
+        });
 
         // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
         if (savedCount > 0) {
