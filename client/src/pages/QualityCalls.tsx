@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNotification } from "@/context/NotificationContext";
+import { useAuth } from "@/context/AuthContext";
+import { DataService } from "@/lib/dataService";
 import { 
   Upload, 
   Download, 
@@ -53,7 +55,9 @@ interface Customer {
 
 const QualityCalls = () => {
   const { addNotification } = useNotification();
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -67,6 +71,11 @@ const QualityCalls = () => {
   const qualifiedCustomers = customers.filter(c => c.status === "مؤهل").length;
   const conversionRate = totalCustomers > 0 ? ((qualifiedCustomers / totalCustomers) * 100).toFixed(1) : "0";
   const pendingCustomers = customers.filter(c => c.status === "قيد المراجعة").length;
+
+  // تحميل البيانات من قاعدة البيانات عند بدء التطبيق
+  useEffect(() => {
+    loadQualityCallsFromDB();
+  }, []);
 
   // تحديث القائمة المفلترة عند تغيير البحث أو الفلتر
   useEffect(() => {
@@ -86,6 +95,65 @@ const QualityCalls = () => {
 
     setFilteredCustomers(filtered);
   }, [customers, searchTerm, statusFilter]);
+
+  // تحميل مكالمات الجودة من قاعدة البيانات
+  const loadQualityCallsFromDB = async () => {
+    try {
+      setIsLoading(true);
+      const qualityCalls = await DataService.getQualityCalls();
+      
+      const formattedCustomers: Customer[] = qualityCalls.map(call => ({
+        id: call.id,
+        customerName: call.customer_name,
+        phoneNumber: call.phone_number,
+        salesEmployee: call.created_by || 'غير محدد',
+        salesResponse: call.notes || '',
+        status: call.qualification_status as Customer['status'],
+        qualificationReason: call.qualification_reason,
+        convertedDate: call.call_date,
+        convertedBy: call.updated_by,
+        callAttempts: 1,
+        lastCallDate: call.call_date,
+        notes: call.notes
+      }));
+
+      setCustomers(formattedCustomers);
+      console.log('تم تحميل مكالمات الجودة من قاعدة البيانات:', formattedCustomers.length);
+    } catch (error) {
+      console.error('خطأ في تحميل مكالمات الجودة:', error);
+      addNotification({
+        title: "خطأ في التحميل",
+        message: "فشل في تحميل البيانات من قاعدة البيانات",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // حفظ عميل جديد في قاعدة البيانات
+  const saveCustomerToDB = async (customer: Customer) => {
+    try {
+      const qualityCallData = {
+        callId: `QC-${Date.now()}`,
+        callDate: new Date().toLocaleDateString('ar-SA'),
+        customerName: customer.customerName,
+        phoneNumber: customer.phoneNumber,
+        project: 'مشروع افتراضي', // يمكن تحديده لاحقاً
+        callType: 'مكالمة جودة',
+        qualificationStatus: customer.status,
+        qualificationReason: customer.qualificationReason,
+        notes: customer.salesResponse,
+        createdBy: user?.username || 'مجهول'
+      };
+
+      await DataService.saveQualityCall(qualityCallData);
+      console.log('تم حفظ العميل في قاعدة البيانات:', customer.customerName);
+    } catch (error) {
+      console.error('خطأ في حفظ العميل:', error);
+      throw error;
+    }
+  };
 
   // رفع ملف Excel
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,12 +258,37 @@ const QualityCalls = () => {
           return;
         }
 
-        setCustomers(prev => [...prev, ...validCustomers]);
-        addNotification({
-          title: "تم الرفع بنجاح",
-          message: `تم رفع ${validCustomers.length} عميل جديد`,
-          type: "success",
-        });
+        // حفظ العملاء في قاعدة البيانات
+        let savedCount = 0;
+        let errorCount = 0;
+
+        for (const customer of validCustomers) {
+          try {
+            await saveCustomerToDB(customer);
+            savedCount++;
+          } catch (error) {
+            console.error('خطأ في حفظ العميل:', customer.customerName, error);
+            errorCount++;
+          }
+        }
+
+        // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
+        if (savedCount > 0) {
+          setCustomers(prev => [...prev, ...validCustomers.slice(0, savedCount)]);
+          addNotification({
+            title: "تم الرفع بنجاح",
+            message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
+            type: "success",
+          });
+        }
+
+        if (errorCount > 0) {
+          addNotification({
+            title: "تحذير",
+            message: `فشل في حفظ ${errorCount} عميل في قاعدة البيانات`,
+            type: "warning",
+          });
+        }
 
         if (validCustomers.length < newCustomers.length) {
           const skippedCount = newCustomers.length - validCustomers.length;
@@ -239,7 +332,7 @@ const QualityCalls = () => {
     salesResponse: ''
   });
 
-  const addNewCustomer = () => {
+  const addNewCustomer = async () => {
     if (!newCustomer.customerName.trim() || !newCustomer.phoneNumber.trim()) {
       addNotification({
         title: "بيانات ناقصة",
@@ -259,20 +352,33 @@ const QualityCalls = () => {
       callAttempts: 0,
     };
 
-    setCustomers(prev => [...prev, customer]);
-    setNewCustomer({
-      customerName: '',
-      phoneNumber: '',
-      salesEmployee: '',
-      salesResponse: ''
-    });
-    setIsAddDialogOpen(false);
+    try {
+      setIsLoading(true);
+      await saveCustomerToDB(customer);
+      setCustomers(prev => [...prev, customer]);
+      setNewCustomer({
+        customerName: '',
+        phoneNumber: '',
+        salesEmployee: '',
+        salesResponse: ''
+      });
+      setIsAddDialogOpen(false);
 
-    addNotification({
-      title: "تم الإضافة",
-      message: "تم إضافة العميل بنجاح",
-      type: "success",
-    });
+      addNotification({
+        title: "تم الإضافة",
+        message: "تم إضافة العميل وحفظه في قاعدة البيانات بنجاح",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('خطأ في إضافة العميل:', error);
+      addNotification({
+        title: "خطأ في الإضافة",
+        message: "فشل في حفظ العميل في قاعدة البيانات",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // تصدير البيانات

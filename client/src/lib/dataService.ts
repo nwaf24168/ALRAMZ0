@@ -675,6 +675,22 @@ export class DataService {
   }
 
   // إدارة مكالمات الجودة
+  static async getQualityCalls(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("quality_calls")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("خطأ Supabase في جلب مكالمات الجودة:", error);
+      throw new Error(
+        `خطأ في جلب مكالمات الجودة: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+
+    return data || [];
+  }
+
   static async saveQualityCall(record: any): Promise<void> {
     const { error } = await supabase
       .from("quality_calls")
