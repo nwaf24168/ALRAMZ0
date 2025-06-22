@@ -683,13 +683,71 @@ export class DataService {
         call_date: record.callDate,
         customer_name: record.customerName,
         phone_number: record.phoneNumber,
-        project: record.project,
+        project: record.project || 'مشروع افتراضي',
         unit_number: record.unitNumber,
-        call_type: record.callType,
+        call_type: record.callType || 'مكالمة جودة',
         call_duration: record.callDuration,
         evaluation_score: record.evaluationScore,
-        qualification_status: record.qualificationStatus || 'قيد المراجعة',
+        qualification_status: record.qualificationStatus || 'غير مؤهل',
         qualification_reason: record.qualificationReason,
+        notes: record.notes,
+        created_by: record.createdBy || 'مجهول'
+      });
+
+    if (error) {
+      console.error("خطأ Supabase في حفظ مكالمة الجودة:", error);
+      throw new Error(
+        `خطأ في حفظ مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`
+      );
+    }
+  }
+
+  static async getQualityCalls(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("quality_calls")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("خطأ Supabase في جلب مكالمات الجودة:", error);
+      throw new Error(
+        `خطأ في جلب مكالمات الجودة: ${error.message || error.details || "خطأ غير معروف"}`
+      );
+    }
+
+    return data || [];
+  }
+
+  static async updateQualityCall(id: string, updates: any): Promise<void> {
+    const { error } = await supabase
+      .from("quality_calls")
+      .update({
+        ...updates,
+        updated_by: updates.updatedBy,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("خطأ Supabase في تحديث مكالمة الجودة:", error);
+      throw new Error(
+        `خطأ في تحديث مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`
+      );
+    }
+  }
+
+  static async deleteQualityCall(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("quality_calls")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("خطأ Supabase في حذف مكالمة الجودة:", error);
+      throw new Error(
+        `خطأ في حذف مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`
+      );
+    }
         notes: record.notes,
         audio_file_url: record.audioFileUrl,
         created_by: record.createdBy,

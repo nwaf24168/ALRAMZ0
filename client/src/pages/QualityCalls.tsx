@@ -130,26 +130,27 @@ const QualityCalls = () => {
     setFilteredCustomers(filtered);
   }, [customers, searchTerm, statusFilter]);
 
-  // حفظ عميل جديد في قاعدة البيانات
+  // حفظ العملاء في قاعدة البيانات
   const saveCustomerToDB = async (customer: Customer) => {
     try {
       const qualityCallData = {
-        callId: `QC-${Date.now()}`,
+        callId: `QC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         callDate: new Date().toLocaleDateString('ar-SA'),
         customerName: customer.customerName,
         phoneNumber: customer.phoneNumber,
-        project: 'مشروع افتراضي', // يمكن تحديده لاحقاً
+        project: 'مشروع افتراضي',
         callType: 'مكالمة جودة',
         qualificationStatus: customer.status,
-        qualificationReason: customer.qualificationReason,
-        notes: customer.salesResponse,
+        qualificationReason: customer.qualificationReason || '',
+        notes: customer.salesResponse || '',
         createdBy: user?.username || 'مجهول'
       };
 
+      console.log('محاولة حفظ العميل:', qualityCallData);
       await DataService.saveQualityCall(qualityCallData);
       console.log('تم حفظ العميل في قاعدة البيانات:', customer.customerName);
     } catch (error) {
-      console.error('خطأ في حفظ العميل:', error);
+      console.error('خطأ في حفظ العميل:', customer.customerName, error);
       throw error;
     }
   };
