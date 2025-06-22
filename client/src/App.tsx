@@ -47,23 +47,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <NotificationProvider>
-        <MetricsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <HashRouter>
-              <AppRoutes />
-            </HashRouter>
-          </TooltipProvider>
-        </MetricsProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <NotificationProvider>
+      <MetricsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <HashRouter>
+            <AppRoutes />
+          </HashRouter>
+        </TooltipProvider>
+      </MetricsProvider>
+    </NotificationProvider>
   </QueryClientProvider>
 );
 
 const AppRoutes = () => {
+  return (
+    <AuthProvider>
+      <RoutesComponent />
+    </AuthProvider>
+  );
+};
+
+const RoutesComponent = () => {
   const { isAuthenticated } = useAuth();
 
   return (

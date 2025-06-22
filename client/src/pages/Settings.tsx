@@ -323,13 +323,13 @@ export default function Settings() {
       try {
         const usersFromDB = await DataService.getUsers();
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
-        
+
         // إنشاء خريطة للمستخدمين الموجودين حالياً
         const currentUsersMap = new Map();
         users.forEach(user => {
           currentUsersMap.set(user.id, user);
         });
-        
+
         // إضافة المستخدمين الجدد من قاعدة البيانات فقط
         usersFromDB.forEach(dbUser => {
           if (!currentUsersMap.has(dbUser.id)) {
@@ -423,7 +423,7 @@ export default function Settings() {
                 </TableHeader>
                 <TableBody>
                   {Array.from(new Map(users.map(user => [user.id, user])).values()).map((user, index) => (
-                    <TableRow key={`user-${user.id}-${index}`}>
+                    <TableRow key={`${user.id}-${index}`}>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.role}</TableCell>
                       <TableCell>
