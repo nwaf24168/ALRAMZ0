@@ -962,8 +962,7 @@ export class DataService {
     role: string;
     permissions?: {
       level: 'read' | 'edit';
-      scope: 'full' | 'limited';
-      pages: string[];
+      scope: 'full' | 'limited';pages: string[];
     };
   }): Promise<void> {
     const { error: userError } = await supabase
