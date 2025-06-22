@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger,
   DialogDescription 
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -73,31 +72,7 @@ const QualityCalls = () => {
   const pendingCustomers = customers.filter(c => c.status === "قيد المراجعة").length;
 
   // تحميل البيانات من قاعدة البيانات عند بدء التطبيق
-  useEffect(() => {
-    loadQualityCallsFromDB();
-  }, []);
-
-  // تحديث القائمة المفلترة عند تغيير البحث أو الفلتر
-  useEffect(() => {
-    let filtered = customers;
-
-    if (searchTerm) {
-      filtered = filtered.filter(customer =>
-        customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phoneNumber.includes(searchTerm) ||
-        customer.salesEmployee.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "الكل") {
-      filtered = filtered.filter(customer => customer.status === statusFilter);
-    }
-
-    setFilteredCustomers(filtered);
-  }, [customers, searchTerm, statusFilter]);
-
-  // تحميل مكالمات الجودة من قاعدة البيانات
-  const loadQualityCallsFromDB = async () => {
+  const loadQualityCallsFromDB = useCallback(async () => {
     try {
       setIsLoading(true);
       const qualityCalls = await DataService.getQualityCalls();
@@ -129,7 +104,30 @@ const QualityCalls = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    loadQualityCallsFromDB();
+  }, [loadQualityCallsFromDB]);
+
+  // تحديث القائمة المفلترة عند تغيير البحث أو الفلتر
+  useEffect(() => {
+    let filtered = customers;
+
+    if (searchTerm) {
+      filtered = filtered.filter(customer =>
+        customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phoneNumber.includes(searchTerm) ||
+        customer.salesEmployee.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter !== "الكل") {
+      filtered = filtered.filter(customer => customer.status === statusFilter);
+    }
+
+    setFilteredCustomers(filtered);
+  }, [customers, searchTerm, statusFilter]);
 
   // حفظ عميل جديد في قاعدة البيانات
   const saveCustomerToDB = async (customer: Customer) => {
@@ -233,7 +231,8 @@ const QualityCalls = () => {
 
     // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
     if (savedCount > 0) {
-      setCustomers(prev => [...prev, ...validCustomers.slice(0, savedCount)]);
+      // Removed local state update, will reload from DB
+      loadQualityCallsFromDB();
       addNotification({
         title: "تم الرفع بنجاح",
         message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
@@ -372,7 +371,8 @@ const QualityCalls = () => {
     try {
       setIsLoading(true);
       await saveCustomerToDB(customer);
-      setCustomers(prev => [...prev, customer]);
+      // Removed local state update, will reload from DB
+      loadQualityCallsFromDB();
       setNewCustomer({
         customerName: '',
         phoneNumber: '',
@@ -427,7 +427,7 @@ const QualityCalls = () => {
   };
 
   // تحويل العميل إلى مؤهل
-  const convertToQualified = () => {
+  const convertToQualified = async () => {
     if (!selectedCustomer || !qualificationReason.trim()) {
       addNotification({
         title: "بيانات ناقصة",
@@ -437,59 +437,100 @@ const QualityCalls = () => {
       return;
     }
 
-    const updatedCustomers = customers.map(customer => {
-      if (customer.id === selectedCustomer.id) {
-        return {
-          ...customer,
-          status: "مؤهل" as const,
-          qualificationReason,
-          convertedDate: new Date().toLocaleDateString('ar-SA'),
-          convertedBy: "المستخدم الحالي", // يمكن تغييرها لتكون من السياق
-          notes: notes.trim() || customer.notes,
-          callAttempts: customer.callAttempts + 1,
-          lastCallDate: new Date().toLocaleDateString('ar-SA')
-        };
-      }
-      return customer;
-    });
+    // Prepare the data for updating in DB
+    const updateData = {
+      qualificationStatus: "مؤهل" as const,
+      qualificationReason: qualificationReason.trim(),
+      convertedDate: new Date().toLocaleDateString('ar-SA'),
+      convertedBy: user?.username || "المستخدم الحالي",
+      notes: notes.trim() || selectedCustomer.notes,
+      callAttempts: selectedCustomer.callAttempts + 1,
+      lastCallDate: new Date().toLocaleDateString('ar-SA')
+    };
 
-    setCustomers(updatedCustomers);
-    setIsDialogOpen(false);
-    setQualificationReason("");
-    setNotes("");
-    setSelectedCustomer(null);
+    try {
+      setIsLoading(true);
+      await DataService.updateQualityCall(selectedCustomer.id, updateData);
 
-    addNotification({
-      title: "تم التحويل",
-      message: "تم تحويل العميل إلى مؤهل بنجاح",
-      type: "success",
-    });
+      // Reload data from DB
+      loadQualityCallsFromDB();
+
+      setIsDialogOpen(false);
+      setQualificationReason("");
+      setNotes("");
+      setSelectedCustomer(null);
+
+      addNotification({
+        title: "تم التحويل",
+        message: "تم تحويل العميل إلى مؤهل بنجاح",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('خطأ في تحويل العميل:', error);
+      addNotification({
+        title: "خطأ في التحويل",
+        message: "فشل في تحويل العميل",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // تحديث حالة العميل
-  const updateCustomerStatus = (customerId: string, newStatus: Customer['status']) => {
-    const updatedCustomers = customers.map(customer => {
-      if (customer.id === customerId) {
-        return {
-          ...customer,
-          status: newStatus,
-          callAttempts: customer.callAttempts + 1,
-          lastCallDate: new Date().toLocaleDateString('ar-SA')
-        };
-      }
-      return customer;
-    });
-    setCustomers(updatedCustomers);
+  const updateCustomerStatus = async (customerId: string, newStatus: Customer['status']) => {
+    try {
+      setIsLoading(true);
+      await DataService.updateQualityCall(customerId, {
+        qualificationStatus: newStatus,
+        callAttempts: customers.find(c => c.id === customerId)?.callAttempts + 1,
+        lastCallDate: new Date().toLocaleDateString('ar-SA')
+      });
+
+      // Reload data from DB
+      loadQualityCallsFromDB();
+
+      addNotification({
+        title: "تم التحديث",
+        message: "تم تحديث حالة العميل بنجاح",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('خطأ في تحديث حالة العميل:', error);
+      addNotification({
+        title: "خطأ في التحديث",
+        message: "فشل في تحديث حالة العميل",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // حذف عميل
-  const deleteCustomer = (customerId: string) => {
-    setCustomers(customers.filter(customer => customer.id !== customerId));
-    addNotification({
-      title: "تم الحذف",
-      message: "تم حذف العميل بنجاح",
-      type: "success",
-    });
+  const deleteCustomer = async (customerId: string) => {
+    try {
+      setIsLoading(true);
+      await DataService.deleteQualityCall(customerId);
+
+      // Reload data from DB
+      loadQualityCallsFromDB();
+
+      addNotification({
+        title: "تم الحذف",
+        message: "تم حذف العميل بنجاح",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('خطأ في حذف العميل:', error);
+      addNotification({
+        title: "خطأ في الحذف",
+        message: "فشل في حذف العميل",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

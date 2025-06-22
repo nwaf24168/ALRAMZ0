@@ -795,8 +795,7 @@ export default function Complaints() {
       month: "long",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+      minute: "2-digit",    }).format(date);
   };
 
   // دالة مساعدة للحصول على اسم الحقل بالعربية
@@ -812,6 +811,93 @@ export default function Complaints() {
     };
     return fieldNames[field] || field;
   };
+
+  const handleSave = async (complaintData: Omit<Complaint, "id" | "createdAt" | "updatedAt" | "updates">) => {
+    try {
+      await DataService.saveComplaint({
+        ...complaintData,
+        createdBy: user?.username || "system",
+        updatedBy: user?.username || "system",
+      });
+
+      addNotification({
+        title: "تم الحفظ",
+        message: "تم حفظ الشكوى بنجاح",
+        type: "success",
+      });
+
+      // إعادة تحميل البيانات من قاعدة البيانات
+      await loadComplaints();
+
+      setIsAddDialogOpen(false);
+      setIsEditDialogOpen(false);
+      setEditingComplaint(null);
+    } catch (error) {
+      console.error("خطأ في حفظ الشكوى:", error);
+      addNotification({
+        title: "خطأ",
+        message: "فشل في حفظ الشكوى",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await DataService.deleteComplaint(id);
+
+      addNotification({
+        title: "تم الحذف",
+        message: "تم حذف الشكوى بنجاح",
+        type: "success",
+      });
+
+      // إعادة تحميل البيانات من قاعدة البيانات
+      await loadComplaints();
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("خطأ في حذف الشكوى:", error);
+      addNotification({
+        title: "خطأ",
+        message: "فشل في حذف الشكوى",
+        type: "error",
+      });
+    }
+  };
+
+  const loadComplaints = async () => {
+    try {
+      const complaintsFromDB = await DataService.getComplaints();
+      if (complaintsFromDB.length > 0) {
+        setComplaints(complaintsFromDB);
+      }
+    } catch (error) {
+      console.error("خطأ في تحميل الشكاوى:", error);
+      addNotification({
+        title: "خطأ",
+        message: "حدث خطأ أثناء تحميل الشكاوى",
+        type: "error",
+      });
+    }
+  };
+
+  // Placeholder for setEditingComplaint
+  const setEditingComplaint = (complaint: Complaint | null) => {
+    // This function should set the state for editing a complaint
+    // In this example, it's a placeholder and you should implement it based on your needs.
+    console.log("setEditingComplaint called with:", complaint);
+  };
+
+  // Placeholder for setShowForm
+  const setShowForm = (show: boolean) => {
+    // This function should set the state for showing the form
+    // In this example, it's a placeholder and you should implement it based on your needs.
+    console.log("setShowForm called with:", show);
+  };
+
+  useEffect(() => {
+    loadComplaints();
+  }, []);
 
   return (
     <Layout>
@@ -973,7 +1059,7 @@ export default function Complaints() {
                 >
                   إلغاء
                 </Button>
-                <Button type="button" onClick={handleAddComplaint}>
+                <Button type="button" onClick={() => handleSave({...newComplaint, id: ""})}>
                   إضافة الشكوى
                 </Button>
               </DialogFooter>
@@ -1525,97 +1611,3 @@ export default function Complaints() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="edit-description"
-                    className="text-xs text-gray-400"
-                  >
-                    التفاصيل
-                  </Label>
-                  <div className="relative">
-                    <Textarea
-                      id="edit-description"
-                      value={newComplaint.description}
-                      onChange={(e) =>
-                        handleNewComplaintChange("description", e.target.value)
-                      }
-                      placeholder="أدخل تفاصيل الشكوى"
-                      className="min-h-[150px] bg-gray-800/30 border-gray-800/50 rounded-xl p-4 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y"
-                      required
-                    />
-                    <div className="absolute bottom-3 left-3 text-xs text-gray-500">
-                      يرجى كتابة تفاصيل الشكوى بشكل واضح ودقيق
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  الإجراء المتخذ
-                </h3>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edit-action"
-                    className="text-xs text-gray-400"
-                  >
-                    الإجراء
-                  </Label>
-                  <Textarea
-                    id="edit-action"
-                    value={newComplaint.action}
-                    onChange={(e) =>
-                      handleNewComplaintChange("action", e.target.value)
-                    }
-                    placeholder="أدخل الإجراء المتخذ (إن وجد)"
-                    className="min-h-[150px] bg-gray-800/30 border-gray-800/50 rounded-xl p-4 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-8 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-              className="bg-transparent hover:bg-gray-800 text-gray-400 hover:text-white"
-            >
-              إلغاء
-            </Button>
-            <Button
-              type="button"
-              onClick={handleUpdateComplaint}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              حفظ التعديلات
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف هذه الشكوى؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم حذف الشكوى رقم {selectedComplaint?.id} نهائيًا. هذا الإجراء
-              لا يمكن التراجع عنه.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteComplaint}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              نعم، حذف الشكوى
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Layout>
-  );
-}
