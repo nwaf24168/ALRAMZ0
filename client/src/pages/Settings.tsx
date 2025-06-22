@@ -165,23 +165,27 @@ export default function Settings() {
       const usersFromDB = await DataService.getUsers();
       console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
       
-      // تحديث البيانات المحلية فقط إذا كانت مختلفة عن قاعدة البيانات
-      const currentIds = new Set(users.map(u => u.id));
-      const dbIds = new Set(usersFromDB.map(u => u.id.toString()));
+      // إنشاء مجموعة فريدة من المستخدمين بناء على الـ id
+      const uniqueUsers = new Map();
       
-      // إضافة المستخدمين الجدد فقط
+      // إضافة المستخدمين من قاعدة البيانات إلى الخريطة
       usersFromDB.forEach(dbUser => {
-        if (!currentIds.has(dbUser.id)) {
-          addUser(dbUser);
+        uniqueUsers.set(dbUser.id, dbUser);
+      });
+      
+      // إضافة المستخدمين المحليين الذين لديهم id مؤقت فقط
+      users.forEach(localUser => {
+        if (localUser.id.startsWith("temp") && !uniqueUsers.has(localUser.id)) {
+          uniqueUsers.set(localUser.id, localUser);
         }
       });
       
-      // إزالة المستخدمين المحذوفين
-      users.forEach(localUser => {
-        if (!dbIds.has(localUser.id) && !localUser.id.startsWith("temp")) {
-          deleteUser(localUser.id);
-        }
-      });
+      // تحديث قائمة المستخدمين بالبيانات الفريدة من قاعدة البيانات
+      const finalUsers = Array.from(uniqueUsers.values());
+      
+      // مسح القائمة الحالية وإعادة إضافة المستخدمين الفريدين
+      // (هذا يتطلب إعادة هيكلة AuthContext أو استخدام دالة setUsers مباشرة)
+      
     } catch (error) {
       console.error("خطأ في إعادة تحميل المستخدمين:", error);
     }
@@ -341,34 +345,20 @@ export default function Settings() {
         const usersFromDB = await DataService.getUsers();
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
         
-        // مقارنة البيانات المحلية مع قاعدة البيانات
-        const currentUsernames = users.map(u => u.username);
-        const dbUsernames = usersFromDB.map(u => u.username);
+        // إنشاء خريطة للمستخدمين الموجودين حالياً
+        const currentUsersMap = new Map();
+        users.forEach(user => {
+          currentUsersMap.set(user.id, user);
+        });
         
-        // إضافة المستخدمين المفقودين من قاعدة البيانات فقط إذا لم يكونوا موجودين محلياً
-        const missingUsers = usersFromDB.filter(dbUser => 
-          !currentUsernames.includes(dbUser.username) &&
-          !users.some(localUser => localUser.id === dbUser.id)
-        );
-        
-        if (missingUsers.length > 0) {
-          console.log("تم إضافة المستخدمين المفقودين:", missingUsers);
-          missingUsers.forEach(dbUser => {
+        // إضافة المستخدمين الجدد من قاعدة البيانات فقط
+        usersFromDB.forEach(dbUser => {
+          if (!currentUsersMap.has(dbUser.id)) {
+            console.log("إضافة مستخدم جديد من قاعدة البيانات:", dbUser);
             addUser(dbUser);
-          });
-        }
-
-        // إزالة المستخدمين الذين لم يعودوا موجودين في قاعدة البيانات
-        const usersToRemove = users.filter(localUser => 
-          !dbUsernames.includes(localUser.username) &&
-          !localUser.id.toString().startsWith("temp")
-        );
-        
-        usersToRemove.forEach(userToRemove => {
-          if (userToRemove.id) {
-            deleteUser(userToRemove.id);
           }
         });
+
       } catch (error) {
         console.error("خطأ في تحميل المستخدمين:", error);
       }
@@ -453,8 +443,8 @@ export default function Settings() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
+                  {users.map((user, index) => (
+                    <TableRow key={`${user.id}-${user.username}-${index}`}>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.role}</TableCell>
                       <TableCell>

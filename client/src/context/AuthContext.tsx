@@ -171,14 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = localUsers.find((u: User) => 
         u.username === username && u.password === password
       );
-      
+
       if (user) {
         setUser(user);
         localStorage.setItem('current_user', JSON.stringify(user));
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
-      
+
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
@@ -199,11 +199,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: Date.now().toString(),
         ...userData
       };
-      
+
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      // التحقق من عدم وجود المستخدم مسبقاً
+      const existingUserIndex = currentUsers.findIndex(u => u.id === newUser.id || u.username === newUser.username);
+      if (existingUserIndex !== -1) {
+        // إذا كان المستخدم موجود، نقوم بتحديثه بدلاً من إضافته
+        currentUsers[existingUserIndex] = newUser;
+        localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+        setUsers([...currentUsers]);
+        return;
+      }
+      // إضافة المستخدم الجديد
       currentUsers.push(newUser);
       localStorage.setItem('auth_users', JSON.stringify(currentUsers));
-      setUsers(currentUsers);
+      setUsers([...currentUsers]);
     } catch (error) {
       console.error('Error adding user:', error);
       throw error;
