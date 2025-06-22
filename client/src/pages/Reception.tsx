@@ -29,10 +29,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { DataService } from "@/lib/dataService";
 import { useAuth } from "@/context/AuthContext";
+import Layout from "@/components/layout/Layout";
 
 interface ReceptionRecord {
   id: string;
