@@ -27,7 +27,7 @@ export default function Sidebar() {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isActive = (path: string) => {
+  const checkIsActive = (path: string) => {
     return location.pathname === path;
   };
 
@@ -120,7 +120,7 @@ export default function Sidebar() {
                 return true; // canAccessPage(pageId);
               })
               .map((item, index) => {
-              const isActive = location.pathname === item.path;
+              const isItemActive = location.pathname === item.path;
               return (
                 <li key={index}>
                   <Link
@@ -128,7 +128,7 @@ export default function Sidebar() {
                     onClick={() => isMobile && setIsOpen(false)}
                     className={cn(
                       "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
-                      isActive(item.path)
+                      isItemActive
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted",
                     )}
