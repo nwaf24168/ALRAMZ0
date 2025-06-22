@@ -5,6 +5,11 @@ interface User {
   username: string;
   password: string;
   role: string;
+  permissions?: {
+    level: 'read' | 'edit'; // مستوى الصلاحية
+    scope: 'full' | 'limited'; // نطاق الوصول
+    pages?: string[]; // الصفحات المسموح بالوصول إليها في حالة النطاق المحدود
+  };
 }
 
 interface AuthContextType {
@@ -16,6 +21,9 @@ interface AuthContextType {
   addUser: (userData: Omit<User, "id">) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   resetUserPassword: (id: string, newPassword: string) => Promise<void>;
+  updateUserPermissions: (id: string, permissions: User['permissions']) => Promise<void>;
+  hasPageAccess: (pageName: string) => boolean;
+  hasEditPermission: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,43 +36,50 @@ const initializeDefaultAdmin = () => {
       id: "1",
       username: "admin",
       password: "admin123",
-      role: "مدير النظام"
+      role: "مدير النظام",
+      permissions: { level: 'edit', scope: 'full' }
     },
     {
       id: "2",
       username: "abdulsalam",
       password: "Alramz2025",
-      role: "مدير ادارة راحة العملاء"
+      role: "مدير ادارة راحة العملاء",
+      permissions: { level: 'edit', scope: 'full' }
     },
     {
       id: "3",
       username: "aljawhara",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'complaints', 'reception'] }
     },
     {
       id: "4",
       username: "khulood",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'complaints', 'quality-calls'] }
     },
     {
       id: "5",
       username: "adnan",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: { level: 'read', scope: 'limited', pages: ['dashboard', 'analytics', 'reports'] }
     },
     {
       id: "6",
       username: "lateefa",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'delivery', 'delivery-analytics'] }
     },
     {
       id: "7",
       username: "nawaf",
       password: "Alramz2025",
-      role: "مدير النظام"
+      role: "مدير النظام",
+      permissions: { level: 'edit', scope: 'full' }
     }
   ];
 
@@ -195,6 +210,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
+    try {
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const updatedUsers = currentUsers.map((u: User) => 
+        u.id === id ? { ...u, permissions } : u
+      );
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
+      
+      // إذا كان المستخدم الحالي هو من يتم تحديث صلاحياته، قم بتحديث بياناته
+      if (user && user.id === id) {
+        const updatedUser = { ...user, permissions };
+        setUser(updatedUser);
+        localStorage.setItem('current_user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('Error updating user permissions:', error);
+      throw error;
+    }
+  };
+
+  const hasPageAccess = (pageName: string): boolean => {
+    if (!user || !user.permissions) return true; // السماح بالوصول إذا لم تكن هناك صلاحيات محددة
+    
+    if (user.permissions.scope === 'full') return true;
+    
+    if (user.permissions.scope === 'limited' && user.permissions.pages) {
+      return user.permissions.pages.includes(pageName);
+    }
+    
+    return false;
+  };
+
+  const hasEditPermission = (): boolean => {
+    if (!user || !user.permissions) return true; // السماح بالتعديل إذا لم تكن هناك صلاحيات محددة
+    return user.permissions.level === 'edit';
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -204,7 +257,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       addUser,
       deleteUser,
-      resetUserPassword
+      resetUserPassword,
+      updateUserPermissions,
+      hasPageAccess,
+      hasEditPermission
     }}>
       {children}
     </AuthContext.Provider>

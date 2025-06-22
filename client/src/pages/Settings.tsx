@@ -30,11 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit2, Trash2, UserPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Edit2, Trash2, UserPlus, Shield, Settings as SettingsIcon } from "lucide-react";
 
 export default function Settings() {
   const { addNotification } = useNotification();
-  const { users, addUser, deleteUser, resetUserPassword } = useAuth();
+  const { users, addUser, deleteUser, resetUserPassword, updateUserPermissions } = useAuth();
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);
 
@@ -48,6 +49,34 @@ export default function Settings() {
     role: "",
     password: "",
   });
+
+  // حالة إدارة الصلاحيات
+  const [editingPermissions, setEditingPermissions] = useState<string | null>(null);
+  const [permissionsForm, setPermissionsForm] = useState<{
+    level: 'read' | 'edit';
+    scope: 'full' | 'limited';
+    pages: string[];
+  }>({
+    level: 'edit',
+    scope: 'full',
+    pages: []
+  });
+
+  // قائمة الصفحات المتاحة
+  const availablePages = [
+    { id: 'dashboard', name: 'لوحة القيادة' },
+    { id: 'complaints', name: 'الشكاوى' },
+    { id: 'reception', name: 'الاستقبال' },
+    { id: 'quality-calls', name: 'مكالمات الجودة' },
+    { id: 'delivery', name: 'التسليم' },
+    { id: 'delivery-analytics', name: 'تحليلات التسليم' },
+    { id: 'analytics', name: 'التحليلات' },
+    { id: 'reports', name: 'التقارير' },
+    { id: 'maintenance', name: 'الصيانة' },
+    { id: 'customer-service', name: 'خدمة العملاء' },
+    { id: 'data-entry', name: 'إدخال البيانات' },
+    { id: 'settings', name: 'الإعدادات' }
+  ];
 
   // معالجة تغيير بيانات المستخدم الجديد
   const handleNewUserChange = (field: string, value: string) => {
@@ -183,6 +212,59 @@ export default function Settings() {
     }
   };
 
+  // فتح نموذج تعديل الصلاحيات
+  const handleEditPermissions = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user && user.permissions) {
+      setPermissionsForm({
+        level: user.permissions.level,
+        scope: user.permissions.scope,
+        pages: user.permissions.pages || []
+      });
+    } else {
+      setPermissionsForm({
+        level: 'edit',
+        scope: 'full',
+        pages: []
+      });
+    }
+    setEditingPermissions(userId);
+  };
+
+  // حفظ الصلاحيات
+  const handleSavePermissions = async () => {
+    if (!editingPermissions) return;
+
+    try {
+      await updateUserPermissions(editingPermissions, permissionsForm);
+      
+      addNotification({
+        title: "تم التحديث",
+        message: "تم تحديث صلاحيات المستخدم بنجاح",
+        type: "success",
+      });
+
+      setEditingPermissions(null);
+    } catch (error) {
+      console.error("خطأ في تحديث الصلاحيات:", error);
+      addNotification({
+        title: "خطأ",
+        message: "حدث خطأ أثناء تحديث الصلاحيات",
+        type: "error",
+      });
+    }
+  };
+
+  // تغيير الصفحات المحددة
+  const handlePageToggle = (pageId: string) => {
+    setPermissionsForm(prev => ({
+      ...prev,
+      pages: prev.pages.includes(pageId)
+        ? prev.pages.filter(p => p !== pageId)
+        : [...prev.pages, pageId]
+    }));
+  };
+
   // تحميل المستخدمين من Supabase عند تحميل المكون
   useEffect(() => {
     const loadUsers = async () => {
@@ -246,6 +328,8 @@ export default function Settings() {
                   <TableRow>
                     <TableHead className="text-right">اسم المستخدم</TableHead>
                     <TableHead className="text-right">الصلاحية</TableHead>
+                    <TableHead className="text-right">مستوى الوصول</TableHead>
+                    <TableHead className="text-right">نطاق الوصول</TableHead>
                     <TableHead className="text-right">رمز الدخول</TableHead>
                     <TableHead className="text-right">الإجراءات</TableHead>
                   </TableRow>
@@ -255,9 +339,35 @@ export default function Settings() {
                     <TableRow key={user.id}>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.role}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          user.permissions?.level === 'edit' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {user.permissions?.level === 'edit' ? 'تعديل' : 'قراءة فقط'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          user.permissions?.scope === 'full' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {user.permissions?.scope === 'full' ? 'كامل المنصة' : 'صفحات محددة'}
+                        </span>
+                      </TableCell>
                       <TableCell>••••••••</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditPermissions(user.id)}
+                            title="تعديل الصلاحيات"
+                          >
+                            <Shield className="h-4 w-4 text-purple-500" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"
@@ -341,6 +451,95 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* نموذج تعديل الصلاحيات */}
+        {editingPermissions && (
+          <Card>
+            <CardHeader>
+              <CardTitle>تعديل صلاحيات المستخدم</CardTitle>
+              <CardDescription>
+                تحديد مستوى الوصول ونطاق الصلاحيات للمستخدم
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* مستوى الصلاحية */}
+                <div className="space-y-2">
+                  <Label>مستوى الصلاحية</Label>
+                  <Select
+                    value={permissionsForm.level}
+                    onValueChange={(value: 'read' | 'edit') =>
+                      setPermissionsForm(prev => ({ ...prev, level: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="read">قراءة فقط</SelectItem>
+                      <SelectItem value="edit">قراءة وتعديل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* نطاق الوصول */}
+                <div className="space-y-2">
+                  <Label>نطاق الوصول</Label>
+                  <Select
+                    value={permissionsForm.scope}
+                    onValueChange={(value: 'full' | 'limited') =>
+                      setPermissionsForm(prev => ({ ...prev, scope: value, pages: value === 'full' ? [] : prev.pages }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">الوصول لكامل المنصة</SelectItem>
+                      <SelectItem value="limited">الوصول لصفحات محددة</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* اختيار الصفحات (في حالة النطاق المحدود) */}
+                {permissionsForm.scope === 'limited' && (
+                  <div className="space-y-2">
+                    <Label>الصفحات المسموح بالوصول إليها</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {availablePages.map((page) => (
+                        <div key={page.id} className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            id={page.id}
+                            checked={permissionsForm.pages.includes(page.id)}
+                            onChange={() => handlePageToggle(page.id)}
+                            className="rounded"
+                          />
+                          <Label htmlFor={page.id} className="text-sm">
+                            {page.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* أزرار الحفظ والإلغاء */}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingPermissions(null)}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button onClick={handleSavePermissions}>
+                    حفظ الصلاحيات
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
