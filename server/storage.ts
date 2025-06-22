@@ -35,6 +35,7 @@ export class MemStorage implements IStorage {
       username: insertUser.username,
       password: insertUser.password,
       role: insertUser.role || "user",
+      permissions: insertUser.permissions || '{"level":"read","scope":"full","pages":[]}',
       createdAt: new Date(),
       updatedAt: new Date()
     };
