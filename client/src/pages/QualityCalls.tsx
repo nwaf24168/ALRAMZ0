@@ -158,105 +158,116 @@ const QualityCalls = () => {
   // معالجة البيانات من Excel
   const processExcelData = async (data: any[]) => {
     console.log("البيانات المقروءة من Excel:", data);
-
-    const newCustomers: Customer[] = data.map((row: any, index: number) => {
-      // محاولة قراءة الاسم من عدة أعمدة محتملة
-      const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
-
-      // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
-      const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
-
-      // باقي البيانات
-      const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
-      const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
-
-      return {
-        id: `customer_${Date.now()}_${index}`,
-        customerName,
-        phoneNumber,
-        salesEmployee,
-        salesResponse,
-        status: "غير مؤهل" as const,
-        qualificationReason: String(row['سبب التأهيل'] || row['Qualification Reason'] || '').trim(),
-        notes: String(row['ملاحظات'] || row['Notes'] || '').trim(),
-        callAttempts: parseInt(String(row['عدد المحاولات'] || row['Call Attempts'] || '0')) || 0,
-        lastCallDate: String(row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '').trim(),
-        convertedDate: String(row['تاريخ التحويل'] || row['Converted Date'] || '').trim(),
-        convertedBy: String(row['محول بواسطة'] || row['Converted By'] || '').trim(),
-      };
-    });
-
-    console.log("العملاء المعالجين:", newCustomers);
-
-    // التحقق من صحة البيانات الأساسية
-    const validCustomers = newCustomers.filter(customer => {
-      const hasName = customer.customerName && customer.customerName.length > 0;
-      const hasPhone = customer.phoneNumber && customer.phoneNumber.length > 0;
-      return hasName && hasPhone;
-    });
-
-    console.log("العملاء الصالحين:", validCustomers);
-
-    if (validCustomers.length === 0) {
+    
+    if (!data || data.length === 0) {
       addNotification({
         title: "خطأ في البيانات",
-        message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال' وأن البيانات غير فارغة",
+        message: "الملف فارغ أو لا يحتوي على بيانات صالحة",
         type: "error",
       });
       return;
     }
 
-    // حفظ العملاء في قاعدة البيانات
-    let savedCount = 0;
-    let errorCount = 0;
+    setIsLoading(true);
 
-    // استخدام Promise.all لحفظ جميع العملاء
-    const savePromises = validCustomers.map(async (customer) => {
-      try {
-        await saveCustomerToDB(customer);
-        return { success: true, customer };
-      } catch (error) {
-        console.error('خطأ في حفظ العميل:', customer.customerName, error);
-        return { success: false, customer, error };
+    try {
+      const newCustomers: Customer[] = data.map((row: any, index: number) => {
+        // محاولة قراءة الاسم من عدة أعمدة محتملة
+        const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
+
+        // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
+        const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
+
+        // باقي البيانات
+        const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
+        const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
+
+        return {
+          id: `customer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`,
+          customerName,
+          phoneNumber,
+          salesEmployee,
+          salesResponse,
+          status: "غير مؤهل" as const,
+          qualificationReason: String(row['سبب التأهيل'] || row['Qualification Reason'] || '').trim(),
+          notes: String(row['ملاحظات'] || row['Notes'] || '').trim(),
+          callAttempts: parseInt(String(row['عدد المحاولات'] || row['Call Attempts'] || '0')) || 0,
+          lastCallDate: String(row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '').trim(),
+          convertedDate: String(row['تاريخ التحويل'] || row['Converted Date'] || '').trim(),
+          convertedBy: String(row['محول بواسطة'] || row['Converted By'] || '').trim(),
+        };
+      });
+
+      console.log("العملاء المعالجين:", newCustomers);
+
+      // التحقق من صحة البيانات الأساسية
+      const validCustomers = newCustomers.filter(customer => {
+        const hasName = customer.customerName && customer.customerName.length > 0;
+        const hasPhone = customer.phoneNumber && customer.phoneNumber.length > 0;
+        return hasName && hasPhone;
+      });
+
+      console.log("العملاء الصالحين:", validCustomers);
+
+      if (validCustomers.length === 0) {
+        addNotification({
+          title: "خطأ في البيانات",
+          message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال' وأن البيانات غير فارغة",
+          type: "error",
+        });
+        return;
       }
-    });
 
-    const results = await Promise.all(savePromises);
+      // حفظ العملاء في قاعدة البيانات
+      let savedCount = 0;
+      let errorCount = 0;
 
-    results.forEach(result => {
-      if (result.success) {
-        savedCount++;
-      } else {
-        errorCount++;
+      // حفظ العملاء بشكل متسلسل لتجنب مشاكل قاعدة البيانات
+      for (const customer of validCustomers) {
+        try {
+          await saveCustomerToDB(customer);
+          savedCount++;
+        } catch (error) {
+          console.error('خطأ في حفظ العميل:', customer.customerName, error);
+          errorCount++;
+        }
       }
-    });
 
-    // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
-    if (savedCount > 0) {
-      // Removed local state update, will reload from DB
-      loadQualityCallsFromDB();
-      addNotification({
-        title: "تم الرفع بنجاح",
-        message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
-        type: "success",
-      });
-    }
+      // تحديث القائمة من قاعدة البيانات
+      if (savedCount > 0) {
+        await loadQualityCallsFromDB();
+        addNotification({
+          title: "تم الرفع بنجاح",
+          message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
+          type: "success",
+        });
+      }
 
-    if (errorCount > 0) {
-      addNotification({
-        title: "تحذير",
-        message: `فشل في حفظ ${errorCount} عميل في قاعدة البيانات`,
-        type: "warning",
-      });
-    }
+      if (errorCount > 0) {
+        addNotification({
+          title: "تحذير",
+          message: `فشل في حفظ ${errorCount} عميل في قاعدة البيانات`,
+          type: "warning",
+        });
+      }
 
-    if (validCustomers.length < newCustomers.length) {
-      const skippedCount = newCustomers.length - validCustomers.length;
+      if (validCustomers.length < newCustomers.length) {
+        const skippedCount = newCustomers.length - validCustomers.length;
+        addNotification({
+          title: "تحذير",
+          message: `تم تجاهل ${skippedCount} صف بسبب بيانات ناقصة (اسم العميل أو رقم الجوال فارغ)`,
+          type: "warning",
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في معالجة البيانات:', error);
       addNotification({
-        title: "تحذير",
-        message: `تم تجاهل ${skippedCount} صف بسبب بيانات ناقصة (اسم العميل أو رقم الجوال فارغ)`,
-        type: "warning",
+        title: "خطأ في المعالجة",
+        message: "حدث خطأ أثناء معالجة البيانات",
+        type: "error",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -273,14 +284,34 @@ const QualityCalls = () => {
         message: "يرجى اختيار ملف Excel بصيغة .xlsx أو .xls",
         type: "error",
       });
+      // إعادة تعيين قيمة الإدخال
+      event.target.value = '';
       return;
     }
 
+    // التحقق من حجم الملف (5MB حد أقصى)
+    if (file.size > 5 * 1024 * 1024) {
+      addNotification({
+        title: "حجم الملف كبير",
+        message: "حجم الملف يجب أن يكون أقل من 5 ميجابايت",
+        type: "error",
+      });
+      event.target.value = '';
+      return;
+    }
+
+    setIsLoading(true);
+
     const reader = new FileReader();
+    
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { 
+          type: 'array',
+          cellText: false,
+          cellDates: true
+        });
 
         if (workbook.SheetNames.length === 0) {
           addNotification({
@@ -288,6 +319,7 @@ const QualityCalls = () => {
             message: "الملف لا يحتوي على أي أوراق عمل",
             type: "error",
           });
+          setIsLoading(false);
           return;
         }
 
@@ -300,10 +332,15 @@ const QualityCalls = () => {
             message: "ورقة العمل الأولى فارغة",
             type: "error",
           });
+          setIsLoading(false);
           return;
         }
 
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          defval: "",
+          raw: false,
+          dateNF: 'yyyy-mm-dd'
+        });
 
         if (jsonData.length === 0) {
           addNotification({
@@ -311,10 +348,13 @@ const QualityCalls = () => {
             message: "الملف لا يحتوي على أي بيانات",
             type: "error",
           });
+          setIsLoading(false);
           return;
         }
 
-        // استخدام الدالة الجديدة لمعالجة البيانات
+        console.log("البيانات المستخرجة من Excel:", jsonData);
+
+        // استخدام الدالة المحدثة لمعالجة البيانات
         processExcelData(jsonData);
 
       } catch (error) {
@@ -324,6 +364,7 @@ const QualityCalls = () => {
           message: `حدث خطأ أثناء قراءة الملف: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
           type: "error",
         });
+        setIsLoading(false);
       }
     };
 
@@ -333,6 +374,7 @@ const QualityCalls = () => {
         message: "فشل في قراءة الملف. يرجى المحاولة مرة أخرى",
         type: "error",
       });
+      setIsLoading(false);
     };
 
     reader.readAsArrayBuffer(file);
