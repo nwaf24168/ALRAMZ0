@@ -5,6 +5,11 @@ interface User {
   username: string;
   password: string;
   role: string;
+  permissions: {
+    level: 'read' | 'edit';
+    scope: 'full' | 'limited';
+    pages: string[];
+  };
 }
 
 interface AuthContextType {
@@ -16,6 +21,7 @@ interface AuthContextType {
   addUser: (userData: Omit<User, "id">) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   resetUserPassword: (id: string, newPassword: string) => Promise<void>;
+  updateUserPermissions: (id: string, permissions: User['permissions']) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,43 +34,78 @@ const initializeDefaultAdmin = () => {
       id: "1",
       username: "admin",
       password: "admin123",
-      role: "مدير النظام"
+      role: "مدير النظام",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "2",
       username: "abdulsalam",
       password: "Alramz2025",
-      role: "مدير ادارة راحة العملاء"
+      role: "مدير ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "3",
       username: "aljawhara",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "4",
       username: "khulood",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "5",
       username: "adnan",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "6",
       username: "lateefa",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء"
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
     },
     {
       id: "7",
       username: "nawaf",
       password: "Alramz2025",
-      role: "مدير النظام"
+      role: "مدير النظام",
+      permissions: {
+        level: "read" as const,
+        scope: "limited" as const,
+        pages: ["delivery"]
+      }
     }
   ];
 
@@ -195,6 +236,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
+    try {
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const updatedUsers = currentUsers.map((u: User) => 
+        u.id === id ? { ...u, permissions } : u
+      );
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -204,7 +259,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       addUser,
       deleteUser,
-      resetUserPassword
+      resetUserPassword,
+      updateUserPermissions
     }}>
       {children}
     </AuthContext.Provider>
