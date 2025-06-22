@@ -145,19 +145,19 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <HashRouter>
-        <AuthProvider>
-          <NotificationProvider>
-            <MetricsProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <MetricsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <HashRouter>
               <AppRoutes />
-            </MetricsProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </HashRouter>
-    </TooltipProvider>
+            </HashRouter>
+          </TooltipProvider>
+        </MetricsProvider>
+      </NotificationProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

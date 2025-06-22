@@ -112,7 +112,7 @@ interface Complaint {
 }
 
 export default function Complaints() {
-  const { user, canEdit } = useAuth();
+  const { user } = useAuth();
   const { addNotification } = useNotification();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -454,12 +454,10 @@ export default function Complaints() {
           <h1 className="text-xl md:text-2xl font-bold">سجل الشكاوى</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              {canEdit('complaints') && (
-                <Button className="flex items-center">
-                  <Plus className="ml-2 h-4 w-4" />
-                  إضافة شكوى جديدة
-                </Button>
-              )}
+              <Button className="flex items-center">
+                <Plus className="ml-2 h-4 w-4" />
+                إضافة شكوى جديدة
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
@@ -707,24 +705,20 @@ export default function Complaints() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {canEdit('complaints') ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditSetup(complaint)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteSetup(complaint)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </>
-                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditSetup(complaint)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteSetup(complaint)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -964,7 +958,7 @@ export default function Complaints() {
                       </span>
                     )}
                   </h3>
-
+                  
                   {selectedComplaint.updates && selectedComplaint.updates.length > 0 ? (
                     <div className="space-y-4 max-h-80 overflow-y-auto">
                       {selectedComplaint.updates
@@ -979,12 +973,12 @@ export default function Complaints() {
                           {index < selectedComplaint.updates.length - 1 && (
                             <div className="absolute left-6 bottom-0 w-0.5 h-4 bg-gradient-to-b from-blue-500/50 to-transparent"></div>
                           )}
-
+                          
                           <div className="flex items-start gap-4">
                             <div className="p-2.5 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30">
                               <Edit className="w-4 h-4 text-blue-400" />
                             </div>
-
+                            
                             <div className="flex-1 space-y-3">
                               {/* رأس التحديث */}
                               <div className="flex items-center justify-between">
@@ -1016,7 +1010,7 @@ export default function Complaints() {
                                   <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
                                   تم تحديث حقل: <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
                                 </p>
-
+                                
                                 <div className="grid grid-cols-1 gap-3">
                                   {/* القيمة القديمة */}
                                   <div className="flex items-start gap-3">
@@ -1029,7 +1023,7 @@ export default function Complaints() {
                                       </div>
                                     </div>
                                   </div>
-
+                                  
                                   {/* القيمة الجديدة */}
                                   <div className="flex items-start gap-3">
                                     <div className="flex items-center gap-2 min-w-0">

@@ -849,10 +849,9 @@ export class DataService {
     }
   }
 
-  // جلب المستخدمين مع صلاحياتهم
   static async getUsers(): Promise<any[]> {
     const { data, error } = await supabase
-      .from("users_with_permissions")
+      .from("users")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -864,182 +863,18 @@ export class DataService {
     }
 
     return (data || []).map((record) => ({
-      id: record.id,
+      id: record.user_id,
       username: record.username,
-      password: "", // لا نرجع كلمة المرور لأسباب أمنية
+      password: record.password_hash,
       role: record.role,
-      permissions: record.permission_level ? {
-        level: record.permission_level as 'read' | 'edit',
-        scope: record.permission_scope as 'full' | 'limited',
-        pages: record.allowed_pages || []
-      } : undefined
     }));
   }
 
-  // إعداد الاشتراك للوقت الفعلي
-  static setupRealtimeSubscription(
-    table: string,
-    callback: (payload: any) => void,
-  ): RealtimeChannel {
-    const channel = supabase
-      .channel(`public:${table}`)
-      .on(
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table: table },
-        callback,
-      )
-      .subscribe();
-
-    return channel;
-  }
-
-  // إزالة الاشتراك للوقت الفعلي
-  static removeRealtimeSubscription(channel: RealtimeChannel): void {
-    supabase.removeChannel(channel);
-  }
-
-  // ========== إدارة المستخدمين ==========
-
-  // جلب جميع المستخدمين مع الصلاحيات
-  static async getUsersWithPermissions(): Promise<any[]> {
-    const { data, error } = await supabase
-      .from("users")
-      .select(`
-        *,
-        user_permissions (
-          permission_level,
-          permission_scope,
-          allowed_pages
-        )
-      `)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("خطأ Supabase في جلب المستخدمين:", error);
-      throw new Error(
-        `خطأ في جلب المستخدمين: ${error.message || error.details || "خطأ غير معروف"}`
-      );
-    }
-
-    return (data || []).map(user => ({
-      id: user.id,
-      username: user.username,
-      password: user.password,
-      role: user.role,
-      permissions: user.user_permissions[0] ? {
-        level: user.user_permissions[0].permission_level,
-        scope: user.user_permissions[0].permission_scope,
-        pages: user.user_permissions[0].allowed_pages || []
-      } : {
-        level: 'edit',
-        scope: 'full',
-        pages: []
-      },
-      createdAt: user.created_at,
-      updatedAt: user.updated_at
-    }));
-  }
-
-  // إضافة مستخدم جديد
-  static async addUser(userData: {
-    id: string;
-    username: string;
-    password: string;
-    role: string;
-    permissions?: {
-      level: 'read' | 'edit';
-      scope: 'full' | 'limited';pages: string[];
-    };
-  }): Promise<void> {
-    const { error: userError } = await supabase
-      .from("users")
-      .insert({
-        id: userData.id,
-        username: userData.username,
-        password: userData.password,
-        role: userData.role
-      });
-
-    if (userError) {
-      console.error("خطأ Supabase في إضافة المستخدم:", userError);
-      throw new Error(
-        `خطأ في إضافة المستخدم: ${userError.message || userError.details || "خطأ غير معروف"}`
-      );
-    }
-
-    // إضافة الصلاحيات
-    const permissions = userData.permissions || {
-      level: 'edit',
-      scope: 'full',
-      pages: []
-    };
-
-    const { error: permissionError } = await supabase
-      .from("user_permissions")
-      .insert({
-        user_id: userData.id,
-        permission_level: permissions.level,
-        permission_scope: permissions.scope,
-        allowed_pages: permissions.pages
-      });
-
-    if (permissionError) {
-      console.error("خطأ Supabase في إضافة صلاحيات المستخدم:", permissionError);
-      throw new Error(
-        `خطأ في إضافة صلاحيات المستخدم: ${permissionError.message || permissionError.details || "خطأ غير معروف"}`
-      );
-    }
-  }
-
-  // تحديث مستخدم
-  static async updateUser(userId: string, updates: {
-    username?: string;
-    password?: string;
-    role?: string;
-  }): Promise<void> {
-    const { error } = await supabase
-      .from("users")
-      .update(updates)
-      .eq("id", userId);
-
-    if (error) {
-      console.error("خطأ Supabase في تحديث المستخدم:", error);
-      throw new Error(
-        `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`
-      );
-    }
-  }
-
-  // تحديث صلاحيات المستخدم
-  static async updateUserPermissions(userId: string, permissions: {
-    level: 'read' | 'edit';
-    scope: 'full' | 'limited';
-    pages: string[];
-  }): Promise<void> {
-    const { error } = await supabase
-      .from("user_permissions")
-      .update({
-        permission_level: permissions.level,
-        permission_scope: permissions.scope,
-        allowed_pages: permissions.pages
-      })
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("خطأ Supabase في تحديث صلاحيات المستخدم:", error);
-      throw new Error(
-        `خطأ في تحديث صلاحيات المستخدم: ${error.message || error.details || "خطأ غير معروف"}`
-      );
-    }
-  }
-
-  // حذف مستخدم
   static async deleteUser(userId: string): Promise<void> {
-    // حذف المستخدم سيؤدي إلى حذف صلاحياته تلقائياً بسبب CASCADE
     const { error } = await supabase
       .from("users")
       .delete()
-      .eq("id", userId);
+      .eq("user_id", userId);
 
     if (error) {
       console.error("خطأ Supabase في حذف المستخدم:", error);
@@ -1049,40 +884,28 @@ export class DataService {
     }
   }
 
-  // تسجيل الدخول
-  static async authenticateUser(username: string, password: string): Promise<any | null> {
-    const { data, error } = await supabase
-      .from("users")
-      .select(`
-        *,
-        user_permissions (
-          permission_level,
-          permission_scope,
-          allowed_pages
-        )
-      `)
-      .eq("username", username)
-      .eq("password", password)
-      .single();
+  // إعداد الاشتراكات للوقت الفعلي
+  static setupRealtimeSubscription(
+    table: string,
+    callback: (payload: any) => void,
+  ): RealtimeChannel {
+    const channel = supabase
+      .channel(`public:${table}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: table,
+        },
+        callback,
+      )
+      .subscribe();
 
-    if (error || !data) {
-      return null;
-    }
+    return channel;
+  }
 
-    return {
-      id: data.id,
-      username: data.username,
-      password: data.password,
-      role: data.role,
-      permissions: data.user_permissions[0] ? {
-        level: data.user_permissions[0].permission_level,
-        scope: data.user_permissions[0].permission_scope,
-        pages: data.user_permissions[0].allowed_pages || []
-      } : {
-        level: 'edit',
-        scope: 'full',
-        pages: []
-      }
-    };
+  static removeRealtimeSubscription(channel: RealtimeChannel): void {
+    supabase.removeChannel(channel);
   }
 }

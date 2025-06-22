@@ -1,16 +1,10 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { DataService } from '@/lib/dataService';
 
 interface User {
   id: string;
   username: string;
   password: string;
   role: string;
-  permissions?: {
-    level: 'read' | 'edit'; // مستوى الصلاحية
-    scope: 'full' | 'limited'; // نطاق الوصول
-    pages?: string[]; // الصفحات المسموح بالوصول إليها في حالة النطاق المحدود
-  };
 }
 
 interface AuthContextType {
@@ -22,9 +16,6 @@ interface AuthContextType {
   addUser: (userData: Omit<User, "id">) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   resetUserPassword: (id: string, newPassword: string) => Promise<void>;
-  updateUserPermissions: (id: string, permissions: User['permissions']) => Promise<void>;
-  hasPageAccess: (pageName: string) => boolean;
-  hasEditPermission: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,50 +28,43 @@ const initializeDefaultAdmin = () => {
       id: "1",
       username: "admin",
       password: "admin123",
-      role: "مدير النظام",
-      permissions: { level: 'edit', scope: 'full' }
+      role: "مدير النظام"
     },
     {
       id: "2",
       username: "abdulsalam",
       password: "Alramz2025",
-      role: "مدير ادارة راحة العملاء",
-      permissions: { level: 'edit', scope: 'full' }
+      role: "مدير ادارة راحة العملاء"
     },
     {
       id: "3",
       username: "aljawhara",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء",
-      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'complaints', 'reception'] }
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "4",
       username: "khulood",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء",
-      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'complaints', 'quality-calls'] }
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "5",
       username: "adnan",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء",
-      permissions: { level: 'read', scope: 'limited', pages: ['dashboard', 'analytics', 'reports'] }
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "6",
       username: "lateefa",
       password: "Alramz2025",
-      role: "موظف ادارة راحة العملاء",
-      permissions: { level: 'edit', scope: 'limited', pages: ['dashboard', 'delivery', 'delivery-analytics'] }
+      role: "موظف ادارة راحة العملاء"
     },
     {
       id: "7",
       username: "nawaf",
       password: "Alramz2025",
-      role: "مدير النظام",
-      permissions: { level: 'edit', scope: 'full' }
+      role: "مدير النظام"
     }
   ];
 
@@ -112,21 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const loadUsersFromDB = async () => {
-      try {
-        const usersFromDB = await DataService.getUsersWithPermissions();
-        setUsers(usersFromDB);
-        console.log('تم تحميل المستخدمين من قاعدة البيانات:', usersFromDB);
-      } catch (error) {
-        console.error('خطأ في تحميل المستخدمين من قاعدة البيانات:', error);
-        // fallback إلى localStorage في حالة الخطأ
-        const initialUsers = initializeDefaultAdmin();
-        setUsers(initialUsers);
-        console.log('تم تحميل المستخدمين من localStorage:', initialUsers);
-      }
-    };
-
-    loadUsersFromDB();
+    const initialUsers = initializeDefaultAdmin();
+    setUsers(initialUsers);
+    console.log('تم تحميل المستخدمين:', initialUsers);
 
     // استرداد المستخدم المحفوظ عند تحديث الصفحة
     const savedUser = localStorage.getItem('current_user');
@@ -154,51 +126,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-
-      // تجربة قاعدة البيانات أولاً
-      const user = await DataService.authenticateUser(username, password);
-
+      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const user = localUsers.find((u: User) => 
+        u.username === username && u.password === password
+      );
+      
       if (user) {
         setUser(user);
         localStorage.setItem('current_user', JSON.stringify(user));
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
-
-      // fallback إلى localStorage في حالة فشل قاعدة البيانات
-      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const localUser = localUsers.find((u: User) => 
-        u.username === username && u.password === password
-      );
-
-      if (localUser) {
-        setUser(localUser);
-        localStorage.setItem('current_user', JSON.stringify(localUser));
-        console.log('تم تسجيل الدخول بنجاح من localStorage للمستخدم:', localUser.username, 'بدور:', localUser.role);
-        return true;
-      }
-
+      
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
-      // fallback إلى localStorage في حالة الخطأ
-      try {
-        const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const localUser = localUsers.find((u: User) => 
-          u.username === username && u.password === password
-        );
-
-        if (localUser) {
-          setUser(localUser);
-          localStorage.setItem('current_user', JSON.stringify(localUser));
-          console.log('تم تسجيل الدخول بنجاح من localStorage (fallback) للمستخدم:', localUser.username);
-          return true;
-        }
-      } catch (localError) {
-        console.error('خطأ في fallback:', localError);
-      }
-      return false;
+      throw new Error('Authentication failed');
     }
   };
 
@@ -214,159 +158,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: Date.now().toString(),
         ...userData
       };
-
-      // إضافة إلى قاعدة البيانات
-      await DataService.addUser(newUser);
-
-      // تحديث القائمة المحلية
-      const updatedUsers = await DataService.getUsersWithPermissions();
-      setUsers(updatedUsers);
-
-      // fallback إلى localStorage
+      
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       currentUsers.push(newUser);
       localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+      setUsers(currentUsers);
     } catch (error) {
-      console.error('خطأ في إضافة المستخدم:', error);
-      // fallback إلى localStorage فقط
-      try {
-        const newUser = {
-          id: Date.now().toString(),
-          ...userData
-        };
-        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        currentUsers.push(newUser);
-        localStorage.setItem('auth_users', JSON.stringify(currentUsers));
-        setUsers(currentUsers);
-      } catch (localError) {
-        console.error('خطأ في fallback localStorage:', localError);
-        throw error;
-      }
+      console.error('Error adding user:', error);
+      throw error;
     }
   };
 
   const deleteUser = async (id: string) => {
     try {
-      // حذف من قاعدة البيانات
-      await DataService.deleteUser(id);
-
-      // تحديث القائمة المحلية
-      const updatedUsers = await DataService.getUsersWithPermissions();
-      setUsers(updatedUsers);
-
-      // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const localUpdatedUsers = currentUsers.filter((u: User) => u.id !== id);
-      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
+      const updatedUsers = currentUsers.filter((u: User) => u.id !== id);
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
     } catch (error) {
-      console.error('خطأ في حذف المستخدم:', error);
-      // fallback إلى localStorage فقط
-      try {
-        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const updatedUsers = currentUsers.filter((u: User) => u.id !== id);
-        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
-        setUsers(updatedUsers);
-      } catch (localError) {
-        console.error('خطأ في fallback localStorage:', localError);
-        throw error;
-      }
+      console.error('Error deleting user:', error);
+      throw error;
     }
   };
 
   const resetUserPassword = async (id: string, newPassword: string) => {
     try {
-      // تحديث في قاعدة البيانات
-      await DataService.updateUser(id, { password: newPassword });
-
-      // تحديث القائمة المحلية
-      const updatedUsers = await DataService.getUsersWithPermissions();
-      setUsers(updatedUsers);
-
-      // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const localUpdatedUsers = currentUsers.map((u: User) => 
+      const updatedUsers = currentUsers.map((u: User) => 
         u.id === id ? { ...u, password: newPassword } : u
       );
-      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
-    } catch (error) {
-      console.error('خطأ في تحديث كلمة المرور:', error);
-      // fallback إلى localStorage فقط
-      try {
-        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const updatedUsers = currentUsers.map((u: User) => 
-          u.id === id ? { ...u, password: newPassword } : u
-        );
-        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
-        setUsers(updatedUsers);
-      } catch (localError) {
-        console.error('خطأ في fallback localStorage:', localError);
-        throw error;
-      }
-    }
-  };
-
-  const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
-    try {
-      if (!permissions) return;
-
-      // تحديث في قاعدة البيانات
-      await DataService.updateUserPermissions(id, permissions);
-
-      // تحديث القائمة المحلية
-      const updatedUsers = await DataService.getUsersWithPermissions();
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
       setUsers(updatedUsers);
-
-      // إذا كان المستخدم الحالي هو من يتم تحديث صلاحياته، قم بتحديث بياناته
-      if (user && user.id === id) {
-        const updatedUser = { ...user, permissions };
-        setUser(updatedUser);
-        localStorage.setItem('current_user', JSON.stringify(updatedUser));
-      }
-
-      // تحديث localStorage
-      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const localUpdatedUsers = currentUsers.map((u: User) => 
-        u.id === id ? { ...u, permissions } : u
-      );
-      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
     } catch (error) {
-      console.error('خطأ في تحديث صلاحيات المستخدم:', error);
-      // fallback إلى localStorage فقط
-      try {
-        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const updatedUsers = currentUsers.map((u: User) => 
-          u.id === id ? { ...u, permissions } : u
-        );
-        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
-        setUsers(updatedUsers);
-
-        if (user && user.id === id) {
-          const updatedUser = { ...user, permissions };
-          setUser(updatedUser);
-          localStorage.setItem('current_user', JSON.stringify(updatedUser));
-        }
-      } catch (localError) {
-        console.error('خطأ في fallback localStorage:', localError);
-        throw error;
-      }
+      console.error('Error resetting password:', error);
+      throw error;
     }
-  };
-
-  const hasPageAccess = (pageName: string): boolean => {
-    if (!user || !user.permissions) return true; // السماح بالوصول إذا لم تكن هناك صلاحيات محددة
-
-    if (user.permissions.scope === 'full') return true;
-
-    if (user.permissions.scope === 'limited' && user.permissions.pages) {
-      return user.permissions.pages.includes(pageName);
-    }
-
-    return false;
-  };
-
-  const hasEditPermission = (): boolean => {
-    if (!user || !user.permissions) return true; // السماح بالتعديل إذا لم تكن هناك صلاحيات محددة
-    return user.permissions.level === 'edit';
   };
 
   return (
@@ -378,10 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       addUser,
       deleteUser,
-      resetUserPassword,
-      updateUserPermissions,
-      hasPageAccess,
-      hasEditPermission
+      resetUserPassword
     }}>
       {children}
     </AuthContext.Provider>
