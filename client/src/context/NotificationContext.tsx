@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -29,9 +28,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       id,
       timestamp: new Date(),
     };
-    
+
     setNotifications((prev) => [newNotification, ...prev]);
-    
+
     // عرض الإشعار كـ toast
     toast({
       title: notification.title,

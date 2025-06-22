@@ -103,24 +103,52 @@ const QualityCalls = () => {
 
         const newCustomers: Customer[] = jsonData.map((row: any, index: number) => ({
           id: `customer_${Date.now()}_${index}`,
-          customerName: row['اسم العميل'] || row['Customer Name'] || '',
-          phoneNumber: row['رقم الجوال'] || row['Phone Number'] || '',
-          salesEmployee: row['موظف المبيعات'] || row['Sales Employee'] || '',
-          salesResponse: row['رد موظف المبيعات'] || row['Sales Response'] || '',
+          customerName: row['اسم العميل'] || row['Customer Name'] || row['العميل'] || '',
+          phoneNumber: row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || '',
+          salesEmployee: row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || '',
+          salesResponse: row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || '',
           status: "غير مؤهل" as const,
-          callAttempts: 0,
+          qualificationReason: row['سبب التأهيل'] || row['Qualification Reason'] || '',
+          notes: row['ملاحظات'] || row['Notes'] || '',
+          callAttempts: parseInt(row['عدد المحاولات'] || row['Call Attempts'] || '0') || 0,
+          lastCallDate: row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '',
+          convertedDate: row['تاريخ التحويل'] || row['Converted Date'] || '',
+          convertedBy: row['محول بواسطة'] || row['Converted By'] || '',
         }));
 
-        setCustomers(prev => [...prev, ...newCustomers]);
+        // التحقق من صحة البيانات الأساسية
+        const validCustomers = newCustomers.filter(customer => 
+          customer.customerName.trim() && customer.phoneNumber.trim()
+        );
+
+        if (validCustomers.length === 0) {
+          addNotification({
+            title: "خطأ في البيانات",
+            message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال'",
+            type: "error",
+          });
+          return;
+        }
+
+        setCustomers(prev => [...prev, ...validCustomers]);
         addNotification({
           title: "تم الرفع بنجاح",
-          message: `تم رفع ${newCustomers.length} عميل جديد`,
+          message: `تم رفع ${validCustomers.length} عميل جديد`,
           type: "success",
         });
+
+        if (validCustomers.length < newCustomers.length) {
+          addNotification({
+            title: "تحذير",
+            message: `تم تجاهل ${newCustomers.length - validCustomers.length} صف بسبب بيانات ناقصة`,
+            type: "warning",
+          });
+        }
       } catch (error) {
+        console.error("Error processing Excel file:", error);
         addNotification({
           title: "خطأ في رفع الملف",
-          message: "تأكد من صحة تنسيق الملف",
+          message: "تأكد من صحة تنسيق الملف. يجب أن يكون ملف Excel (.xlsx أو .xls)",
           type: "error",
         });
       }
