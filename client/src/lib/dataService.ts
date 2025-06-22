@@ -394,7 +394,7 @@ export class DataService {
               old_value: update.oldValue,
               new_value: update.newValue,
               updated_by: update.updatedBy,
-              created_at: update.updatedAt,
+              // سيتم استخدام القيمة الافتراضية لـ created_at
             });
 
           if (updateError) {
@@ -443,7 +443,7 @@ export class DataService {
         oldValue: update.old_value,
         newValue: update.new_value,
         updatedBy: update.updated_by,
-        updatedAt: update.created_at,
+        updatedAt: update.created_at || new Date().toISOString(),
       }));
 
       return {

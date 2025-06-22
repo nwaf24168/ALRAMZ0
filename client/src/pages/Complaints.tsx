@@ -947,64 +947,113 @@ export default function Complaints() {
                   </div>
                 </div>
 
-                {/* تحديثات الشكوى */}
-                  {selectedComplaint.updates &&
-                    selectedComplaint.updates.length > 0 && (
-                    <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                      <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                        <History className="w-4 h-4 text-green-400" />
-                        سجل التحديثات ({selectedComplaint.updates.length})
-                      </h3>
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {selectedComplaint.updates
-                          .slice()
-                          .reverse()
-                          .map((update, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start gap-3 p-4 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-colors border border-gray-700/30"
-                          >
-                            <div className="p-2 rounded-full bg-green-500/10 mt-1">
-                              <Edit className="w-4 h-4 text-green-400" />
+                {/* سجل التحديثات - يظهر دائماً */}
+                <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
+                  <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <History className="w-4 h-4 text-blue-400" />
+                    سجل التحديثات والتعديلات
+                    {selectedComplaint.updates && selectedComplaint.updates.length > 0 && (
+                      <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs">
+                        {selectedComplaint.updates.length} تحديث
+                      </span>
+                    )}
+                  </h3>
+                  
+                  {selectedComplaint.updates && selectedComplaint.updates.length > 0 ? (
+                    <div className="space-y-4 max-h-80 overflow-y-auto">
+                      {selectedComplaint.updates
+                        .slice()
+                        .reverse()
+                        .map((update, index) => (
+                        <div
+                          key={index}
+                          className="relative p-4 rounded-lg bg-gradient-to-r from-gray-800/20 to-gray-800/40 border border-gray-700/30 hover:border-gray-600/50 transition-all duration-200"
+                        >
+                          {/* خط التوصيل للتحديثات */}
+                          {index < selectedComplaint.updates.length - 1 && (
+                            <div className="absolute left-6 bottom-0 w-0.5 h-4 bg-gradient-to-b from-blue-500/50 to-transparent"></div>
+                          )}
+                          
+                          <div className="flex items-start gap-4">
+                            <div className="p-2.5 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30">
+                              <Edit className="w-4 h-4 text-blue-400" />
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-medium text-blue-400">
-                                  {update.updatedBy}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(update.updatedAt).toLocaleDateString(
-                                    "ar-EG",
-                                  )}{" "}
-                                  -{" "}
-                                  {new Date(update.updatedAt).toLocaleTimeString(
-                                    "ar-EG",
-                                  )}
-                                </span>
-                              </div>
-                              <p className="text-sm text-white mb-2">
-                                تم تحديث <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
-                              </p>
-                              <div className="text-xs space-y-1">
+                            
+                            <div className="flex-1 space-y-3">
+                              {/* رأس التحديث */}
+                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-400">من:</span>
-                                  <span className="text-red-400 bg-red-500/10 px-2 py-1 rounded">
-                                    {update.oldValue || "فارغ"}
+                                  <span className="text-sm font-medium text-blue-400">
+                                    {update.updatedBy}
+                                  </span>
+                                  <span className="text-xs text-gray-500">•</span>
+                                  <span className="text-xs text-gray-400">
+                                    قام بالتحديث
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-400">إلى:</span>
-                                  <span className="text-green-400 bg-green-500/10 px-2 py-1 rounded">
-                                    {update.newValue || "فارغ"}
-                                  </span>
+                                <div className="text-right">
+                                  <div className="text-xs text-gray-300">
+                                    {new Date(update.updatedAt).toLocaleDateString("ar-EG")}
+                                  </div>
+                                  <div className="text-xs text-gray-400">
+                                    {new Date(update.updatedAt).toLocaleTimeString("ar-EG", {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* تفاصيل التحديث */}
+                              <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/20">
+                                <p className="text-sm text-white mb-3 flex items-center gap-2">
+                                  <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                  تم تحديث حقل: <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
+                                </p>
+                                
+                                <div className="grid grid-cols-1 gap-3">
+                                  {/* القيمة القديمة */}
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-xs text-gray-400 whitespace-nowrap">القيمة السابقة:</span>
+                                      <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-3 py-1.5 rounded-md text-xs max-w-full overflow-hidden">
+                                        <span className="block truncate" title={update.oldValue || "فارغ"}>
+                                          {update.oldValue || "فارغ"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* القيمة الجديدة */}
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-xs text-gray-400 whitespace-nowrap">القيمة الجديدة:</span>
+                                      <div className="bg-green-500/10 border border-green-500/20 text-green-300 px-3 py-1.5 rounded-md text-xs max-w-full overflow-hidden">
+                                        <span className="block truncate" title={update.newValue || "فارغ"}>
+                                          {update.newValue || "فارغ"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        ))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800/50 flex items-center justify-center">
+                        <History className="w-8 h-8 text-gray-500" />
                       </div>
+                      <p className="text-gray-400 text-sm">لا توجد تحديثات على هذه الشكوى</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        ستظهر هنا جميع التعديلات التي تتم على الشكوى
+                      </p>
                     </div>
                   )}
+                </div>
               </div>
 
               <DialogFooter className="mt-8">
