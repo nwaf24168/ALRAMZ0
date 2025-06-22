@@ -849,9 +849,10 @@ export class DataService {
     }
   }
 
+  // جلب المستخدمين مع صلاحياتهم
   static async getUsers(): Promise<any[]> {
     const { data, error } = await supabase
-      .from("users")
+      .from("users_with_permissions")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -863,10 +864,15 @@ export class DataService {
     }
 
     return (data || []).map((record) => ({
-      id: record.user_id,
+      id: record.id,
       username: record.username,
-      password: record.password_hash,
+      password: "", // لا نرجع كلمة المرور لأسباب أمنية
       role: record.role,
+      permissions: record.permission_level ? {
+        level: record.permission_level as 'read' | 'edit',
+        scope: record.permission_scope as 'full' | 'limited',
+        pages: record.allowed_pages || []
+      } : undefined
     }));
   }
 
