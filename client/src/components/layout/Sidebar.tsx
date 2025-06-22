@@ -1,8 +1,12 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Settings,
@@ -12,16 +16,17 @@ import {
   LineChart,
   User,
   Package,
-  BarChart3, // Added import for BarChart3 icon
   PackageCheck,
   Phone,
-  TrendingUp,
   Headphones,
+  Menu,
 } from "lucide-react";
 
 export default function Sidebar() {
   const { logout, user } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -75,69 +80,95 @@ export default function Sidebar() {
     },
   ];
 
-  return (
-    <aside className="fixed md:sticky top-0 right-0 h-screen w-64 md:w-64 sm:w-56 bg-sidebar border-l overflow-y-auto z-50 transform md:transform-none transition-transform duration-300">
-      <div className="flex flex-col h-full">
-        <div className="p-3 md:p-4 border-b">
-          <div className="flex flex-col items-center justify-center p-2">
-            <h1 className="text-lg md:text-xl font-bold mb-1 text-center">
-              شركة الرمز العقارية
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground text-center">
-              منصة إدارة راحة العملاء
-            </p>
-          </div>
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-3 md:p-4 border-b">
+        <div className="flex flex-col items-center justify-center p-2">
+          <h1 className="text-lg md:text-xl font-bold mb-1 text-center">
+            شركة الرمز العقارية
+          </h1>
+          <p className="text-xs md:text-sm text-muted-foreground text-center">
+            منصة إدارة راحة العملاء
+          </p>
         </div>
+      </div>
 
-        <div className="p-3 md:p-4 border-b">
-          <div className="flex items-center space-x-3 md:space-x-4 space-x-reverse">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-4 w-4 md:h-6 md:w-6 text-primary" />
-            </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-medium text-sm md:text-base truncate">
-                {user?.username}
-              </span>
-              <span className="text-xs md:text-sm text-muted-foreground truncate">
-                {user?.role}
-              </span>
-            </div>
+      <div className="p-3 md:p-4 border-b">
+        <div className="flex items-center space-x-3 md:space-x-4 space-x-reverse">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="h-4 w-4 md:h-6 md:w-6 text-primary" />
           </div>
-        </div>
-
-        <nav className="flex-1 p-3 md:p-4">
-          <ul className="space-y-1 md:space-y-2">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
-                    isActive(item.path)
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted",
-                  )}
-                >
-                  {item.icon}
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="p-3 md:p-4 border-t">
-          <div className="flex items-center justify-center">
-            <button
-              onClick={() => logout()}
-              className="flex items-center text-xs md:text-sm p-2 rounded-md text-red-500 hover:bg-red-900/20 w-full justify-center"
-            >
-              <LogOut className="ml-2 h-3 w-3 md:h-4 md:w-4" />
-              <span>تسجيل الخروج</span>
-            </button>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-medium text-sm md:text-base truncate">
+              {user?.username}
+            </span>
+            <span className="text-xs md:text-sm text-muted-foreground truncate">
+              {user?.role}
+            </span>
           </div>
         </div>
       </div>
+
+      <nav className="flex-1 p-3 md:p-4">
+        <ul className="space-y-1 md:space-y-2">
+          {menuItems.map((item) => (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                onClick={() => isMobile && setIsOpen(false)}
+                className={cn(
+                  "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
+                  isActive(item.path)
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted",
+                )}
+              >
+                {item.icon}
+                <span className="truncate">{item.title}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="p-3 md:p-4 border-t">
+        <div className="flex items-center justify-center">
+          <button
+            onClick={() => logout()}
+            className="flex items-center text-xs md:text-sm p-2 rounded-md text-red-500 hover:bg-red-900/20 w-full justify-center"
+          >
+            <LogOut className="ml-2 h-3 w-3 md:h-4 md:w-4" />
+            <span>تسجيل الخروج</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="fixed top-4 right-4 z-50 md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-64 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <aside className="sticky top-0 right-0 h-screen w-64 bg-sidebar border-l overflow-y-auto">
+      <SidebarContent />
     </aside>
   );
 }
