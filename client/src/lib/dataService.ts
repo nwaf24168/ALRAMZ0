@@ -749,46 +749,38 @@ export class DataService {
       );
     }
   }
+
+  static async getUsers(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("users")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("خطأ Supabase في جلب مكالمات الجودة:", error);
+      console.error("خطأ Supabase في جلب المستخدمين:", error);
       throw new Error(
-        `خطأ في جلب مكالمات الجودة: ${error.message || error.details || "خطأ غير معروف"}`,
+        `خطأ في جلب المستخدمين: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
 
-    return data || [];
+    return (data || []).map((record) => ({
+      id: record.user_id,
+      username: record.username,
+      password: record.password_hash,
+      role: record.role,
+    }));
   }
 
-  static async updateQualityCall(id: string, updates: any): Promise<void> {
+  static async deleteUser(userId: string): Promise<void> {
     const { error } = await supabase
-      .from("quality_calls")
-      .update({
-        ...updates,
-        updated_by: updates.updatedBy,
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.error("خطأ Supabase في تحديث مكالمة الجودة:", error);
-      throw new Error(
-        `خطأ في تحديث مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-  }
-
-  static async deleteQualityCall(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("quality_calls")
+      .from("users")
       .delete()
-      .eq("id", id);
+      .eq("user_id", userId);
 
     if (error) {
-      console.error("خطأ Supabase في حذف مكالمة الجودة:", error);
+      console.error("خطأ Supabase في حذف المستخدم:", error);
       throw new Error(
-        `خطأ في حذف مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`,
+        `خطأ في حذف المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
   }
