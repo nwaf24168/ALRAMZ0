@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { DataService } from '@/lib/dataService';
 
 interface User {
   id: string;
@@ -111,9 +112,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const initialUsers = initializeDefaultAdmin();
-    setUsers(initialUsers);
-    console.log('تم تحميل المستخدمين:', initialUsers);
+    const loadUsersFromDB = async () => {
+      try {
+        const usersFromDB = await DataService.getUsersWithPermissions();
+        setUsers(usersFromDB);
+        console.log('تم تحميل المستخدمين من قاعدة البيانات:', usersFromDB);
+      } catch (error) {
+        console.error('خطأ في تحميل المستخدمين من قاعدة البيانات:', error);
+        // fallback إلى localStorage في حالة الخطأ
+        const initialUsers = initializeDefaultAdmin();
+        setUsers(initialUsers);
+        console.log('تم تحميل المستخدمين من localStorage:', initialUsers);
+      }
+    };
+
+    loadUsersFromDB();
 
     // استرداد المستخدم المحفوظ عند تحديث الصفحة
     const savedUser = localStorage.getItem('current_user');
@@ -141,10 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const user = localUsers.find((u: User) => 
-        u.username === username && u.password === password
-      );
+      
+      // تجربة قاعدة البيانات أولاً
+      const user = await DataService.authenticateUser(username, password);
       
       if (user) {
         setUser(user);
@@ -153,11 +165,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true;
       }
       
+      // fallback إلى localStorage في حالة فشل قاعدة البيانات
+      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const localUser = localUsers.find((u: User) => 
+        u.username === username && u.password === password
+      );
+      
+      if (localUser) {
+        setUser(localUser);
+        localStorage.setItem('current_user', JSON.stringify(localUser));
+        console.log('تم تسجيل الدخول بنجاح من localStorage للمستخدم:', localUser.username, 'بدور:', localUser.role);
+        return true;
+      }
+      
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
-      throw new Error('Authentication failed');
+      // fallback إلى localStorage في حالة الخطأ
+      try {
+        const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const localUser = localUsers.find((u: User) => 
+          u.username === username && u.password === password
+        );
+        
+        if (localUser) {
+          setUser(localUser);
+          localStorage.setItem('current_user', JSON.stringify(localUser));
+          console.log('تم تسجيل الدخول بنجاح من localStorage (fallback) للمستخدم:', localUser.username);
+          return true;
+        }
+      } catch (localError) {
+        console.error('خطأ في fallback:', localError);
+      }
+      return false;
     }
   };
 
@@ -174,49 +215,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...userData
       };
       
+      // إضافة إلى قاعدة البيانات
+      await DataService.addUser(newUser);
+      
+      // تحديث القائمة المحلية
+      const updatedUsers = await DataService.getUsersWithPermissions();
+      setUsers(updatedUsers);
+      
+      // fallback إلى localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       currentUsers.push(newUser);
       localStorage.setItem('auth_users', JSON.stringify(currentUsers));
-      setUsers(currentUsers);
     } catch (error) {
-      console.error('Error adding user:', error);
-      throw error;
+      console.error('خطأ في إضافة المستخدم:', error);
+      // fallback إلى localStorage فقط
+      try {
+        const newUser = {
+          id: Date.now().toString(),
+          ...userData
+        };
+        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        currentUsers.push(newUser);
+        localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+        setUsers(currentUsers);
+      } catch (localError) {
+        console.error('خطأ في fallback localStorage:', localError);
+        throw error;
+      }
     }
   };
 
   const deleteUser = async (id: string) => {
     try {
-      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const updatedUsers = currentUsers.filter((u: User) => u.id !== id);
-      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      // حذف من قاعدة البيانات
+      await DataService.deleteUser(id);
+      
+      // تحديث القائمة المحلية
+      const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
+      
+      // تحديث localStorage
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const localUpdatedUsers = currentUsers.filter((u: User) => u.id !== id);
+      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
     } catch (error) {
-      console.error('Error deleting user:', error);
-      throw error;
+      console.error('خطأ في حذف المستخدم:', error);
+      // fallback إلى localStorage فقط
+      try {
+        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const updatedUsers = currentUsers.filter((u: User) => u.id !== id);
+        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+        setUsers(updatedUsers);
+      } catch (localError) {
+        console.error('خطأ في fallback localStorage:', localError);
+        throw error;
+      }
     }
   };
 
   const resetUserPassword = async (id: string, newPassword: string) => {
     try {
+      // تحديث في قاعدة البيانات
+      await DataService.updateUser(id, { password: newPassword });
+      
+      // تحديث القائمة المحلية
+      const updatedUsers = await DataService.getUsersWithPermissions();
+      setUsers(updatedUsers);
+      
+      // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const updatedUsers = currentUsers.map((u: User) => 
+      const localUpdatedUsers = currentUsers.map((u: User) => 
         u.id === id ? { ...u, password: newPassword } : u
       );
-      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
-      setUsers(updatedUsers);
+      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
     } catch (error) {
-      console.error('Error resetting password:', error);
-      throw error;
+      console.error('خطأ في تحديث كلمة المرور:', error);
+      // fallback إلى localStorage فقط
+      try {
+        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const updatedUsers = currentUsers.map((u: User) => 
+          u.id === id ? { ...u, password: newPassword } : u
+        );
+        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+        setUsers(updatedUsers);
+      } catch (localError) {
+        console.error('خطأ في fallback localStorage:', localError);
+        throw error;
+      }
     }
   };
 
   const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
     try {
-      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-      const updatedUsers = currentUsers.map((u: User) => 
-        u.id === id ? { ...u, permissions } : u
-      );
-      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      if (!permissions) return;
+      
+      // تحديث في قاعدة البيانات
+      await DataService.updateUserPermissions(id, permissions);
+      
+      // تحديث القائمة المحلية
+      const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
       
       // إذا كان المستخدم الحالي هو من يتم تحديث صلاحياته، قم بتحديث بياناته
@@ -225,9 +322,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(updatedUser);
         localStorage.setItem('current_user', JSON.stringify(updatedUser));
       }
+      
+      // تحديث localStorage
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const localUpdatedUsers = currentUsers.map((u: User) => 
+        u.id === id ? { ...u, permissions } : u
+      );
+      localStorage.setItem('auth_users', JSON.stringify(localUpdatedUsers));
     } catch (error) {
-      console.error('Error updating user permissions:', error);
-      throw error;
+      console.error('خطأ في تحديث صلاحيات المستخدم:', error);
+      // fallback إلى localStorage فقط
+      try {
+        const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const updatedUsers = currentUsers.map((u: User) => 
+          u.id === id ? { ...u, permissions } : u
+        );
+        localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+        setUsers(updatedUsers);
+        
+        if (user && user.id === id) {
+          const updatedUser = { ...user, permissions };
+          setUser(updatedUser);
+          localStorage.setItem('current_user', JSON.stringify(updatedUser));
+        }
+      } catch (localError) {
+        console.error('خطأ في fallback localStorage:', localError);
+        throw error;
+      }
     }
   };
 

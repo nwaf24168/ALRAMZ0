@@ -265,13 +265,14 @@ export default function Settings() {
     }));
   };
 
-  // تحميل المستخدمين من Supabase عند تحميل المكون
+  // تحميل المستخدمين من قاعدة البيانات عند تحميل المكون
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const usersFromDB = await DataService.getUsers();
-        // يمكن دمج المستخدمين من قاعدة البيانات مع المستخدمين المحليين
+        const usersFromDB = await DataService.getUsersWithPermissions();
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
+        
+        // لا نحتاج لدمج البيانات لأن AuthContext يتعامل مع هذا
       } catch (error) {
         console.error("خطأ في تحميل المستخدمين:", error);
       }
