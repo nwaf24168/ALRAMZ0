@@ -82,10 +82,26 @@ export default function Delivery() {
   const loadDeliveryRecords = async () => {
     try {
       setLoading(true);
-      // هنا يجب استخدام DataService لتحميل سجلات التسليم من قاعدة البيانات
-      // const data = await DataService.getDeliveryRecords();
-      // setRecords(data);
-      console.log("تحميل سجلات التسليم من قاعدة البيانات");
+      // تحميل البيانات من نفس مصدر صفحة التحليل (الحجوزات)
+      const bookingsData = await DataService.getBookings();
+      
+      // تحويل بيانات الحجوزات إلى سجلات تسليم
+      const deliveryRecords = bookingsData.map(booking => ({
+        id: booking.id,
+        date: booking.bookingDate,
+        customerName: booking.customerName,
+        project: booking.project,
+        unitNumber: booking.unit,
+        deliveryType: booking.deliveryDate ? "تسليم نهائي" : "مجدول",
+        status: booking.deliveryDate ? "مكتمل" : "مجدول", 
+        notes: `${booking.saleType} - ${booking.paymentMethod}`,
+        deliveryDate: booking.deliveryDate || "",
+        createdBy: booking.salesEmployee,
+        updatedBy: undefined,
+      }));
+      
+      setRecords(deliveryRecords);
+      console.log("تم تحميل سجلات التسليم:", deliveryRecords.length);
     } catch (error) {
       console.error("خطأ في تحميل سجلات التسليم:", error);
       addNotification({
@@ -129,12 +145,27 @@ export default function Delivery() {
         updatedBy: editingRecord ? user?.username : undefined,
       };
 
-      // هنا يجب حفظ البيانات في قاعدة البيانات
-      // if (editingRecord) {
-      //   await DataService.updateDeliveryRecord(recordData.id, recordData);
-      // } else {
-      //   await DataService.saveDeliveryRecord(recordData);
-      // }
+      // حفظ البيانات كحجز جديد أو تحديث حجز موجود
+      const bookingData = {
+        id: recordData.id,
+        bookingDate: recordData.date,
+        customerName: recordData.customerName,
+        project: recordData.project,
+        building: "1", // قيمة افتراضية
+        unit: recordData.unitNumber,
+        paymentMethod: "نقدي", // قيمة افتراضية
+        saleType: recordData.deliveryType,
+        unitValue: 0, // قيمة افتراضية
+        transferDate: recordData.date,
+        salesEmployee: recordData.createdBy,
+        deliveryDate: recordData.deliveryDate || null,
+      };
+
+      if (editingRecord) {
+        await DataService.updateBooking(recordData.id, bookingData);
+      } else {
+        await DataService.saveBooking(bookingData);
+      }
 
       await loadDeliveryRecords();
       handleCancel();
@@ -174,7 +205,7 @@ export default function Delivery() {
   const handleDelete = async (id: string) => {
     try {
       setLoading(true);
-      // await DataService.deleteDeliveryRecord(id);
+      await DataService.deleteBooking(id);
       await loadDeliveryRecords();
       addNotification({
         title: "تم بنجاح",
