@@ -785,41 +785,6 @@ export class DataService {
     }
   }
 
-  static async getUsers(): Promise<any[]> {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("خطأ Supabase في جلب المستخدمين:", error);
-      throw new Error(
-        `خطأ في جلب المستخدمين: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-
-    return (data || []).map((record) => ({
-      id: record.user_id,
-      username: record.username,
-      password: record.password_hash,
-      role: record.role,
-    }));
-  }
-
-  static async deleteUser(userId: string): Promise<void> {
-    const { error } = await supabase
-      .from("users")
-      .delete()
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("خطأ Supabase في حذف المستخدم:", error);
-      throw new Error(
-        `خطأ في حذف المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-  }
-
   // إعداد الاشتراكات للوقت الفعلي
   static setupRealtimeSubscription(
     table: string,
