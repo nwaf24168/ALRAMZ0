@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
@@ -54,11 +53,6 @@ export default function Sidebar() {
       path: "/analytics",
     },
     {
-      title: "الإعدادات",
-      icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
-      path: "/settings",
-    },
-    {
       title: "قسم التسليم",
       icon: <Package className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/delivery",
@@ -77,6 +71,11 @@ export default function Sidebar() {
       title: "الاستقبال",
       icon: <Headphones className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/reception",
+    },
+    {
+      title: "الإعدادات",
+      icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
+      path: "/settings",
     },
   ];
 
@@ -239,7 +238,6 @@ function DeliveryAnalysis() {
             <td>2,687,500</td>
             <td></td>
             <td>محمد شعيب</td>
-            <td></td>
             <td></td>
             <td></td>
             <td></td>
