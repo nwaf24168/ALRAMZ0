@@ -101,7 +101,7 @@ const QualityCalls = () => {
     try {
       setIsLoading(true);
       const qualityCalls = await DataService.getQualityCalls();
-      
+
       const formattedCustomers: Customer[] = qualityCalls.map(call => ({
         id: call.id,
         customerName: call.customer_name,
@@ -162,14 +162,14 @@ const QualityCalls = () => {
     const newCustomers: Customer[] = data.map((row: any, index: number) => {
       // محاولة قراءة الاسم من عدة أعمدة محتملة
       const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
-      
+
       // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
       const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
-      
+
       // باقي البيانات
       const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
       const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
-      
+
       return {
         id: `customer_${Date.now()}_${index}`,
         customerName,
@@ -222,7 +222,7 @@ const QualityCalls = () => {
     });
 
     const results = await Promise.all(savePromises);
-    
+
     results.forEach(result => {
       if (result.success) {
         savedCount++;
@@ -280,7 +280,7 @@ const QualityCalls = () => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-        
+
         if (workbook.SheetNames.length === 0) {
           addNotification({
             title: "ملف فارغ",
@@ -292,7 +292,7 @@ const QualityCalls = () => {
 
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        
+
         if (!worksheet) {
           addNotification({
             title: "ورقة عمل فارغة",
@@ -303,7 +303,7 @@ const QualityCalls = () => {
         }
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        
+
         if (jsonData.length === 0) {
           addNotification({
             title: "لا توجد بيانات",
