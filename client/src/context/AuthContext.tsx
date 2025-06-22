@@ -99,6 +99,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initialUsers = initializeDefaultAdmin();
     setUsers(initialUsers);
     console.log('تم تحميل المستخدمين:', initialUsers);
+
+    // استرداد المستخدم المحفوظ عند تحديث الصفحة
+    const savedUser = localStorage.getItem('current_user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        console.log('تم استرداد المستخدم من localStorage:', parsedUser.username);
+      } catch (error) {
+        console.error('خطأ في استرداد بيانات المستخدم:', error);
+        localStorage.removeItem('current_user');
+      }
+    }
   }, []);
 
   const loadUsers = () => {
@@ -120,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (user) {
         setUser(user);
+        localStorage.setItem('current_user', JSON.stringify(user));
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
@@ -134,6 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setUser(null);
+    localStorage.removeItem('current_user');
+    console.log('تم تسجيل الخروج وحذف بيانات المستخدم من localStorage');
   };
 
   const addUser = async (userData: Omit<User, "id">) => {
