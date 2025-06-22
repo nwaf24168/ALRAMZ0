@@ -67,7 +67,7 @@
 
 @layer components {
   .metric-card {
-    @apply relative rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md;
+    @apply relative rounded-xl border bg-card p-3 sm:p-4 shadow-sm transition-all hover:shadow-md;
   }
 
   .metric-card-success {
@@ -87,19 +87,19 @@
   }
 
   .dashboard-grid {
-    @apply grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5;
+    @apply grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5;
   }
 
   .chart-container {
-    @apply rounded-xl border bg-card p-4 shadow-sm;
+    @apply rounded-xl border bg-card p-3 sm:p-4 shadow-sm;
   }
 
   .form-container {
-    @apply rounded-xl border bg-card p-6 shadow-sm;
+    @apply rounded-xl border bg-card p-4 sm:p-6 shadow-sm;
   }
 
   .form-grid {
-    @apply grid grid-cols-1 gap-6 md:grid-cols-2;
+    @apply grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2;
   }
 
   .tab-active {
@@ -108,5 +108,30 @@
 
   .tab-inactive {
     @apply hover:bg-secondary rounded-md;
+  }
+
+  /* Mobile responsive utilities */
+  .mobile-container {
+    @apply px-3 sm:px-4 lg:px-6;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-button {
+    @apply px-3 py-2 text-sm sm:px-4 sm:py-2 sm:text-base;
+  }
+
+  .mobile-table {
+    @apply overflow-x-auto;
+  }
+
+  .mobile-dialog {
+    @apply mx-2 sm:mx-auto;
+  }
+
+  .mobile-grid {
+    @apply grid gap-3 sm:gap-4 lg:gap-6;
   }
 }

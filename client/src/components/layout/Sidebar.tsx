@@ -214,7 +214,6 @@ function DeliveryAnalysis() {
             <td></td>
             <td></td>
             <td></td>
-            <td></td>
           </tr>
           <tr>
             <td>5</td>

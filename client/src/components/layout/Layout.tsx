@@ -27,7 +27,7 @@ export default function Layout({ children, requireAuth = true }: LayoutProps) {
   return (
     <div className="flex min-h-screen bg-background" dir="rtl">
       <Sidebar />
-      <main className="flex-1 p-6 overflow-x-hidden">{children}</main>
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden">{children}</main>
     </div>
   );
 }

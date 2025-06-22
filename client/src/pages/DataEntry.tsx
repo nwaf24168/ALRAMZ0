@@ -193,7 +193,7 @@ export default function DataEntry() {
     if (isNaN(numValue) && value !== "" && value !== "-") return;
 
     const metric = metrics[index];
-    
+
     // قائمة المؤشرات التي هي أرقام صحيحة وليست نسب مئوية
     const nonPercentageMetrics = [
       "عدد الثواني للرد",
@@ -203,7 +203,7 @@ export default function DataEntry() {
     ];
 
     const isNonPercentage = nonPercentageMetrics.includes(metric.title);
-    
+
     const targetValue = parseFloat(
       metric.target.replace(/[^0-9.-]/g, "") || "0",
     );
@@ -772,6 +772,7 @@ const handleMetricChange = (index: number, value: string) => {
     const nonPercentageMetrics = [
       "عدد الثواني للرد",
       "سرعة إغلاق طلبات الصيانة", 
+      "عدد إعادة فتح طلب",
       "عدد إعادة فتح طلب",
       "عدد العملاء المرشحين"
     ];

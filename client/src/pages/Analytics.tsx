@@ -174,32 +174,29 @@ export default function Analytics() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="h-6 w-6" />
-              تحليلات الأداء المتقدمة
-            </h1>
-            <p className="text-muted-foreground">
-              نظرة شاملة على أداء النظام ورضا العملاء
-            </p>
-          </div>
-
-          <div className="flex gap-2">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">التحليلات</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <Button
               variant={currentPeriod === "weekly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("weekly")}
+              className="mobile-button"
             >
-              <Clock className="h-4 w-4 mr-2" />
               أسبوعي
+            </Button>
+            <Button
+              variant={currentPeriod === "monthly" ? "default" : "outline"}
+              onClick={() => setCurrentPeriod("monthly")}
+              className="mobile-button"
+            >
+              شهري
             </Button>
             <Button
               variant={currentPeriod === "yearly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("yearly")}
+              className="mobile-button"
             >
-              <Activity className="h-4 w-4 mr-2" />
               سنوي
             </Button>
           </div>

@@ -156,7 +156,7 @@ export default function Reception() {
       // قراءة الملف
       const data = await file.arrayBuffer();
       const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array' }));
-      
+
       // الحصول على أول ورقة عمل
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = await import('xlsx').then(XLSX => XLSX.utils.sheet_to_json(worksheet, { header: 1 }));
@@ -180,7 +180,7 @@ export default function Reception() {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        
+
         try {
           // تحديد الحقول المطلوبة (يمكن تعديلها حسب تنسيق Excel المتوقع)
           const recordData = {
@@ -277,7 +277,7 @@ export default function Reception() {
       // قراءة الملف
       const data = await file.arrayBuffer();
       const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array' }));
-      
+
       // الحصول على أول ورقة عمل
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = await import('xlsx').then(XLSX => XLSX.utils.sheet_to_json(worksheet, { header: 1 }));
@@ -305,7 +305,7 @@ export default function Reception() {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        
+
         try {
           // تحديد الحقول المطلوبة
           const recordData = {
@@ -520,10 +520,10 @@ export default function Reception() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">الاستقبال</h1>
-          <div className="flex gap-2">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">الاستقبال</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -532,6 +532,16 @@ export default function Reception() {
               id="excel-file-upload"
               disabled={isLoading}
             />
+            <Button 
+              variant="outline" 
+              onClick={triggerFileUpload}
+              disabled={isLoading}
+              className="mobile-button"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
+            </Button>
+
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -542,25 +552,18 @@ export default function Reception() {
             />
             <Button 
               variant="outline" 
-              onClick={triggerFileUpload}
-              disabled={isLoading}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
-            </Button>
-            <Button 
-              variant="outline" 
               onClick={triggerFullImportUpload}
               disabled={isLoading}
+              className="mobile-button"
             >
               <Upload className="h-4 w-4 mr-2" />
               {isLoading ? "جاري الاستيراد..." : "استيراد البيانات"}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleOpenDialog}>
+                <Button variant="outline" className="mobile-button">
                   <Plus className="h-4 w-4 ml-2" />
-                  إضافة سجل جديد
+                  إضافة عميل جديد
                 </Button>
               </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

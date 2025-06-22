@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -28,7 +27,7 @@ export function MetricCard({
 }: MetricCardProps) {
   // تحديد لون البطاقة بناء على ما إذا كانت القيمة تحقق الهدف
   let cardVariant = variant;
-  
+
   if (reachedTarget !== undefined) {
     cardVariant = reachedTarget ? "success" : "danger";
   }
@@ -41,35 +40,35 @@ export function MetricCard({
       "metric-card-info": cardVariant === "info",
     })}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="text-muted-foreground">{icon}</div>
+        <CardTitle className="text-xs sm:text-sm font-medium leading-tight">{title}</CardTitle>
+        <div className="text-muted-foreground shrink-0">{icon}</div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+      <CardContent className="space-y-1">
+        <div className="text-xl sm:text-2xl font-bold">{value}</div>
         {target && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground">
             الهدف: {target}
+          </div>
+        )}
+        {typeof change === 'number' && (
+          <p className={`text-xs flex items-center ${
+            isPositive ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isPositive ? (
+              <ArrowUp className="h-3 w-3 mr-1 shrink-0" />
+            ) : (
+              <ArrowDown className="h-3 w-3 mr-1 shrink-0" />
+            )}
+            <span className="truncate">{Math.abs(change)}%</span>
           </p>
         )}
-      </CardContent>
-      {change !== undefined && (
-        <CardFooter className="p-2">
-          <div className="flex items-center text-xs">
-            {isPositive ? (
-              <ArrowUp className={cn("h-3 w-3 ml-1", isLowerBetter ? "text-danger" : "text-success")} />
-            ) : (
-              <ArrowDown className={cn("h-3 w-3 ml-1", isLowerBetter ? "text-success" : "text-danger")} />
-            )}
-            <span className={cn(
-              isPositive 
-                ? isLowerBetter ? "text-danger" : "text-success" 
-                : isLowerBetter ? "text-success" : "text-danger"
-            )}>
-              {Math.abs(change)}%
-            </span>
+        {reachedTarget && (
+          <div className="flex items-center">
+            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mr-1 shrink-0" />
+            <span className="text-xs text-green-600 truncate">تم تحقيق الهدف</span>
           </div>
-        </CardFooter>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 }

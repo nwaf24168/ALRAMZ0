@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +83,7 @@ export default function Delivery() {
       setLoading(true);
       // تحميل البيانات من نفس مصدر صفحة التحليل (الحجوزات)
       const bookingsData = await DataService.getBookings();
-      
+
       // تحويل بيانات الحجوزات إلى سجلات تسليم
       const deliveryRecords = bookingsData.map(booking => ({
         id: booking.id,
@@ -99,7 +98,7 @@ export default function Delivery() {
         createdBy: booking.salesEmployee,
         updatedBy: undefined,
       }));
-      
+
       setRecords(deliveryRecords);
       console.log("تم تحميل سجلات التسليم:", deliveryRecords.length);
     } catch (error) {
@@ -271,16 +270,18 @@ export default function Delivery() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">إدارة التسليم</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 ml-2" />
-                إضافة سجل تسليم
-              </Button>
-            </DialogTrigger>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">قسم التسليم</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="mobile-button">
+                  <Plus className="h-4 w-4 mr-2" />
+                  إضافة حجز جديد
+                </Button>
+              </DialogTrigger>
+            
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>

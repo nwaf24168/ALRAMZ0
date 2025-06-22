@@ -158,7 +158,7 @@ const QualityCalls = () => {
   // معالجة البيانات من Excel
   const processExcelData = async (data: any[]) => {
     console.log("البيانات المقروءة من Excel:", data);
-    
+
     if (!data || data.length === 0) {
       addNotification({
         title: "خطأ في البيانات",
@@ -303,7 +303,7 @@ const QualityCalls = () => {
     setIsLoading(true);
 
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -587,10 +587,10 @@ const QualityCalls = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">مكالمات الجودة</h1>
-          <div className="flex gap-2">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">مكالمات الجودة</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -603,15 +603,16 @@ const QualityCalls = () => {
               variant="outline" 
               onClick={triggerFileUpload}
               disabled={isLoading}
+              className="mobile-button"
             >
               <Upload className="h-4 w-4 mr-2" />
               {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  إضافة عميل
+                <Button variant="outline" className="mobile-button">
+                  <Plus className="h-4 w-4 mr-2" />
+                  إضافة عميل جديد
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -883,8 +884,7 @@ const QualityCalls = () => {
                                   <Button onClick={convertToQualified}>
                                     تأهيل العميل
                                   </Button>
-                                </div>
-                              </div>
+                                </div>                              </div>
                             </DialogContent>
                           </Dialog>
 

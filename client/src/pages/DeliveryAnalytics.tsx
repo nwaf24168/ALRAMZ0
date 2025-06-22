@@ -179,32 +179,22 @@ export default function DeliveryAnalytics() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Package className="h-6 w-6" />
-              تحليل قسم التسليم
-            </h1>
-            <p className="text-muted-foreground">
-              مؤشرات الأداء الرئيسية لقسم التسليم
-            </p>
-          </div>
-
-          <div className="flex gap-2">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">تحليل قسم التسليم</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <Button
               variant={currentPeriod === "monthly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("monthly")}
+              className="mobile-button"
             >
-              <Calendar className="h-4 w-4 mr-2" />
               شهري
             </Button>
             <Button
               variant={currentPeriod === "yearly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("yearly")}
+              className="mobile-button"
             >
-              <Calendar className="h-4 w-4 mr-2" />
               سنوي
             </Button>
           </div>
