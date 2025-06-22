@@ -118,6 +118,14 @@ export default function Reception() {
     }
   };
 
+  // تفعيل زر الاستيراد الكامل
+  const triggerFullImportUpload = () => {
+    const fileInput = document.getElementById('excel-full-import-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
   // معالجة رفع ملف Excel
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -220,6 +228,130 @@ export default function Reception() {
       toast({
         title: "خطأ",
         description: "فشل في معالجة ملف Excel",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
+    }
+  };
+
+  // معالجة الاستيراد الكامل للبيانات
+  const handleFullImportUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // تأكيد العملية
+    const confirmImport = window.confirm(
+      "سيتم استبدال جميع البيانات الموجودة بالبيانات من ملف Excel. هل أنت متأكد من المتابعة؟"
+    );
+
+    if (!confirmImport) {
+      event.target.value = '';
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array' }));
+      
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = await import('xlsx').then(XLSX => XLSX.utils.sheet_to_json(worksheet, { header: 1 }));
+
+      if (jsonData.length < 2) {
+        toast({
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // حذف جميع السجلات الموجودة أولاً
+      for (const record of records) {
+        await DataService.deleteReceptionRecord(record.id);
+      }
+
+      // تحويل البيانات إلى سجلات استقبال
+      const headers = jsonData[0] as string[];
+      const rows = jsonData.slice(1) as any[][];
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        
+        try {
+          // تحديد الحقول المطلوبة
+          const recordData = {
+            date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            customerName: row[1] || `عميل ${i + 1}`,
+            phoneNumber: row[2] || "",
+            project: row[3] || "مشروع افتراضي",
+            employee: row[4] || user.username,
+            contactMethod: row[5] || "اتصال هاتفي",
+            type: row[6] || "استفسار",
+            customerRequest: row[7] || "",
+            action: row[8] || "",
+            status: row[9] || "جديد",
+            createdBy: user.username,
+          };
+
+          // التحقق من البيانات الأساسية
+          if (!recordData.customerName || !recordData.phoneNumber) {
+            errorCount++;
+            continue;
+          }
+
+          // حفظ السجل في قاعدة البيانات
+          await DataService.saveReceptionRecord(recordData);
+          successCount++;
+
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // تحديث قائمة السجلات
+      await loadReceptionRecords();
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد الكامل",
+        description: `تم استيراد ${successCount} سجل بنجاح واستبدال جميع البيانات السابقة${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`,
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel للاستيراد الكامل",
         variant: "destructive",
       });
     } finally {
@@ -400,6 +532,14 @@ export default function Reception() {
               id="excel-file-upload"
               disabled={isLoading}
             />
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFullImportUpload}
+              className="hidden"
+              id="excel-full-import-upload"
+              disabled={isLoading}
+            />
             <Button 
               variant="outline" 
               onClick={triggerFileUpload}
@@ -407,6 +547,15 @@ export default function Reception() {
             >
               <Upload className="h-4 w-4 mr-2" />
               {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={triggerFullImportUpload}
+              disabled={isLoading}
+              className="bg-blue-50 hover:bg-blue-100 border-blue-300"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isLoading ? "جاري الاستيراد..." : "استيراد البيانات كاملة"}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
