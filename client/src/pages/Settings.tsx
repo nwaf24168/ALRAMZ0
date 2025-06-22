@@ -165,9 +165,22 @@ export default function Settings() {
       const usersFromDB = await DataService.getUsers();
       console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
       
-      // مسح المستخدمين الحاليين وإضافة الجدد
+      // تحديث البيانات المحلية فقط إذا كانت مختلفة عن قاعدة البيانات
+      const currentIds = new Set(users.map(u => u.id));
+      const dbIds = new Set(usersFromDB.map(u => u.id.toString()));
+      
+      // إضافة المستخدمين الجدد فقط
       usersFromDB.forEach(dbUser => {
-        addUser(dbUser);
+        if (!currentIds.has(dbUser.id)) {
+          addUser(dbUser);
+        }
+      });
+      
+      // إزالة المستخدمين المحذوفين
+      users.forEach(localUser => {
+        if (!dbIds.has(localUser.id) && !localUser.id.startsWith("temp")) {
+          deleteUser(localUser.id);
+        }
       });
     } catch (error) {
       console.error("خطأ في إعادة تحميل المستخدمين:", error);
@@ -332,9 +345,10 @@ export default function Settings() {
         const currentUsernames = users.map(u => u.username);
         const dbUsernames = usersFromDB.map(u => u.username);
         
-        // إضافة المستخدمين المفقودين من قاعدة البيانات
+        // إضافة المستخدمين المفقودين من قاعدة البيانات فقط إذا لم يكونوا موجودين محلياً
         const missingUsers = usersFromDB.filter(dbUser => 
-          !currentUsernames.includes(dbUser.username)
+          !currentUsernames.includes(dbUser.username) &&
+          !users.some(localUser => localUser.id === dbUser.id)
         );
         
         if (missingUsers.length > 0) {
@@ -346,7 +360,8 @@ export default function Settings() {
 
         // إزالة المستخدمين الذين لم يعودوا موجودين في قاعدة البيانات
         const usersToRemove = users.filter(localUser => 
-          !dbUsernames.includes(localUser.username)
+          !dbUsernames.includes(localUser.username) &&
+          !localUser.id.toString().startsWith("temp")
         );
         
         usersToRemove.forEach(userToRemove => {
@@ -359,13 +374,11 @@ export default function Settings() {
       }
     };
 
-    loadUsers();
-    
-    // إعادة تحميل كل 30 ثانية للتأكد من التزامن
-    const interval = setInterval(loadUsers, 30000);
-    
-    return () => clearInterval(interval);
-  }, [users.length]); // تشغيل فقط عند تغيير عدد المستخدمين
+    // تحميل المستخدمين فقط عند تحميل المكون لأول مرة
+    if (users.length === 0) {
+      loadUsers();
+    }
+  }, []); // تشغيل مرة واحدة فقط عند تحميل المكون
 
   // إعداد الاشتراك للوقت الفعلي للمستخدمين
   useEffect(() => {

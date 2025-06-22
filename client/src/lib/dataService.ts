@@ -659,47 +659,26 @@ export class DataService {
 
   // إدارة المستخدمين
   static async saveUser(user: any): Promise<any> {
-    const record: Partial<UserRecord> = {
-      username: user.username,
-      password: user.password,
-      role: user.role,
-      permissions: JSON.stringify(user.permissions || {
-        level: "read",
-        scope: "full",
-        pages: []
-      })
-    };
+    try {
+      // إعداد البيانات للإدراج/التحديث
+      const record: Partial<UserRecord> = {
+        username: user.username,
+        password: user.password,
+        role: user.role,
+        permissions: JSON.stringify(user.permissions || {
+          level: "read",
+          scope: "full",
+          pages: []
+        })
+      };
 
-    // إذا كان المستخدم له id صالح، نحدثه
-    if (user.id && user.id !== "" && !user.id.toString().startsWith("175")) {
-      const { data, error } = await supabase
-        .from("users")
-        .update(record)
-        .eq("id", user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("خطأ Supabase في تحديث المستخدم:", error);
-        throw new Error(
-          `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-        );
-      }
-      return data;
-    } else {
-      // التحقق إذا كان المستخدم موجود مسبقاً بنفس اسم المستخدم
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("id")
-        .eq("username", user.username)
-        .maybeSingle();
-
-      if (existingUser) {
-        // تحديث المستخدم الموجود
+      // إذا كان المستخدم له id صالح ولا يبدأ بـ temp، نحدثه
+      if (user.id && user.id !== "" && !user.id.toString().startsWith("temp") && !user.id.toString().startsWith("175")) {
+        console.log("تحديث مستخدم موجود بـ id:", user.id);
         const { data, error } = await supabase
           .from("users")
           .update(record)
-          .eq("id", existingUser.id)
+          .eq("id", user.id)
           .select()
           .single();
 
@@ -711,21 +690,93 @@ export class DataService {
         }
         return data;
       } else {
-        // إضافة مستخدم جديد (بدون تحديد id)
-        const { data, error } = await supabase
+        // التحقق إذا كان المستخدم موجود مسبقاً بنفس اسم المستخدم
+        console.log("البحث عن مستخدم بنفس الاسم:", user.username);
+        const { data: existingUser, error: searchError } = await supabase
           .from("users")
-          .insert(record)
-          .select()
-          .single();
+          .select("id")
+          .eq("username", user.username)
+          .maybeSingle();
 
-        if (error) {
-          console.error("خطأ Supabase في إضافة المستخدم:", error);
-          throw new Error(
-            `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-          );
+        if (searchError && searchError.code !== "PGRST116") {
+          console.error("خطأ في البحث عن المستخدم:", searchError);
+          throw new Error(`خطأ في البحث عن المستخدم: ${searchError.message}`);
         }
-        return data;
+
+        if (existingUser) {
+          // تحديث المستخدم الموجود
+          console.log("تحديث مستخدم موجود:", existingUser.id);
+          const { data, error } = await supabase
+            .from("users")
+            .update(record)
+            .eq("id", existingUser.id)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("خطأ Supabase في تحديث المستخدم الموجود:", error);
+            throw new Error(
+              `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+            );
+          }
+          return data;
+        } else {
+          // إضافة مستخدم جديد تماماً (Supabase سيولد id تلقائياً)
+          console.log("إضافة مستخدم جديد:", record);
+          
+          // التأكد من عدم إرسال id في البيانات
+          const insertRecord = { ...record };
+          delete insertRecord.id;
+          
+          const { data, error } = await supabase
+            .from("users")
+            .insert(insertRecord)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("خطأ Supabase في إضافة المستخدم الجديد:", error);
+            
+            // إذا كان الخطأ متعلق بالـ id، نحاول مرة أخرى مع تحديد id يدوياً
+            if (error.code === "23502" && error.message.includes("id")) {
+              console.log("محاولة إضافة مستخدم بـ id تسلسلي...");
+              
+              // الحصول على أعلى id موجود
+              const { data: maxIdData } = await supabase
+                .from("users")
+                .select("id")
+                .order("id", { ascending: false })
+                .limit(1)
+                .single();
+              
+              const nextId = maxIdData ? maxIdData.id + 1 : 1;
+              
+              const recordWithId = { ...insertRecord, id: nextId };
+              const { data: retryData, error: retryError } = await supabase
+                .from("users")
+                .insert(recordWithId)
+                .select()
+                .single();
+              
+              if (retryError) {
+                console.error("خطأ في المحاولة الثانية:", retryError);
+                throw new Error(
+                  `خطأ في إضافة المستخدم: ${retryError.message || retryError.details || "خطأ غير معروف"}`,
+                );
+              }
+              return retryData;
+            }
+            
+            throw new Error(
+              `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+            );
+          }
+          return data;
+        }
       }
+    } catch (error) {
+      console.error("خطأ عام في saveUser:", error);
+      throw error;
     }
   }
 
