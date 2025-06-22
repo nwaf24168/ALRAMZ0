@@ -92,39 +92,99 @@ const QualityCalls = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // التحقق من نوع الملف
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      addNotification({
+        title: "نوع ملف غير صحيح",
+        message: "يرجى اختيار ملف Excel بصيغة .xlsx أو .xls",
+        type: "error",
+      });
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
+        
+        if (workbook.SheetNames.length === 0) {
+          addNotification({
+            title: "ملف فارغ",
+            message: "الملف لا يحتوي على أي أوراق عمل",
+            type: "error",
+          });
+          return;
+        }
+
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (!worksheet) {
+          addNotification({
+            title: "ورقة عمل فارغة",
+            message: "ورقة العمل الأولى فارغة",
+            type: "error",
+          });
+          return;
+        }
 
-        const newCustomers: Customer[] = jsonData.map((row: any, index: number) => ({
-          id: `customer_${Date.now()}_${index}`,
-          customerName: row['اسم العميل'] || row['Customer Name'] || row['العميل'] || '',
-          phoneNumber: row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || '',
-          salesEmployee: row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || '',
-          salesResponse: row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || '',
-          status: "غير مؤهل" as const,
-          qualificationReason: row['سبب التأهيل'] || row['Qualification Reason'] || '',
-          notes: row['ملاحظات'] || row['Notes'] || '',
-          callAttempts: parseInt(row['عدد المحاولات'] || row['Call Attempts'] || '0') || 0,
-          lastCallDate: row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '',
-          convertedDate: row['تاريخ التحويل'] || row['Converted Date'] || '',
-          convertedBy: row['محول بواسطة'] || row['Converted By'] || '',
-        }));
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        
+        if (jsonData.length === 0) {
+          addNotification({
+            title: "لا توجد بيانات",
+            message: "الملف لا يحتوي على أي بيانات",
+            type: "error",
+          });
+          return;
+        }
+
+        console.log("البيانات المقروءة من Excel:", jsonData);
+
+        const newCustomers: Customer[] = jsonData.map((row: any, index: number) => {
+          // محاولة قراءة الاسم من عدة أعمدة محتملة
+          const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
+          
+          // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
+          const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
+          
+          // باقي البيانات
+          const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
+          const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
+          
+          return {
+            id: `customer_${Date.now()}_${index}`,
+            customerName,
+            phoneNumber,
+            salesEmployee,
+            salesResponse,
+            status: "غير مؤهل" as const,
+            qualificationReason: String(row['سبب التأهيل'] || row['Qualification Reason'] || '').trim(),
+            notes: String(row['ملاحظات'] || row['Notes'] || '').trim(),
+            callAttempts: parseInt(String(row['عدد المحاولات'] || row['Call Attempts'] || '0')) || 0,
+            lastCallDate: String(row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '').trim(),
+            convertedDate: String(row['تاريخ التحويل'] || row['Converted Date'] || '').trim(),
+            convertedBy: String(row['محول بواسطة'] || row['Converted By'] || '').trim(),
+          };
+        });
+
+        console.log("العملاء المعالجين:", newCustomers);
 
         // التحقق من صحة البيانات الأساسية
-        const validCustomers = newCustomers.filter(customer => 
-          customer.customerName.trim() && customer.phoneNumber.trim()
-        );
+        const validCustomers = newCustomers.filter(customer => {
+          const hasName = customer.customerName && customer.customerName.length > 0;
+          const hasPhone = customer.phoneNumber && customer.phoneNumber.length > 0;
+          return hasName && hasPhone;
+        });
+
+        console.log("العملاء الصالحين:", validCustomers);
 
         if (validCustomers.length === 0) {
           addNotification({
             title: "خطأ في البيانات",
-            message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال'",
+            message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال' وأن البيانات غير فارغة",
             type: "error",
           });
           return;
@@ -138,21 +198,32 @@ const QualityCalls = () => {
         });
 
         if (validCustomers.length < newCustomers.length) {
+          const skippedCount = newCustomers.length - validCustomers.length;
           addNotification({
             title: "تحذير",
-            message: `تم تجاهل ${newCustomers.length - validCustomers.length} صف بسبب بيانات ناقصة`,
+            message: `تم تجاهل ${skippedCount} صف بسبب بيانات ناقصة (اسم العميل أو رقم الجوال فارغ)`,
             type: "warning",
           });
         }
+
       } catch (error) {
-        console.error("Error processing Excel file:", error);
+        console.error("خطأ في معالجة ملف Excel:", error);
         addNotification({
           title: "خطأ في رفع الملف",
-          message: "تأكد من صحة تنسيق الملف. يجب أن يكون ملف Excel (.xlsx أو .xls)",
+          message: `حدث خطأ أثناء قراءة الملف: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
           type: "error",
         });
       }
     };
+
+    reader.onerror = () => {
+      addNotification({
+        title: "خطأ في قراءة الملف",
+        message: "فشل في قراءة الملف. يرجى المحاولة مرة أخرى",
+        type: "error",
+      });
+    };
+
     reader.readAsArrayBuffer(file);
 
     // إعادة تعيين قيمة الإدخال لإتاحة رفع نفس الملف مرة أخرى
@@ -314,7 +385,7 @@ const QualityCalls = () => {
             <label htmlFor="file-upload">
               <Button variant="outline" className="cursor-pointer">
                 <Upload className="h-4 w-4 mr-2" />
-                رفع ملف
+                رفع ملف Excel
               </Button>
             </label>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -387,8 +458,30 @@ const QualityCalls = () => {
           </div>
         </div>
 
+        {/* رسالة مساعدة لرفع الملفات */}
+        {customers.length === 0 && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="text-center text-blue-800">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <h3 className="font-semibold mb-2">رفع ملف العملاء</h3>
+                <p className="text-sm mb-3">
+                  لرفع بيانات العملاء، يرجى التأكد من أن ملف Excel يحتوي على الأعمدة التالية:
+                </p>
+                <div className="text-xs space-y-1 text-right">
+                  <div>• <span className="font-medium">اسم العميل</span> (مطلوب)</div>
+                  <div>• <span className="font-medium">رقم الجوال</span> (مطلوب)</div>
+                  <div>• موظف المبيعات</div>
+                  <div>• رد موظف المبيعات</div>
+                  <div>• ملاحظات</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* كروت الإحصائيات */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"></div>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">إجمالي العملاء</CardTitle>
