@@ -13,6 +13,7 @@ import {
   DialogTrigger,
   DialogDescription 
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { 
   Select,
   SelectContent,
