@@ -551,6 +551,14 @@ const QualityCalls = () => {
     }
   };
 
+  // تفعيل زر رفع الملف
+  const triggerFileUpload = () => {
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
   // حذف عميل
   const deleteCustomer = async (customerId: string) => {
     try {
@@ -589,13 +597,16 @@ const QualityCalls = () => {
               onChange={handleFileUpload}
               className="hidden"
               id="file-upload"
+              disabled={isLoading}
             />
-            <label htmlFor="file-upload">
-              <Button variant="outline" className="cursor-pointer">
-                <Upload className="h-4 w-4 mr-2" />
-                رفع ملف Excel
-              </Button>
-            </label>
+            <Button 
+              variant="outline" 
+              onClick={triggerFileUpload}
+              disabled={isLoading}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
+            </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
