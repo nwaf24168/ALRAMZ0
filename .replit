@@ -7,13 +7,15 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "npm start"]
+build = ["sh", "-c", "npm run build"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [workflows]
+runButton = "Development"
 
 [[workflows.workflow]]
 name = "Project"
@@ -44,6 +46,15 @@ args = "npm run dev"
 
 [[workflows.workflow]]
 name = "Dev Server"
+author = 42148746
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Development"
 author = 42148746
 mode = "sequential"
 
