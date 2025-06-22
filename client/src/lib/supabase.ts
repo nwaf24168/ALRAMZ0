@@ -94,19 +94,25 @@ export interface ComplaintUpdateRecord {
   created_at?: string;
 }
 
-export interface BookingRecord {
+export interface UserRecord {
   id?: number;
+  username: string;
+  password: string;
+  role: string;
+}
+
+export interface BookingRecord {
   id?: number;
   booking_id: string;
   booking_date: string;
   customer_name: string;
   project: string;
-  building?: string;
+  building: string;
   unit: string;
   payment_method: string;
   sale_type: string;
   unit_value: number;
-  transfer_date?: string;
+  transfer_date: string;
   sales_employee: string;
   construction_end_date?: string;
   final_receipt_date?: string;
@@ -121,12 +127,8 @@ export interface BookingRecord {
   evaluation_score?: number;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface UserRecord {
-  username: string;
-  password: string;
-  role: string;
+  created_by: string;
+  updated_by?: string;
 }
 
 // دالة فحص الاتصال مع Supabase

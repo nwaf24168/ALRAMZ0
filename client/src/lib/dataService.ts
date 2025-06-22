@@ -446,83 +446,46 @@ export class DataService {
   // إدارة الحجوزات
   static async getBookings(): Promise<any[]> {
     try {
-      // بيانات تجريبية للحجوزات - يجب ربطها بقاعدة البيانات لاحقاً
-      const sampleBookings = [
-        {
-          id: "booking_1",
-          bookingDate: "2025-01-15",
-          customerName: "أحمد محمد السالم",
-          project: "مشروع النخيل",
-          building: "A",
-          unit: "101",
-          paymentMethod: "نقدي",
-          saleType: "جاهز",
-          unitValue: 850000,
-          transferDate: "2025-01-20",
-          salesEmployee: "محمد أحمد",
-          constructionEndDate: "2025-01-25",
-          finalReceiptDate: "2025-01-30",
-          electricityTransferDate: "2025-02-05",
-          waterTransferDate: "2025-02-07",
-          deliveryDate: "2025-02-10",
-          status: "مكتمل", // added status
-          status_sales_filled: true, // added status_sales_filled
-          status_projects_filled: true, // added status_projects_filled
-          status_customer_filled: true, // added status_customer_filled
-          isEvaluated: true,
-          evaluationScore: 9
-        },
-        {
-          id: "booking_2", 
-          bookingDate: "2025-01-18",
-          customerName: "فاطمة عبدالله",
-          project: "مشروع الياسمين",
-          building: "B",
-          unit: "205",
-          paymentMethod: "تحويل بنكي",
-          saleType: "على الخارطة",
-          unitValue: 750000,
-          transferDate: "2025-01-25",
-          salesEmployee: "سارة محمد",
-          constructionEndDate: "2025-03-15",
-          finalReceiptDate: "2025-03-20",
-          electricityTransferDate: "2025-03-25",
-          waterTransferDate: "2025-03-27",
-          deliveryDate: null,
-          status: "قيد التنفيذ", // added status
-          status_sales_filled: false, // added status_sales_filled
-          status_projects_filled: false, // added status_projects_filled
-          status_customer_filled: true, // added status_customer_filled
-          isEvaluated: false,
-          evaluationScore: null
-        },
-        {
-          id: "booking_3",
-          bookingDate: "2025-01-22",
-          customerName: "عبدالرحمن الشهري",
-          project: "مشروع الورود",
-          building: "C", 
-          unit: "304",
-          paymentMethod: "نقدي",
-          saleType: "جاهز",
-          unitValue: 920000,
-          transferDate: "2025-01-28",
-          salesEmployee: "أحمد عبدالله",
-          constructionEndDate: "2025-02-10",
-          finalReceiptDate: "2025-02-15",
-          electricityTransferDate: "2025-02-20",
-          waterTransferDate: "2025-02-22",
-          deliveryDate: "2025-02-25",
-          status: "مكتمل", // added status
-          status_sales_filled: true, // added status_sales_filled
-          status_projects_filled: true, // added status_projects_filled
-          status_customer_filled: true, // added status_customer_filled
-          isEvaluated: true,
-          evaluationScore: 8
-        }
-      ];
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      return sampleBookings;
+      if (error) {
+        console.error("خطأ Supabase في جلب الحجوزات:", error);
+        throw new Error(
+          `خطأ في جلب الحجوزات: ${error.message || error.details || "خطأ غير معروف"}`
+        );
+      }
+
+      return (data || []).map((record) => ({
+        id: record.booking_id,
+        bookingDate: record.booking_date,
+        customerName: record.customer_name,
+        project: record.project,
+        building: record.building,
+        unit: record.unit,
+        paymentMethod: record.payment_method,
+        saleType: record.sale_type,
+        unitValue: record.unit_value,
+        transferDate: record.transfer_date,
+        salesEmployee: record.sales_employee,
+        constructionEndDate: record.construction_end_date,
+        finalReceiptDate: record.final_receipt_date,
+        electricityTransferDate: record.electricity_transfer_date,
+        waterTransferDate: record.water_transfer_date,
+        deliveryDate: record.delivery_date,
+        status: record.status,
+        status_sales_filled: record.status_sales_filled,
+        status_projects_filled: record.status_projects_filled,
+        status_customer_filled: record.status_customer_filled,
+        isEvaluated: record.is_evaluated,
+        evaluationScore: record.evaluation_score,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+        createdBy: record.created_by,
+        updatedBy: record.updated_by,
+      }));
     } catch (error) {
       console.error('خطأ في جلب الحجوزات:', error);
       return [];
@@ -531,8 +494,42 @@ export class DataService {
 
   static async saveBooking(booking: any): Promise<void> {
     try {
-      console.log('حفظ حجز جديد:', booking);
-      // يجب ربطها بقاعدة البيانات لاحقاً
+      const record: BookingRecord = {
+        booking_id: booking.id,
+        booking_date: booking.bookingDate,
+        customer_name: booking.customerName,
+        project: booking.project,
+        building: booking.building || "1",
+        unit: booking.unit,
+        payment_method: booking.paymentMethod,
+        sale_type: booking.saleType,
+        unit_value: booking.unitValue || 0,
+        transfer_date: booking.transferDate,
+        sales_employee: booking.salesEmployee,
+        construction_end_date: booking.constructionEndDate,
+        final_receipt_date: booking.finalReceiptDate,
+        electricity_transfer_date: booking.electricityTransferDate,
+        water_transfer_date: booking.waterTransferDate,
+        delivery_date: booking.deliveryDate,
+        status: booking.status || "مجدول",
+        status_sales_filled: booking.status_sales_filled || false,
+        status_projects_filled: booking.status_projects_filled || false,
+        status_customer_filled: booking.status_customer_filled || false,
+        is_evaluated: booking.isEvaluated || false,
+        evaluation_score: booking.evaluationScore,
+        created_by: booking.createdBy,
+      };
+
+      const { error } = await supabase
+        .from("bookings")
+        .insert(record);
+
+      if (error) {
+        console.error("خطأ Supabase في حفظ الحجز:", error);
+        throw new Error(
+          `خطأ في حفظ الحجز: ${error.message || error.details || "خطأ غير معروف"}`
+        );
+      }
     } catch (error) {
       console.error('خطأ في حفظ الحجز:', error);
       throw error;
@@ -541,8 +538,42 @@ export class DataService {
 
     static async updateBooking(id: string, booking: any): Promise<void> {
     try {
-      console.log('تحديث الحجز:', id, booking);
-      // يجب ربطها بقاعدة البيانات لاحقاً
+      const record: Partial<BookingRecord> = {
+        booking_date: booking.bookingDate,
+        customer_name: booking.customerName,
+        project: booking.project,
+        building: booking.building,
+        unit: booking.unit,
+        payment_method: booking.paymentMethod,
+        sale_type: booking.saleType,
+        unit_value: booking.unitValue,
+        transfer_date: booking.transferDate,
+        sales_employee: booking.salesEmployee,
+        construction_end_date: booking.constructionEndDate,
+        final_receipt_date: booking.finalReceiptDate,
+        electricity_transfer_date: booking.electricityTransferDate,
+        water_transfer_date: booking.waterTransferDate,
+        delivery_date: booking.deliveryDate,
+        status: booking.status,
+        status_sales_filled: booking.status_sales_filled,
+        status_projects_filled: booking.status_projects_filled,
+        status_customer_filled: booking.status_customer_filled,
+        is_evaluated: booking.isEvaluated,
+        evaluation_score: booking.evaluationScore,
+        updated_by: booking.updatedBy,
+      };
+
+      const { error } = await supabase
+        .from("bookings")
+        .update(record)
+        .eq("booking_id", id);
+
+      if (error) {
+        console.error("خطأ Supabase في تحديث الحجز:", error);
+        throw new Error(
+          `خطأ في تحديث الحجز: ${error.message || error.details || "خطأ غير معروف"}`
+        );
+      }
     } catch (error) {
       console.error('خطأ في تحديث الحجز:', error);
       throw error;
@@ -551,8 +582,17 @@ export class DataService {
 
   static async deleteBooking(id: string): Promise<void> {
     try {
-      console.log('حذف الحجز:', id);
-      // يجب ربطها بقاعدة البيانات لاحقاً
+      const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("booking_id", id);
+
+      if (error) {
+        console.error("خطأ Supabase في حذف الحجز:", error);
+        throw new Error(
+          `خطأ في حذف الحجز: ${error.message || error.details || "خطأ غير معروف"}`
+        );
+      }
     } catch (error) {
       console.error('خطأ في حذف الحجز:', error);
       throw error;
