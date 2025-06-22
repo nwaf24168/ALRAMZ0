@@ -382,6 +382,26 @@ export class DataService {
           `خطأ في تحديث الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
         );
       }
+
+      // حفظ التحديثات إذا كانت موجودة
+      if (complaint.updates && complaint.updates.length > 0) {
+        for (const update of complaint.updates) {
+          const { error: updateError } = await supabase
+            .from("complaint_updates")
+            .insert({
+              complaint_id: complaint.id,
+              field_name: update.field,
+              old_value: update.oldValue,
+              new_value: update.newValue,
+              updated_by: update.updatedBy,
+              created_at: update.updatedAt,
+            });
+
+          if (updateError) {
+            console.error("خطأ في حفظ تحديث الشكوى:", updateError);
+          }
+        }
+      }
     } else {
       // إضافة شكوى جديدة
       const { error } = await supabase
@@ -410,23 +430,42 @@ export class DataService {
       );
     }
 
-    return (data || []).map((record) => ({
-      id: record.complaint_id,
-      date: record.date,
-      customerName: record.customer_name,
-      project: record.project,
-      unitNumber: record.unit_number || "",
-      source: record.source,
-      status: record.status,
-      description: record.description,
-      action: record.action || "",
-      duration: record.duration || 0,
-      createdBy: record.created_by,
-      updatedBy: record.updated_by,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at,
-      updates: [],
+    const complaints = await Promise.all((data || []).map(async (record) => {
+      // جلب التحديثات لكل شكوى
+      const { data: updatesData } = await supabase
+        .from("complaint_updates")
+        .select("*")
+        .eq("complaint_id", record.complaint_id)
+        .order("created_at", { ascending: false });
+
+      const updates = (updatesData || []).map(update => ({
+        field: update.field_name,
+        oldValue: update.old_value,
+        newValue: update.new_value,
+        updatedBy: update.updated_by,
+        updatedAt: update.created_at,
+      }));
+
+      return {
+        id: record.complaint_id,
+        date: record.date,
+        customerName: record.customer_name,
+        project: record.project,
+        unitNumber: record.unit_number || "",
+        source: record.source,
+        status: record.status,
+        description: record.description,
+        action: record.action || "",
+        duration: record.duration || 0,
+        createdBy: record.created_by,
+        updatedBy: record.updated_by,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+        updates: updates,
+      };
     }));
+
+    return complaints;
   }
 
   static async deleteComplaint(complaintId: string): Promise<void> {

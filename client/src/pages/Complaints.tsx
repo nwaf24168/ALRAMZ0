@@ -304,7 +304,7 @@ export default function Complaints() {
     if (!selectedComplaint || !user) return;
 
     const now = new Date().toISOString();
-    const updates: ComplaintUpdate[] = [];
+    const newUpdates: ComplaintUpdate[] = [];
 
     // تتبع التغييرات في كل الحقول
     const fieldsToCheck = {
@@ -321,7 +321,7 @@ export default function Complaints() {
       const oldValue = (selectedComplaint as any)[field];
       const newValue = (newComplaint as any)[field];
       if (oldValue !== newValue) {
-        updates.push({
+        newUpdates.push({
           field,
           oldValue: oldValue || "",
           newValue: newValue || "",
@@ -331,13 +331,23 @@ export default function Complaints() {
       }
     });
 
+    if (newUpdates.length === 0) {
+      addNotification({
+        title: "تنبيه",
+        message: "لم يتم إجراء أي تغييرات",
+        type: "info",
+      });
+      setIsEditDialogOpen(false);
+      return;
+    }
+
     try {
       const updatedComplaint = {
         ...selectedComplaint,
         ...newComplaint,
         updatedBy: user.username,
         updatedAt: now,
-        updates: [...selectedComplaint.updates, ...updates],
+        updates: newUpdates, // إرسال التحديثات الجديدة فقط
       };
 
       console.log("تحديث الشكوى:", updatedComplaint);
@@ -346,7 +356,7 @@ export default function Complaints() {
       setIsEditDialogOpen(false);
 
       // إظهار إشعار لكل تحديث
-      updates.forEach((update) => {
+      newUpdates.forEach((update) => {
         addNotification({
           title: "تم التحديث",
           message: `تم تحديث ${fieldsToCheck[update.field]} من "${update.oldValue}" إلى "${update.newValue}" بواسطة ${user.username}`,
