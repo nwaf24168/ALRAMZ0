@@ -392,7 +392,7 @@ export class DataService {
             old_value: update.oldValue || '',
             new_value: update.newValue || '',
             updated_by: update.updatedBy,
-            created_at: update.updatedAt || new Date().toISOString()
+            updated_at: update.updatedAt || new Date().toISOString()
           };
 
           console.log('حفظ تحديث الشكوى:', updateRecord);
@@ -445,7 +445,7 @@ export class DataService {
         .from("complaint_updates")
         .select("*")
         .eq("complaint_id", record.complaint_id)
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
       if (updatesError) {
         console.error("خطأ في جلب تحديثات الشكوى:", updatesError);
@@ -456,7 +456,7 @@ export class DataService {
         oldValue: update.old_value || '',
         newValue: update.new_value || '',
         updatedBy: update.updated_by,
-        updatedAt: update.created_at || new Date().toISOString(),
+        updatedAt: update.updated_at || new Date().toISOString(),
       }));
 
       console.log(`تحديثات الشكوى ${record.complaint_id}:`, updates);

@@ -9,12 +9,12 @@ CREATE TABLE complaint_updates (
   old_value TEXT,
   new_value TEXT,
   updated_by TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- إضافة فهرس لتحسين الأداء
 CREATE INDEX IF NOT EXISTS idx_complaint_updates_complaint_id ON complaint_updates(complaint_id);
-CREATE INDEX IF NOT EXISTS idx_complaint_updates_created_at ON complaint_updates(created_at);
+CREATE INDEX IF NOT EXISTS idx_complaint_updates_updated_at ON complaint_updates(updated_at);
 
 -- تمكين RLS
 ALTER TABLE complaint_updates ENABLE ROW LEVEL SECURITY;
