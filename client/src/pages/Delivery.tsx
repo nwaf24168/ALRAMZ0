@@ -282,7 +282,7 @@ export default function Delivery() {
                 </Button>
               </DialogTrigger>
             
-            <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
                   {editingRecord ? "تعديل سجل التسليم" : "إضافة سجل تسليم جديد"}
@@ -386,8 +386,9 @@ export default function Delivery() {
                   حفظ
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* إحصائيات سريعة */}
