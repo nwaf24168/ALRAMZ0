@@ -29,7 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search, Upload } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { DataService } from "@/lib/dataService";
 import { useAuth } from "@/context/AuthContext";
@@ -58,6 +58,7 @@ export default function Reception() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ReceptionRecord | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [records, setRecords] = useState<ReceptionRecord[]>([]);
 
   // بيانات النموذج
@@ -108,6 +109,125 @@ export default function Reception() {
   };
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // تفعيل زر رفع الملف
+  const triggerFileUpload = () => {
+    const fileInput = document.getElementById('excel-file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
+  // معالجة رفع ملف Excel
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array' }));
+      
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = await import('xlsx').then(XLSX => XLSX.utils.sheet_to_json(worksheet, { header: 1 }));
+
+      if (jsonData.length < 2) {
+        toast({
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // تحويل البيانات إلى سجلات استقبال
+      const headers = jsonData[0] as string[];
+      const rows = jsonData.slice(1) as any[][];
+
+      const newRecords: any[] = [];
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        
+        try {
+          // تحديد الحقول المطلوبة (يمكن تعديلها حسب تنسيق Excel المتوقع)
+          const recordData = {
+            date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            customerName: row[1] || `عميل ${i + 1}`,
+            phoneNumber: row[2] || "",
+            project: row[3] || "مشروع افتراضي",
+            employee: row[4] || user.username,
+            contactMethod: row[5] || "اتصال هاتفي",
+            type: row[6] || "استفسار",
+            customerRequest: row[7] || "",
+            action: row[8] || "",
+            status: row[9] || "جديد",
+            createdBy: user.username,
+          };
+
+          // التحقق من البيانات الأساسية
+          if (!recordData.customerName || !recordData.phoneNumber) {
+            errorCount++;
+            continue;
+          }
+
+          // حفظ السجل في قاعدة البيانات
+          await DataService.saveReceptionRecord(recordData);
+          newRecords.push(recordData);
+          successCount++;
+
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // تحديث قائمة السجلات
+      await loadReceptionRecords();
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`,
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
+    }
+  };
 
   const filteredRecords = records.filter(record =>
     record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -271,13 +391,30 @@ export default function Reception() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">الاستقبال</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleOpenDialog}>
-                <Plus className="h-4 w-4 ml-2" />
-                إضافة سجل جديد
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="excel-file-upload"
+              disabled={isLoading}
+            />
+            <Button 
+              variant="outline" 
+              onClick={triggerFileUpload}
+              disabled={isLoading}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleOpenDialog}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة سجل جديد
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingRecord ? "تعديل سجل الاستقبال" : "إضافة سجل استقبال جديد"}</DialogTitle>
@@ -404,6 +541,7 @@ export default function Reception() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* إحصائيات سريعة */}
