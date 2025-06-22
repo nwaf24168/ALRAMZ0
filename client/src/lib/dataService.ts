@@ -876,20 +876,6 @@ export class DataService {
     }));
   }
 
-  static async deleteUser(userId: string): Promise<void> {
-    const { error } = await supabase
-      .from("users")
-      .delete()
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("خطأ Supabase في حذف المستخدم:", error);
-      throw new Error(
-        `خطأ في حذف المستخدم: ${error.message || error.details || "خطأ غير معروف"}`
-      );
-    }
-  }
-
   // إعداد الاشتراك للوقت الفعلي
   static setupRealtimeSubscription(
     table: string,
