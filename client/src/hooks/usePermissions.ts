@@ -7,7 +7,7 @@ export function usePermissions() {
   const hasReadAccess = (page?: string) => {
     if (!user) return false;
     
-    // مدراء النظام لديهم صلاحية كاملة
+    // مدراء النظام مع صلاحية تعديل ونطاق كامل لديهم صلاحية كاملة
     if (user.role === "مدير النظام" && user.permissions?.level === "edit" && user.permissions?.scope === "full") {
       return true;
     }
@@ -22,6 +22,7 @@ export function usePermissions() {
       return true;
     }
 
+    // المستخدمون بدون صلاحيات محددة لا يمكنهم الوصول
     return false;
   };
 

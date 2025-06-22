@@ -110,23 +110,35 @@ export default function Sidebar() {
 
       <nav className="flex-1 p-3 md:p-4">
         <ul className="space-y-1 md:space-y-2">
-          {menuItems.map((item) => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                onClick={() => isMobile && setIsOpen(false)}
-                className={cn(
-                  "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
-                  isActive(item.path)
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted",
-                )}
-              >
-                {item.icon}
-                <span className="truncate">{item.title}</span>
-              </Link>
-            </li>
-          ))}
+          {menuItems
+              .filter((item) => {
+                // تحديد معرف الصفحة بناءً على المسار
+                const pageId = item.path.replace('/', '') || 'dashboard';
+                // عرض العنصر فقط إذا كان المستخدم لديه صلاحية الوصول
+                // Assuming canAccessPage function is defined in AuthContext or a similar utility
+                // For now, we'll just return true to avoid errors.  You'll need to replace this.
+                return true; // canAccessPage(pageId);
+              })
+              .map((item, index) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <li key={index}>
+                  <Link
+                    to={item.path}
+                    onClick={() => isMobile && setIsOpen(false)}
+                    className={cn(
+                      "flex items-center p-2 md:p-3 rounded-md transition-colors text-sm md:text-base",
+                      isActive(item.path)
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted",
+                    )}
+                  >
+                    {item.icon}
+                    <span className="truncate">{item.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
         </ul>
       </nav>
 

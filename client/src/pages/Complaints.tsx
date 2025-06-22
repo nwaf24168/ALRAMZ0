@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { DataService } from "@/lib/dataService";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,6 +115,7 @@ interface Complaint {
 export default function Complaints() {
   const { user } = useAuth();
   const { addNotification } = useNotification();
+  const { canAccessPage, hasEditAccess, isReadOnly } = usePermissions();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
@@ -434,6 +436,22 @@ export default function Complaints() {
     return fieldNames[field] || field;
   };
 
+  // فحص صلاحيات الوصول للصفحة
+  if (!canAccessPage("complaints")) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-600 mb-2">غير مصرح</h1>
+            <p className="text-gray-500">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const readOnly = isReadOnly("complaints");
+
   if (loading) {
     return (
       <Layout>
@@ -451,14 +469,17 @@ export default function Complaints() {
     <Layout>
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-xl md:text-2xl font-bold">سجل الشكاوى</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center">
-                <Plus className="ml-2 h-4 w-4" />
-                إضافة شكوى جديدة
-              </Button>
-            </DialogTrigger>
+          <h1 className="text-xl md:text-2xl font-bold">
+            سجل الشكاوى {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}
+          </h1>
+          {hasEditAccess("complaints") && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center">
+                  <Plus className="ml-2 h-4 w-4" />
+                  إضافة شكوى جديدة
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>إضافة شكوى جديدة</DialogTitle>
@@ -612,6 +633,7 @@ export default function Complaints() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         <Card>
@@ -705,20 +727,26 @@ export default function Complaints() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditSetup(complaint)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteSetup(complaint)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            {hasEditAccess("complaints") ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditSetup(complaint)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteSetup(complaint)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 text-sm">قراءة فقط</span>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Layout from "@/components/layout/Layout";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useNotification } from "@/context/NotificationContext";
 import { DataService } from "@/lib/dataService";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -43,6 +44,7 @@ import { Edit2, Trash2, UserPlus } from "lucide-react";
 export default function Settings() {
   const { addNotification } = useNotification();
   const { users, addUser, deleteUser, resetUserPassword, updateUserPermissions } = useAuth();
+  const { canAccessPage, hasEditAccess, isReadOnly } = usePermissions();
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);
 
@@ -328,10 +330,28 @@ export default function Settings() {
     console.log("قائمة المستخدمين الحالية في الإعدادات:", users);
   }, [users]);
 
+  // فحص صلاحيات الوصول للصفحة
+  if (!canAccessPage("settings")) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-600 mb-2">غير مصرح</h1>
+            <p className="text-gray-500">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const readOnly = isReadOnly("settings");
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">
-        <h1 className="text-xl md:text-2xl font-bold">إعدادات النظام</h1>
+        <h1 className="text-xl md:text-2xl font-bold">
+          إعدادات النظام {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}
+        </h1>
 
         <Card>
           <CardHeader>
@@ -378,32 +398,36 @@ export default function Settings() {
                       </TableCell>
                       <TableCell>••••••••</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUpdatePermissions(user.id)}
-                            title="تعديل الصلاحيات"
-                          >
-                            الصلاحيات
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleResetPassword(user.id)}
-                            title="تعديل كلمة المرور"
-                          >
-                            <Edit2 className="h-4 w-4 text-blue-500" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteUser(user.id)}
-                            title="حذف المستخدم"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
+                        {hasEditAccess("settings") ? (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUpdatePermissions(user.id)}
+                              title="تعديل الصلاحيات"
+                            >
+                              الصلاحيات
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleResetPassword(user.id)}
+                              title="تعديل كلمة المرور"
+                            >
+                              <Edit2 className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                              title="حذف المستخدم"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">قراءة فقط</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -507,10 +531,12 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button onClick={handleAddUser} className="flex items-center">
-                <UserPlus className="ml-2 h-4 w-4" />
-                إضافة المستخدم
-              </Button>
+              {hasEditAccess("settings") && (
+                <Button onClick={handleAddUser} className="flex items-center">
+                  <UserPlus className="ml-2 h-4 w-4" />
+                  إضافة المستخدم
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
