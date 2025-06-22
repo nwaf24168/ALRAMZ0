@@ -552,7 +552,6 @@ export default function Reception() {
               variant="outline" 
               onClick={triggerFullImportUpload}
               disabled={isLoading}
-              className="bg-blue-50 hover:bg-blue-100 border-blue-300"
             >
               <Upload className="h-4 w-4 mr-2" />
               {isLoading ? "جاري الاستيراد..." : "استيراد البيانات كاملة"}
