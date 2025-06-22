@@ -554,7 +554,7 @@ export default function Reception() {
               disabled={isLoading}
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isLoading ? "جاري الاستيراد..." : "استيراد البيانات كاملة"}
+              {isLoading ? "جاري الاستيراد..." : "استيراد البيانات"}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
