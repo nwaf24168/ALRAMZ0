@@ -164,28 +164,7 @@ export default function Settings() {
     try {
       const usersFromDB = await DataService.getUsers();
       console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
-      
-      // إنشاء مجموعة فريدة من المستخدمين بناء على الـ id
-      const uniqueUsers = new Map();
-      
-      // إضافة المستخدمين من قاعدة البيانات إلى الخريطة
-      usersFromDB.forEach(dbUser => {
-        uniqueUsers.set(dbUser.id, dbUser);
-      });
-      
-      // إضافة المستخدمين المحليين الذين لديهم id مؤقت فقط
-      users.forEach(localUser => {
-        if (localUser.id.startsWith("temp") && !uniqueUsers.has(localUser.id)) {
-          uniqueUsers.set(localUser.id, localUser);
-        }
-      });
-      
-      // تحديث قائمة المستخدمين بالبيانات الفريدة من قاعدة البيانات
-      const finalUsers = Array.from(uniqueUsers.values());
-      
-      // مسح القائمة الحالية وإعادة إضافة المستخدمين الفريدين
-      // (هذا يتطلب إعادة هيكلة AuthContext أو استخدام دالة setUsers مباشرة)
-      
+      // ملاحظة: سيتم تحديث القائمة تلقائياً من خلال AuthContext
     } catch (error) {
       console.error("خطأ في إعادة تحميل المستخدمين:", error);
     }
@@ -443,8 +422,8 @@ export default function Settings() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user, index) => (
-                    <TableRow key={`${user.id}-${user.username}-${index}`}>
+                  {Array.from(new Map(users.map(user => [user.id, user])).values()).map((user, index) => (
+                    <TableRow key={`user-${user.id}-${index}`}>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.role}</TableCell>
                       <TableCell>

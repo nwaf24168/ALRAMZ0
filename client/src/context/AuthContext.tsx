@@ -193,6 +193,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('تم تسجيل الخروج وحذف بيانات المستخدم من localStorage');
   };
 
+  // دالة لإزالة المستخدمين المكررين
+  const removeDuplicateUsers = (userList: User[]): User[] => {
+    const uniqueUsers = new Map<string, User>();
+    userList.forEach(user => {
+      // استخدام id كمفتاح فريد، أو username كبديل إذا لم يكن id متوفراً
+      const key = user.id || user.username;
+      uniqueUsers.set(key, user);
+    });
+    return Array.from(uniqueUsers.values());
+  };
+
   const addUser = async (userData: Omit<User, "id">) => {
     try {
       const newUser = {
@@ -213,7 +224,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // إضافة المستخدم الجديد
       currentUsers.push(newUser);
       localStorage.setItem('auth_users', JSON.stringify(currentUsers));
-      setUsers([...currentUsers]);
+      setUsers((prevUsers) => {
+        const updatedUsers = [...prevUsers, newUser];
+        return removeDuplicateUsers(updatedUsers);
+      });
     } catch (error) {
       console.error('Error adding user:', error);
       throw error;

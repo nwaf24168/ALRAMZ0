@@ -675,20 +675,55 @@ export class DataService {
       // إذا كان المستخدم له id صالح ولا يبدأ بـ temp، نحدثه
       if (user.id && user.id !== "" && !user.id.toString().startsWith("temp") && !user.id.toString().startsWith("175")) {
         console.log("تحديث مستخدم موجود بـ id:", user.id);
-        const { data, error } = await supabase
+        
+        // التحقق من وجود المستخدم أولاً
+        const { data: existingUserCheck, error: checkError } = await supabase
           .from("users")
-          .update(record)
+          .select("id")
           .eq("id", user.id)
-          .select()
-          .single();
+          .maybeSingle();
 
-        if (error) {
-          console.error("خطأ Supabase في تحديث المستخدم:", error);
-          throw new Error(
-            `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-          );
+        if (checkError && checkError.code !== "PGRST116") {
+          console.error("خطأ في التحقق من وجود المستخدم:", checkError);
+          throw new Error(`خطأ في التحقق من المستخدم: ${checkError.message}`);
         }
-        return data;
+
+        if (!existingUserCheck) {
+          console.log("المستخدم غير موجود، سيتم إنشاؤه كمستخدم جديد");
+          // إذا لم يوجد المستخدم، ننشئه كمستخدم جديد
+          const insertRecord = { ...record };
+          delete insertRecord.id;
+          
+          const { data, error } = await supabase
+            .from("users")
+            .insert(insertRecord)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("خطأ Supabase في إنشاء المستخدم:", error);
+            throw new Error(
+              `خطأ في إنشاء المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+            );
+          }
+          return data;
+        } else {
+          // تحديث المستخدم الموجود
+          const { data, error } = await supabase
+            .from("users")
+            .update(record)
+            .eq("id", user.id)
+            .select()
+            .single();
+
+          if (error) {
+            console.error("خطأ Supabase في تحديث المستخدم:", error);
+            throw new Error(
+              `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+            );
+          }
+          return data;
+        }
       } else {
         // التحقق إذا كان المستخدم موجود مسبقاً بنفس اسم المستخدم
         console.log("البحث عن مستخدم بنفس الاسم:", user.username);
