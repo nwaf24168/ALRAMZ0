@@ -397,9 +397,10 @@ export class DataService {
 
           console.log('حفظ تحديث الشكوى:', updateRecord);
 
-          const { error: updateError } = await supabase
+          const { data, error: updateError } = await supabase
             .from("complaint_updates")
-            .insert(updateRecord);
+            .insert(updateRecord)
+            .select();
 
           if (updateError) {
             console.error("خطأ في حفظ تحديث الشكوى:", updateError);
@@ -407,7 +408,7 @@ export class DataService {
               `خطأ في حفظ تحديث الشكوى: ${updateError.message || updateError.details || "خطأ غير معروف"}`,
             );
           } else {
-            console.log('تم حفظ التحديث بنجاح');
+            console.log('تم حفظ التحديث بنجاح:', data);
           }
         }
       }
@@ -447,17 +448,20 @@ export class DataService {
         .eq("complaint_id", record.complaint_id)
         .order("updated_at", { ascending: false });
 
+      let updates = [];
       if (updatesError) {
         console.error("خطأ في جلب تحديثات الشكوى:", updatesError);
+        // في حالة وجود خطأ، نعيد مصفوفة فارغة بدلاً من التوقف
+        updates = [];
+      } else {
+        updates = (updatesData || []).map(update => ({
+          field: update.field_name,
+          oldValue: update.old_value || '',
+          newValue: update.new_value || '',
+          updatedBy: update.updated_by,
+          updatedAt: update.updated_at || new Date().toISOString(),
+        }));
       }
-
-      const updates = (updatesData || []).map(update => ({
-        field: update.field_name,
-        oldValue: update.old_value || '',
-        newValue: update.new_value || '',
-        updatedBy: update.updated_by,
-        updatedAt: update.updated_at || new Date().toISOString(),
-      }));
 
       console.log(`تحديثات الشكوى ${record.complaint_id}:`, updates);
 

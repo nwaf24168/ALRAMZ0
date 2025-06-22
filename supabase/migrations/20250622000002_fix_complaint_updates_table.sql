@@ -1,9 +1,9 @@
 
--- إنشاء جدول تحديثات الشكاوى مع التأكد من وجود جميع الأعمدة
+-- إنشاء جدول تحديثات الشكاوى مع التأكد من وجود جميع الأعمدة والأنواع الصحيحة
 DROP TABLE IF EXISTS complaint_updates;
 
 CREATE TABLE complaint_updates (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   complaint_id TEXT NOT NULL,
   field_name TEXT NOT NULL,
   old_value TEXT,
