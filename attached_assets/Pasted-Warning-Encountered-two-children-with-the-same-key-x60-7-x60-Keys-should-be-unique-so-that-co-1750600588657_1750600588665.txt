@@ -1,0 +1,62 @@
+Warning: Encountered two children with the same key, &#x60;7&#x60;. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at tbody
+    at _c5 (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/table.tsx:55:12)
+    at table
+    at div
+    at _c (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/table.tsx:20:11)
+    at div
+    at div
+    at _c9 (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/layout/Layout.tsx:22:34)
+    at Settings (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/Settings.tsx:60:31)
+    at ProtectedRoute (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/App.tsx?v=-0wTHof-uYjAkFN1e2gg_:50:27)
+    at RenderedRoute (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:5455:26)
+    at Routes (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:6188:3)
+    at AppRoutes (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/App.tsx?v=-0wTHof-uYjAkFN1e2gg_:114:31)
+    at Router (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:6131:13)
+    at HashRouter (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:9180:23)
+    at Provider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7CHUOEIG.js?v=cf77620e:38:15)
+    at TooltipProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=cf77620e:60:5)
+    at MetricsProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/MetricsContext.tsx:391:35)
+    at NotificationProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/NotificationContext.tsx:21:40)
+    at AuthProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/AuthContext.tsx:118:32)
+    at QueryClientProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=cf77620e:2932:3)
+    at App
+Warning: Encountered two children with the same key, &#x60;71&#x60;. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at tbody
+    at _c5 (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/table.tsx:55:12)
+    at table
+    at div
+    at _c (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/table.tsx:20:11)
+    at div
+    at div
+    at _c9 (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/components/layout/Layout.tsx:22:34)
+    at Settings (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/Settings.tsx:60:31)
+    at ProtectedRoute (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/App.tsx?v=-0wTHof-uYjAkFN1e2gg_:50:27)
+    at RenderedRoute (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:5455:26)
+    at Routes (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:6188:3)
+    at AppRoutes (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/App.tsx?v=-0wTHof-uYjAkFN1e2gg_:114:31)
+    at Router (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:6131:13)
+    at HashRouter (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=cf77620e:9180:23)
+    at Provider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7CHUOEIG.js?v=cf77620e:38:15)
+    at TooltipProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=cf77620e:60:5)
+    at MetricsProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/MetricsContext.tsx:391:35)
+    at NotificationProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/NotificationContext.tsx:21:40)
+    at AuthProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/context/AuthContext.tsx:118:32)
+    at QueryClientProvider (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=cf77620e:2932:3)
+    at App
+قائمة المستخدمين الحالية في الإعدادات: 
+(12) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
