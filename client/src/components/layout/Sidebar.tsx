@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
-  const { logout, user } = useAuth();
   const location = useLocation();
+  const { logout, user } = useAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 

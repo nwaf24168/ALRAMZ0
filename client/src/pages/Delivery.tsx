@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DataService } from "@/lib/dataService";
-import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { Plus, Edit, Trash2, Search, Filter, Package, Truck, Clock } from "lucide-react";
 
@@ -53,6 +54,7 @@ const deliveryStatuses = ["مجدول", "قيد التنفيذ", "مكتمل", "
 
 export default function Delivery() {
   const { user } = useAuth();
+  const { canAccessPage, hasEditAccess, isReadOnly } = usePermissions();
   const { addNotification } = useNotification();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<DeliveryRecord | null>(null);
@@ -268,20 +270,38 @@ export default function Delivery() {
     }
   };
 
+  // فحص صلاحيات الوصول للصفحة
+  if (!canAccessPage("delivery")) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-600 mb-2">غير مصرح</h1>
+            <p className="text-gray-500">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const readOnly = isReadOnly("delivery");
+
   return (
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">قسم التسليم</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">قسم التسليم {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}</h1>
           <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
+              {hasEditAccess("delivery") && (
                 <Button variant="outline" className="mobile-button">
                   <Plus className="h-4 w-4 mr-2" />
                   إضافة حجز جديد
                 </Button>
+              )}
               </DialogTrigger>
-            
+
               <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -382,7 +402,7 @@ export default function Delivery() {
                 <Button variant="outline" onClick={handleCancel}>
                   إلغاء
                 </Button>
-                <Button onClick={handleSave} disabled={loading}>
+                <Button onClick={handleSave} disabled={loading || readOnly}>
                   حفظ
                 </Button>
               </div>
@@ -496,14 +516,18 @@ export default function Delivery() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(record)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(record.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {hasEditAccess("delivery") ? (
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(record)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(record.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">قراءة فقط</span>
+                          )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -100,7 +100,7 @@ const initializeDefaultAdmin = () => {
       id: "7",
       username: "nawaf",
       password: "Alramz2025",
-      role: "مدير النظام",
+      role: "موظف ادارة راحة العملاء",
       permissions: {
         level: "read" as const,
         scope: "limited" as const,

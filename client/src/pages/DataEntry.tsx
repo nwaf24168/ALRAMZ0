@@ -104,8 +104,9 @@ interface FormData {
   maintenanceSatisfaction: MaintenanceSatisfactionData;
 }
 
+import { usePermissions } from "@/hooks/usePermissions";
+
 export default function DataEntry() {
-  const { user } = useAuth();
   const {
     metrics,
     updateMetric,
@@ -116,8 +117,8 @@ export default function DataEntry() {
     currentPeriod,
     setCurrentPeriod,
   } = useMetrics();
-
   const { addNotification } = useNotification();
+  const { hasEditAccess, canAccessPage, isReadOnly } = usePermissions();
   const [newComment, setNewComment] = useState("");
   const [formData, setFormData] = useState<FormDataState>({
     metrics: metrics.map((metric) => ({
@@ -197,9 +198,9 @@ export default function DataEntry() {
     // قائمة المؤشرات التي هي أرقام صحيحة وليست نسب مئوية
     const nonPercentageMetrics = [
       "عدد الثواني للرد",
-      "سرعة إغلاق طلبات الصيانة", 
+      "سرعة إغلاق طلبات الصيانة",
       "عدد إعادة فتح طلب",
-      "عدد العملاء المرشحين"
+      "عدد العملاء المرشحين",
     ];
 
     const isNonPercentage = nonPercentageMetrics.includes(metric.title);
@@ -433,13 +434,29 @@ export default function DataEntry() {
     }
   };
 
+  // فحص صلاحيات الوصول للصفحة
+  if (!canAccessPage("data-entry")) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-600 mb-2">غير مصرح</h1>
+            <p className="text-gray-500">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const readOnly = isReadOnly("data-entry");
+
   return (
     <Layout>
       <div className="container mx-auto p-3 md:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-4">
           <div className="w-full sm:w-auto">
             <h1 className="text-xl md:text-2xl font-bold mb-2">
-              إدخال البيانات
+              إدخال البيانات {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}
             </h1>
             <div className="flex gap-2 w-full sm:w-auto">
               <Button
@@ -478,7 +495,7 @@ export default function DataEntry() {
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    مؤشرات الأداء الرئيسية -{" "}
+                    مؤشرات الأداء الرئيسية -
                     {currentPeriod === "weekly" ? "أسبوعي" : "سنوي"}
                   </CardTitle>
                 </CardHeader>
@@ -501,6 +518,7 @@ export default function DataEntry() {
                           }
                           className="text-left ltr"
                           dir="ltr"
+                          disabled={readOnly}
                         />
                         <div className="flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-gray-500 gap-1">
                           <span>الهدف: {metric.target}</span>
@@ -543,6 +561,7 @@ export default function DataEntry() {
                             }
                             className="text-left ltr"
                             dir="ltr"
+                            disabled={readOnly}
                           />
                         </div>
                       ))}
@@ -581,6 +600,7 @@ export default function DataEntry() {
                             }
                             className="text-left ltr"
                             dir="ltr"
+                            disabled={readOnly}
                           />
                         </div>
                       ),
@@ -622,6 +642,7 @@ export default function DataEntry() {
                             }
                             className="text-left ltr"
                             dir="ltr"
+                            disabled={readOnly}
                           />
                         </div>
                       ),
@@ -672,6 +693,7 @@ export default function DataEntry() {
                               }
                               className="text-left ltr"
                               dir="ltr"
+                              disabled={readOnly}
                             />
                           </div>
                         ))}
@@ -693,8 +715,9 @@ export default function DataEntry() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     className="bg-gray-800 text-white border-gray-700 placeholder:text-gray-400"
+                    disabled={readOnly}
                   />
-                  <Button onClick={handleAddComment} className="self-start">
+                  <Button onClick={handleAddComment} className="self-start" disabled={readOnly}>
                     تسجيل
                   </Button>
                 </div>
