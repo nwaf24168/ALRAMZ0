@@ -469,6 +469,21 @@ export default function Settings() {
                       <SelectItem value="موظف ادارة راحة العملاء">
                         موظف ادارة راحة العملاء
                       </SelectItem>
+                      <SelectItem value="موظف قسم الصيانة">
+                        موظف قسم الصيانة
+                      </SelectItem>
+                      <SelectItem value="موظف قسم التسليم">
+                        موظف قسم التسليم
+                      </SelectItem>
+                      <SelectItem value="موظف المبيعات">
+                        موظف المبيعات
+                      </SelectItem>
+                      <SelectItem value="موظف الاستقبال">
+                        موظف الاستقبال
+                      </SelectItem>
+                      <SelectItem value="موظف ادارة المشاريع">
+                        موظف ادارة المشاريع
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
