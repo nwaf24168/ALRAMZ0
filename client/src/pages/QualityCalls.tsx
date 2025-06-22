@@ -34,7 +34,8 @@ import {
   Search,
   Filter,
   Edit,
-  Trash2
+  Trash2,
+  Plus
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 
