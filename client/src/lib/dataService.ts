@@ -663,21 +663,20 @@ export class DataService {
       username: user.username,
       password: user.password,
       role: user.role,
+      permissions: JSON.stringify(user.permissions || {
+        level: "read",
+        scope: "full",
+        pages: []
+      })
     };
 
-    // التحقق إذا كان المستخدم موجود مسبقاً
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", user.username)
-      .single();
-
-    if (existingUser) {
-      // تحديث المستخدم الموجود
+    // إذا كان المستخدم له id، نحدثه، وإلا نضيفه كجديد
+    if (user.id) {
+      // تحديث المستخدم الموجود باستخدام ID
       const { error } = await supabase
         .from("users")
         .update(record)
-        .eq("username", user.username);
+        .eq("id", user.id);
 
       if (error) {
         console.error("خطأ Supabase في تحديث المستخدم:", error);
@@ -686,16 +685,38 @@ export class DataService {
         );
       }
     } else {
-      // إضافة مستخدم جديد
-      const { error } = await supabase
+      // التحقق إذا كان المستخدم موجود مسبقاً بنفس اسم المستخدم
+      const { data: existingUser } = await supabase
         .from("users")
-        .insert(record);
+        .select("id")
+        .eq("username", user.username)
+        .single();
 
-      if (error) {
-        console.error("خطأ Supabase في إضافة المستخدم:", error);
-        throw new Error(
-          `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
-        );
+      if (existingUser) {
+        // تحديث المستخدم الموجود
+        const { error } = await supabase
+          .from("users")
+          .update(record)
+          .eq("id", existingUser.id);
+
+        if (error) {
+          console.error("خطأ Supabase في تحديث المستخدم:", error);
+          throw new Error(
+            `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+          );
+        }
+      } else {
+        // إضافة مستخدم جديد
+        const { error } = await supabase
+          .from("users")
+          .insert(record);
+
+        if (error) {
+          console.error("خطأ Supabase في إضافة المستخدم:", error);
+          throw new Error(
+            `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
+          );
+        }
       }
     }
   }
@@ -863,10 +884,15 @@ export class DataService {
     }
 
     return (data || []).map((record) => ({
-      id: record.user_id,
+      id: record.id.toString(),
       username: record.username,
-      password: record.password_hash,
+      password: record.password_hash || record.password,
       role: record.role,
+      permissions: record.permissions ? JSON.parse(record.permissions) : {
+        level: "read",
+        scope: "full",
+        pages: []
+      }
     }));
   }
 
@@ -874,7 +900,7 @@ export class DataService {
     const { error } = await supabase
       .from("users")
       .delete()
-      .eq("user_id", userId);
+      .eq("id", userId);
 
     if (error) {
       console.error("خطأ Supabase في حذف المستخدم:", error);

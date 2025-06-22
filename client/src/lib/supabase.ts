@@ -99,6 +99,9 @@ export interface UserRecord {
   username: string;
   password: string;
   role: string;
+  permissions?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface BookingRecord {

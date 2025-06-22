@@ -116,15 +116,11 @@ export default function Settings() {
     }
 
     try {
+      // حفظ في Supabase أولاً
+      await DataService.saveUser(newUser);
+
       // إضافة المستخدم محلياً
       addUser(newUser);
-
-      // حفظ في Supabase
-      const userWithId = {
-        id: Date.now().toString(),
-        ...newUser,
-      };
-      await DataService.saveUser(userWithId);
 
       addNotification({
         title: "تمت الإضافة",
@@ -164,11 +160,11 @@ export default function Settings() {
     if (!userToDelete) return;
 
     try {
+      // حذف من Supabase أولاً
+      await DataService.deleteUser(id);
+
       // حذف محلياً
       deleteUser(id);
-
-      // حذف من Supabase
-      await DataService.deleteUser(id);
 
       addNotification({
         title: "تم الحذف",
@@ -196,15 +192,18 @@ export default function Settings() {
 
     if (newPassword) {
       try {
-        // تحديث محلياً
-        resetUserPassword(id, newPassword);
-
-        // تحديث في Supabase
+        // تحديث في Supabase أولاً
         const updatedUser = {
-          ...userToReset,
+          id: userToReset.id,
+          username: userToReset.username,
           password: newPassword,
+          role: userToReset.role,
+          permissions: userToReset.permissions,
         };
         await DataService.saveUser(updatedUser);
+
+        // تحديث محلياً
+        resetUserPassword(id, newPassword);
 
         addNotification({
           title: "تم التحديث",
@@ -248,15 +247,18 @@ export default function Settings() {
     if (!userToUpdate) return;
 
     try {
-      // تحديث محلياً
-      await updateUserPermissions(editingPermissions.userId, editingPermissions.permissions);
-
-      // تحديث في Supabase
+      // تحديث في Supabase أولاً
       const updatedUser = {
-        ...userToUpdate,
+        id: userToUpdate.id,
+        username: userToUpdate.username,
+        password: userToUpdate.password,
+        role: userToUpdate.role,
         permissions: editingPermissions.permissions,
       };
       await DataService.saveUser(updatedUser);
+
+      // تحديث محلياً
+      await updateUserPermissions(editingPermissions.userId, editingPermissions.permissions);
 
       addNotification({
         title: "تم التحديث",
@@ -291,15 +293,23 @@ export default function Settings() {
     const loadUsers = async () => {
       try {
         const usersFromDB = await DataService.getUsers();
-        // يمكن دمج المستخدمين من قاعدة البيانات مع المستخدمين المحليين
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
+        
+        // مزامنة المستخدمين من قاعدة البيانات مع الحالة المحلية
+        // نتأكد من أن جميع المستخدمين في قاعدة البيانات موجودون محلياً
+        usersFromDB.forEach(dbUser => {
+          const existsLocally = users.some(localUser => localUser.username === dbUser.username);
+          if (!existsLocally) {
+            addUser(dbUser);
+          }
+        });
       } catch (error) {
         console.error("خطأ في تحميل المستخدمين:", error);
       }
     };
 
     loadUsers();
-  }, []);
+  }, [users, addUser]);
 
   // إعداد الاشتراك للوقت الفعلي للمستخدمين
   useEffect(() => {
