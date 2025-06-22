@@ -116,6 +116,45 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const receptionRecords = pgTable("reception_records", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  customerName: text("customer_name").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  project: text("project").notNull(),
+  employee: text("employee").notNull(),
+  contactMethod: text("contact_method").notNull(),
+  type: text("type").notNull(),
+  customerRequest: text("customer_request").notNull(),
+  action: text("action").notNull(),
+  status: text("status").notNull().default("جديد"),
+  createdBy: text("created_by").notNull(),
+  updatedBy: text("updated_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const qualityCalls = pgTable("quality_calls", {
+  id: text("id").primaryKey(),
+  callId: text("call_id").notNull().unique(),
+  callDate: text("call_date").notNull(),
+  customerName: text("customer_name").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  project: text("project").notNull(),
+  unitNumber: text("unit_number"),
+  callType: text("call_type").notNull(),
+  callDuration: integer("call_duration"),
+  evaluationScore: integer("evaluation_score"),
+  qualificationStatus: text("qualification_status").notNull().default("قيد المراجعة"),
+  qualificationReason: text("qualification_reason"),
+  notes: text("notes"),
+  audioFileUrl: text("audio_file_url"),
+  createdBy: text("created_by").notNull(),
+  updatedBy: text("updated_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -129,6 +168,8 @@ export const insertSatisfactionSchema = createInsertSchema(satisfaction);
 export const insertCommentSchema = createInsertSchema(comments);
 export const insertComplaintSchema = createInsertSchema(complaints);
 export const insertBookingSchema = createInsertSchema(bookings);
+export const insertReceptionRecordSchema = createInsertSchema(receptionRecords);
+export const insertQualityCallSchema = createInsertSchema(qualityCalls);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -145,3 +186,7 @@ export type InsertComplaint = z.infer<typeof insertComplaintSchema>;
 export type Complaint = typeof complaints.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
+export type InsertReceptionRecord = z.infer<typeof insertReceptionRecordSchema>;
+export type ReceptionRecord = typeof receptionRecords.$inferSelect;
+export type InsertQualityCall = z.infer<typeof insertQualityCallSchema>;
+export type QualityCall = typeof qualityCalls.$inferSelect;

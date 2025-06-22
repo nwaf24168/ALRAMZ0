@@ -1,10 +1,16 @@
-
-import React, { useState } from "react";
-import Layout from "@/components/layout/Layout";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -16,20 +22,17 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Phone, Mail, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import { DataService } from "@/lib/dataService";
+import { useAuth } from "@/context/AuthContext";
 
 interface ReceptionRecord {
   id: string;
@@ -49,64 +52,61 @@ const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "�
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة"];
 const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل"];
 
-const mockData: ReceptionRecord[] = [
-  {
-    id: "1",
-    date: "2025-06-19",
-    customerName: "أحمد محمد السالم",
-    phoneNumber: "0501234567",
-    project: "النخيل",
-    employee: "فاطمة أحمد",
-    contactMethod: "اتصال هاتفي",
-    type: "شكوى",
-    customerRequest: "مشكلة في تسليم الوحدة",
-    action: "تم التواصل مع قسم التسليم",
-    status: "قيد المعالجة"
-  },
-  {
-    id: "2",
-    date: "2025-06-19",
-    customerName: "نورا عبدالله",
-    phoneNumber: "0559876543",
-    project: "المعالي",
-    employee: "خالد العتيبي",
-    contactMethod: "واتساب",
-    type: "استفسار",
-    customerRequest: "استفسار عن موعد التسليم",
-    action: "تم توضيح الموعد المتوقع",
-    status: "مكتمل"
-  },
-  {
-    id: "3",
-    date: "2025-06-18",
-    customerName: "سعد الشمري",
-    phoneNumber: "0541239876",
-    project: "سديم تاون",
-    employee: "مريم الزهراني",
-    contactMethod: "بريد إلكتروني",
-    type: "طلب خدمة",
-    customerRequest: "طلب تعديل في الوحدة",
-    action: "تم إحالة الطلب لقسم المشاريع",
-    status: "قيد المعالجة"
-  }
-];
-
 export default function Reception() {
-  const [records, setRecords] = useState<ReceptionRecord[]>(mockData);
+  const { user } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ReceptionRecord | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<ReceptionRecord[]>([]);
+
+  // بيانات النموذج
+  const [date, setDate] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [project, setProject] = useState("");
+  const [employee, setEmployee] = useState("");
+  const [contactMethod, setContactMethod] = useState("");
+  const [type, setType] = useState("");
+  const [customerRequest, setCustomerRequest] = useState("");
+  const [action, setAction] = useState("");
+  const [status, setStatus] = useState("");
+
+  // تحميل البيانات عند تحميل الصفحة
+  useEffect(() => {
+    loadReceptionRecords();
+  }, []);
+
+  const loadReceptionRecords = async () => {
+    try {
+      setLoading(true);
+      const data = await DataService.getReceptionRecords();
+      const formattedRecords = data.map((record: any) => ({
+        id: record.id,
+        date: record.date,
+        customerName: record.customer_name,
+        phoneNumber: record.phone_number,
+        project: record.project,
+        employee: record.employee,
+        contactMethod: record.contact_method,
+        type: record.type,
+        customerRequest: record.customer_request,
+        action: record.action,
+        status: record.status,
+      }));
+      setRecords(formattedRecords);
+    } catch (error) {
+      console.error("خطأ في تحميل سجلات الاستقبال:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل سجلات الاستقبال",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newRecord, setNewRecord] = useState<Partial<ReceptionRecord>>({
-    date: new Date().toISOString().split('T')[0],
-    customerName: "",
-    phoneNumber: "",
-    project: "",
-    employee: "",
-    contactMethod: "",
-    type: "",
-    customerRequest: "",
-    action: "",
-    status: "جديد"
-  });
 
   const filteredRecords = records.filter(record =>
     record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,36 +114,128 @@ export default function Reception() {
     record.project.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddRecord = () => {
-    if (newRecord.customerName && newRecord.phoneNumber) {
-      const record: ReceptionRecord = {
-        id: (records.length + 1).toString(),
-        date: newRecord.date || new Date().toISOString().split('T')[0],
-        customerName: newRecord.customerName || "",
-        phoneNumber: newRecord.phoneNumber || "",
-        project: newRecord.project || "",
-        employee: newRecord.employee || "",
-        contactMethod: newRecord.contactMethod || "",
-        type: newRecord.type || "",
-        customerRequest: newRecord.customerRequest || "",
-        action: newRecord.action || "",
-        status: newRecord.status || "جديد"
-      };
-      
-      setRecords([record, ...records]);
-      setNewRecord({
-        date: new Date().toISOString().split('T')[0],
-        customerName: "",
-        phoneNumber: "",
-        project: "",
-        employee: "",
-        contactMethod: "",
-        type: "",
-        customerRequest: "",
-        action: "",
-        status: "جديد"
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleEditRecord = (record: ReceptionRecord) => {
+    setEditingRecord(record);
+    setDate(record.date);
+    setCustomerName(record.customerName);
+    setPhoneNumber(record.phoneNumber);
+    setProject(record.project);
+    setEmployee(record.employee);
+    setContactMethod(record.contactMethod);
+    setType(record.type);
+    setCustomerRequest(record.customerRequest);
+    setAction(record.action);
+    setStatus(record.status);
+    setIsDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setEditingRecord(null);
+    setDate("");
+    setCustomerName("");
+    setPhoneNumber("");
+    setProject("");
+    setEmployee("");
+    setContactMethod("");
+    setType("");
+    setCustomerRequest("");
+    setAction("");
+    setStatus("");
+  };
+
+  const handleCancelDialog = () => {
+    setIsDialogOpen(false);
+    resetForm();
+  };
+
+  const handleSaveRecord = async () => {
+    if (!date || !customerName || !phoneNumber || !project || !employee || !contactMethod || !type) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
       });
-      setIsAddDialogOpen(false);
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const recordData = {
+      date,
+      customerName,
+      phoneNumber,
+      project,
+      employee,
+      contactMethod,
+      type,
+      customerRequest,
+      action,
+      status: status || "جديد",
+      createdBy: user.username,
+      updatedBy: user.username,
+    };
+
+    try {
+      setLoading(true);
+
+      if (editingRecord) {
+        await DataService.updateReceptionRecord(editingRecord.id, recordData);
+        toast({
+          title: "تم بنجاح",
+          description: "تم تحديث السجل بنجاح",
+        });
+      } else {
+        await DataService.saveReceptionRecord(recordData);
+        toast({
+          title: "تم بنجاح", 
+          description: "تم إضافة السجل بنجاح",
+        });
+      }
+
+      await loadReceptionRecords();
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("خطأ في حفظ السجل:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ السجل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRecord = async (id: string) => {
+    try {
+      setLoading(true);
+      await DataService.deleteReceptionRecord(id);
+      await loadReceptionRecords();
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف السجل بنجاح",
+      });
+    } catch (error) {
+      console.error("خطأ في حذف السجل:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف السجل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,16 +270,16 @@ export default function Reception() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">الاستقبال</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={handleOpenDialog}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة سجل جديد
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>إضافة سجل استقبال جديد</DialogTitle>
+                <DialogTitle>{editingRecord ? "تعديل سجل الاستقبال" : "إضافة سجل استقبال جديد"}</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -195,16 +287,16 @@ export default function Reception() {
                   <Input
                     id="date"
                     type="date"
-                    value={newRecord.date}
-                    onChange={(e) => setNewRecord({...newRecord, date: e.target.value})}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                   />
                 </div>
                 <div>
                   <Label htmlFor="customerName">اسم العميل</Label>
                   <Input
                     id="customerName"
-                    value={newRecord.customerName}
-                    onChange={(e) => setNewRecord({...newRecord, customerName: e.target.value})}
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="اسم العميل"
                   />
                 </div>
@@ -212,8 +304,8 @@ export default function Reception() {
                   <Label htmlFor="phoneNumber">رقم الجوال</Label>
                   <Input
                     id="phoneNumber"
-                    value={newRecord.phoneNumber}
-                    onChange={(e) => setNewRecord({...newRecord, phoneNumber: e.target.value})}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="رقم الجوال"
                   />
                 </div>
@@ -221,8 +313,8 @@ export default function Reception() {
                   <Label htmlFor="project">المشروع</Label>
                   <Input
                     id="project"
-                    value={newRecord.project}
-                    onChange={(e) => setNewRecord({...newRecord, project: e.target.value})}
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
                     placeholder="اسم المشروع"
                   />
                 </div>
@@ -230,14 +322,14 @@ export default function Reception() {
                   <Label htmlFor="employee">الموظف</Label>
                   <Input
                     id="employee"
-                    value={newRecord.employee}
-                    onChange={(e) => setNewRecord({...newRecord, employee: e.target.value})}
+                    value={employee}
+                    onChange={(e) => setEmployee(e.target.value)}
                     placeholder="اسم الموظف"
                   />
                 </div>
                 <div>
                   <Label htmlFor="contactMethod">طريقة التواصل</Label>
-                  <Select value={newRecord.contactMethod} onValueChange={(value) => setNewRecord({...newRecord, contactMethod: value})}>
+                  <Select value={contactMethod} onValueChange={(value) => setContactMethod(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر طريقة التواصل" />
                     </SelectTrigger>
@@ -252,7 +344,7 @@ export default function Reception() {
                 </div>
                 <div>
                   <Label htmlFor="type">النوع</Label>
-                  <Select value={newRecord.type} onValueChange={(value) => setNewRecord({...newRecord, type: value})}>
+                  <Select value={type} onValueChange={(value) => setType(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر نوع الطلب" />
                     </SelectTrigger>
@@ -267,7 +359,7 @@ export default function Reception() {
                 </div>
                 <div>
                   <Label htmlFor="status">الحالة</Label>
-                  <Select value={newRecord.status} onValueChange={(value) => setNewRecord({...newRecord, status: value})}>
+                  <Select value={status} onValueChange={(value) => setStatus(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر الحالة" />
                     </SelectTrigger>
@@ -284,8 +376,8 @@ export default function Reception() {
                   <Label htmlFor="customerRequest">طلب العميل</Label>
                   <Textarea
                     id="customerRequest"
-                    value={newRecord.customerRequest}
-                    onChange={(e) => setNewRecord({...newRecord, customerRequest: e.target.value})}
+                    value={customerRequest}
+                    onChange={(e) => setCustomerRequest(e.target.value)}
                     placeholder="تفاصيل طلب العميل"
                     rows={3}
                   />
@@ -294,18 +386,18 @@ export default function Reception() {
                   <Label htmlFor="action">الإجراء</Label>
                   <Textarea
                     id="action"
-                    value={newRecord.action}
-                    onChange={(e) => setNewRecord({...newRecord, action: e.target.value})}
+                    value={action}
+                    onChange={(e) => setAction(e.target.value)}
                     placeholder="الإجراء المتخذ"
                     rows={3}
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button variant="outline" onClick={handleCancelDialog}>
                   إلغاء
                 </Button>
-                <Button onClick={handleAddRecord}>
+                <Button onClick={handleSaveRecord} disabled={loading}>
                   حفظ
                 </Button>
               </div>
@@ -385,6 +477,7 @@ export default function Reception() {
                     <TableHead>طلب العميل</TableHead>
                     <TableHead>الإجراء</TableHead>
                     <TableHead>الحالة</TableHead>
+                    <TableHead className="text-right">العمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -419,11 +512,21 @@ export default function Reception() {
                           {record.status}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              
+
               {filteredRecords.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   لا توجد سجلات تطابق البحث
