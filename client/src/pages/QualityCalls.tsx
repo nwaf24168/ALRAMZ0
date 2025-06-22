@@ -155,8 +155,112 @@ const QualityCalls = () => {
     }
   };
 
+  // معالجة البيانات من Excel
+  const processExcelData = async (data: any[]) => {
+    console.log("البيانات المقروءة من Excel:", data);
+
+    const newCustomers: Customer[] = data.map((row: any, index: number) => {
+      // محاولة قراءة الاسم من عدة أعمدة محتملة
+      const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
+      
+      // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
+      const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
+      
+      // باقي البيانات
+      const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
+      const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
+      
+      return {
+        id: `customer_${Date.now()}_${index}`,
+        customerName,
+        phoneNumber,
+        salesEmployee,
+        salesResponse,
+        status: "غير مؤهل" as const,
+        qualificationReason: String(row['سبب التأهيل'] || row['Qualification Reason'] || '').trim(),
+        notes: String(row['ملاحظات'] || row['Notes'] || '').trim(),
+        callAttempts: parseInt(String(row['عدد المحاولات'] || row['Call Attempts'] || '0')) || 0,
+        lastCallDate: String(row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '').trim(),
+        convertedDate: String(row['تاريخ التحويل'] || row['Converted Date'] || '').trim(),
+        convertedBy: String(row['محول بواسطة'] || row['Converted By'] || '').trim(),
+      };
+    });
+
+    console.log("العملاء المعالجين:", newCustomers);
+
+    // التحقق من صحة البيانات الأساسية
+    const validCustomers = newCustomers.filter(customer => {
+      const hasName = customer.customerName && customer.customerName.length > 0;
+      const hasPhone = customer.phoneNumber && customer.phoneNumber.length > 0;
+      return hasName && hasPhone;
+    });
+
+    console.log("العملاء الصالحين:", validCustomers);
+
+    if (validCustomers.length === 0) {
+      addNotification({
+        title: "خطأ في البيانات",
+        message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال' وأن البيانات غير فارغة",
+        type: "error",
+      });
+      return;
+    }
+
+    // حفظ العملاء في قاعدة البيانات
+    let savedCount = 0;
+    let errorCount = 0;
+
+    // استخدام Promise.all لحفظ جميع العملاء
+    const savePromises = validCustomers.map(async (customer) => {
+      try {
+        await saveCustomerToDB(customer);
+        return { success: true, customer };
+      } catch (error) {
+        console.error('خطأ في حفظ العميل:', customer.customerName, error);
+        return { success: false, customer, error };
+      }
+    });
+
+    const results = await Promise.all(savePromises);
+    
+    results.forEach(result => {
+      if (result.success) {
+        savedCount++;
+      } else {
+        errorCount++;
+      }
+    });
+
+    // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
+    if (savedCount > 0) {
+      setCustomers(prev => [...prev, ...validCustomers.slice(0, savedCount)]);
+      addNotification({
+        title: "تم الرفع بنجاح",
+        message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
+        type: "success",
+      });
+    }
+
+    if (errorCount > 0) {
+      addNotification({
+        title: "تحذير",
+        message: `فشل في حفظ ${errorCount} عميل في قاعدة البيانات`,
+        type: "warning",
+      });
+    }
+
+    if (validCustomers.length < newCustomers.length) {
+      const skippedCount = newCustomers.length - validCustomers.length;
+      addNotification({
+        title: "تحذير",
+        message: `تم تجاهل ${skippedCount} صف بسبب بيانات ناقصة (اسم العميل أو رقم الجوال فارغ)`,
+        type: "warning",
+      });
+    }
+  };
+
   // رفع ملف Excel
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -172,7 +276,7 @@ const QualityCalls = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -209,106 +313,8 @@ const QualityCalls = () => {
           return;
         }
 
-        console.log("البيانات المقروءة من Excel:", jsonData);
-
-        const newCustomers: Customer[] = jsonData.map((row: any, index: number) => {
-          // محاولة قراءة الاسم من عدة أعمدة محتملة
-          const customerName = String(row['اسم العميل'] || row['Customer Name'] || row['العميل'] || row['الاسم'] || row['Name'] || '').trim();
-          
-          // محاولة قراءة رقم الجوال من عدة أعمدة محتملة
-          const phoneNumber = String(row['رقم الجوال'] || row['Phone Number'] || row['الجوال'] || row['رقم الهاتف'] || row['الهاتف'] || row['Phone'] || '').trim();
-          
-          // باقي البيانات
-          const salesEmployee = String(row['موظف المبيعات'] || row['Sales Employee'] || row['الموظف'] || row['Employee'] || '').trim();
-          const salesResponse = String(row['رد موظف المبيعات'] || row['Sales Response'] || row['الرد'] || row['الملاحظات'] || row['Response'] || '').trim();
-          
-          return {
-            id: `customer_${Date.now()}_${index}`,
-            customerName,
-            phoneNumber,
-            salesEmployee,
-            salesResponse,
-            status: "غير مؤهل" as const,
-            qualificationReason: String(row['سبب التأهيل'] || row['Qualification Reason'] || '').trim(),
-            notes: String(row['ملاحظات'] || row['Notes'] || '').trim(),
-            callAttempts: parseInt(String(row['عدد المحاولات'] || row['Call Attempts'] || '0')) || 0,
-            lastCallDate: String(row['تاريخ آخر مكالمة'] || row['Last Call Date'] || '').trim(),
-            convertedDate: String(row['تاريخ التحويل'] || row['Converted Date'] || '').trim(),
-            convertedBy: String(row['محول بواسطة'] || row['Converted By'] || '').trim(),
-          };
-        });
-
-        console.log("العملاء المعالجين:", newCustomers);
-
-        // التحقق من صحة البيانات الأساسية
-        const validCustomers = newCustomers.filter(customer => {
-          const hasName = customer.customerName && customer.customerName.length > 0;
-          const hasPhone = customer.phoneNumber && customer.phoneNumber.length > 0;
-          return hasName && hasPhone;
-        });
-
-        console.log("العملاء الصالحين:", validCustomers);
-
-        if (validCustomers.length === 0) {
-          addNotification({
-            title: "خطأ في البيانات",
-            message: "لم يتم العثور على بيانات صحيحة. تأكد من وجود أعمدة 'اسم العميل' و 'رقم الجوال' وأن البيانات غير فارغة",
-            type: "error",
-          });
-          return;
-        }
-
-        // حفظ العملاء في قاعدة البيانات
-        let savedCount = 0;
-        let errorCount = 0;
-
-        // استخدام Promise.all لحفظ جميع العملاء
-        const savePromises = validCustomers.map(async (customer) => {
-          try {
-            await saveCustomerToDB(customer);
-            return { success: true, customer };
-          } catch (error) {
-            console.error('خطأ في حفظ العميل:', customer.customerName, error);
-            return { success: false, customer, error };
-          }
-        });
-
-        const results = await Promise.all(savePromises);
-        
-        results.forEach(result => {
-          if (result.success) {
-            savedCount++;
-          } else {
-            errorCount++;
-          }
-        });
-
-        // تحديث القائمة المحلية فقط للعملاء المحفوظين بنجاح
-        if (savedCount > 0) {
-          setCustomers(prev => [...prev, ...validCustomers.slice(0, savedCount)]);
-          addNotification({
-            title: "تم الرفع بنجاح",
-            message: `تم رفع وحفظ ${savedCount} عميل جديد في قاعدة البيانات`,
-            type: "success",
-          });
-        }
-
-        if (errorCount > 0) {
-          addNotification({
-            title: "تحذير",
-            message: `فشل في حفظ ${errorCount} عميل في قاعدة البيانات`,
-            type: "warning",
-          });
-        }
-
-        if (validCustomers.length < newCustomers.length) {
-          const skippedCount = newCustomers.length - validCustomers.length;
-          addNotification({
-            title: "تحذير",
-            message: `تم تجاهل ${skippedCount} صف بسبب بيانات ناقصة (اسم العميل أو رقم الجوال فارغ)`,
-            type: "warning",
-          });
-        }
+        // استخدام الدالة الجديدة لمعالجة البيانات
+        processExcelData(jsonData);
 
       } catch (error) {
         console.error("خطأ في معالجة ملف Excel:", error);
