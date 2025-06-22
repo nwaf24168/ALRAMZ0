@@ -154,30 +154,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-      
+
       // تجربة قاعدة البيانات أولاً
       const user = await DataService.authenticateUser(username, password);
-      
+
       if (user) {
         setUser(user);
         localStorage.setItem('current_user', JSON.stringify(user));
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
-      
+
       // fallback إلى localStorage في حالة فشل قاعدة البيانات
       const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       const localUser = localUsers.find((u: User) => 
         u.username === username && u.password === password
       );
-      
+
       if (localUser) {
         setUser(localUser);
         localStorage.setItem('current_user', JSON.stringify(localUser));
         console.log('تم تسجيل الدخول بنجاح من localStorage للمستخدم:', localUser.username, 'بدور:', localUser.role);
         return true;
       }
-      
+
       console.log('فشل تسجيل الدخول للمستخدم:', username);
       return false;
     } catch (error) {
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const localUser = localUsers.find((u: User) => 
           u.username === username && u.password === password
         );
-        
+
         if (localUser) {
           setUser(localUser);
           localStorage.setItem('current_user', JSON.stringify(localUser));
@@ -214,14 +214,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: Date.now().toString(),
         ...userData
       };
-      
+
       // إضافة إلى قاعدة البيانات
       await DataService.addUser(newUser);
-      
+
       // تحديث القائمة المحلية
       const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
-      
+
       // fallback إلى localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       currentUsers.push(newUser);
@@ -249,11 +249,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // حذف من قاعدة البيانات
       await DataService.deleteUser(id);
-      
+
       // تحديث القائمة المحلية
       const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
-      
+
       // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       const localUpdatedUsers = currentUsers.filter((u: User) => u.id !== id);
@@ -277,11 +277,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // تحديث في قاعدة البيانات
       await DataService.updateUser(id, { password: newPassword });
-      
+
       // تحديث القائمة المحلية
       const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
-      
+
       // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       const localUpdatedUsers = currentUsers.map((u: User) => 
@@ -308,21 +308,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
     try {
       if (!permissions) return;
-      
+
       // تحديث في قاعدة البيانات
       await DataService.updateUserPermissions(id, permissions);
-      
+
       // تحديث القائمة المحلية
       const updatedUsers = await DataService.getUsersWithPermissions();
       setUsers(updatedUsers);
-      
+
       // إذا كان المستخدم الحالي هو من يتم تحديث صلاحياته، قم بتحديث بياناته
       if (user && user.id === id) {
         const updatedUser = { ...user, permissions };
         setUser(updatedUser);
         localStorage.setItem('current_user', JSON.stringify(updatedUser));
       }
-      
+
       // تحديث localStorage
       const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
       const localUpdatedUsers = currentUsers.map((u: User) => 
@@ -339,7 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
         localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
         setUsers(updatedUsers);
-        
+
         if (user && user.id === id) {
           const updatedUser = { ...user, permissions };
           setUser(updatedUser);
@@ -354,13 +354,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPageAccess = (pageName: string): boolean => {
     if (!user || !user.permissions) return true; // السماح بالوصول إذا لم تكن هناك صلاحيات محددة
-    
+
     if (user.permissions.scope === 'full') return true;
-    
+
     if (user.permissions.scope === 'limited' && user.permissions.pages) {
       return user.permissions.pages.includes(pageName);
     }
-    
+
     return false;
   };
 

@@ -31,9 +31,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit2, Trash2, UserPlus, Shield, Settings as SettingsIcon } from "lucide-react";
+import { Edit2, Trash2, UserPlus, Shield, SettingsIcon, Eye } from "lucide-react";
 
 export default function Settings() {
+  const { user, canEdit, hasPageAccess } = useAuth();
+
+  // التحقق من صلاحية الوصول لصفحة الإعدادات
+  if (!hasPageAccess('settings')) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-lg text-muted-foreground">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+        </div>
+      </Layout>
+    );
+  }
   const { addNotification } = useNotification();
   const { users, addUser, deleteUser, resetUserPassword, updateUserPermissions } = useAuth();
   const [realtimeChannel, setRealtimeChannel] =
@@ -237,7 +249,7 @@ export default function Settings() {
 
     try {
       await updateUserPermissions(editingPermissions, permissionsForm);
-      
+
       addNotification({
         title: "تم التحديث",
         message: "تم تحديث صلاحيات المستخدم بنجاح",
@@ -271,7 +283,7 @@ export default function Settings() {
       try {
         const usersFromDB = await DataService.getUsersWithPermissions();
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
-        
+
         // لا نحتاج لدمج البيانات لأن AuthContext يتعامل مع هذا
       } catch (error) {
         console.error("خطأ في تحميل المستخدمين:", error);
@@ -342,8 +354,8 @@ export default function Settings() {
                       <TableCell>{user.role}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
-                          user.permissions?.level === 'edit' 
-                            ? 'bg-green-100 text-green-800' 
+                          user.permissions?.level === 'edit'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {user.permissions?.level === 'edit' ? 'تعديل' : 'قراءة فقط'}
@@ -351,8 +363,8 @@ export default function Settings() {
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
-                          user.permissions?.scope === 'full' 
-                            ? 'bg-blue-100 text-blue-800' 
+                          user.permissions?.scope === 'full'
+                            ? 'bg-blue-100 text-blue-800'
                             : 'bg-orange-100 text-orange-800'
                         }`}>
                           {user.permissions?.scope === 'full' ? 'كامل المنصة' : 'صفحات محددة'}

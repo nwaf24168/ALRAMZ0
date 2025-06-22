@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
@@ -32,53 +31,67 @@ export default function Sidebar() {
     return location.pathname === path;
   };
 
-  const menuItems = [
+  const { hasPageAccess } = useAuth();
+
+  const allMenuItems = [
     {
       title: "لوحة التحكم",
       icon: <LayoutDashboard className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/dashboard",
+      pageKey: "dashboard",
     },
     {
       title: "إدخال البيانات",
       icon: <FileInput className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/data-entry",
+      pageKey: "data-entry",
     },
     {
       title: "الشكاوى",
       icon: <MessageSquare className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/complaints",
+      pageKey: "complaints",
     },
     {
       title: "التحليلات",
       icon: <LineChart className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/analytics",
+      pageKey: "analytics",
     },
     {
       title: "الإعدادات",
       icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/settings",
+      pageKey: "settings",
     },
     {
       title: "قسم التسليم",
       icon: <Package className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/delivery",
+      pageKey: "delivery",
     },
     {
       title: "تحليل قسم التسليم",
       icon: <PackageCheck className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/delivery-analytics",
+      pageKey: "delivery-analytics",
     },
     {
       title: "مكالمات الجودة",
       icon: <Phone className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/quality-calls",
+      pageKey: "quality-calls",
     },
     {
       title: "الاستقبال",
       icon: <Headphones className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/reception",
+      pageKey: "reception",
     },
   ];
+
+  // تصفية العناصر حسب الصلاحيات
+  const menuItems = allMenuItems.filter(item => hasPageAccess(item.pageKey));
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -239,7 +252,6 @@ function DeliveryAnalysis() {
             <td>2,687,500</td>
             <td></td>
             <td>محمد شعيب</td>
-            <td></td>
             <td></td>
             <td></td>
             <td></td>
