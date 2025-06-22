@@ -658,8 +658,8 @@ export class DataService {
   }
 
   // إدارة المستخدمين
-  static async saveUser(user: any): Promise<void> {
-    const record: UserRecord = {
+  static async saveUser(user: any): Promise<any> {
+    const record: Partial<UserRecord> = {
       username: user.username,
       password: user.password,
       role: user.role,
@@ -670,13 +670,14 @@ export class DataService {
       })
     };
 
-    // إذا كان المستخدم له id، نحدثه، وإلا نضيفه كجديد
-    if (user.id) {
-      // تحديث المستخدم الموجود باستخدام ID
-      const { error } = await supabase
+    // إذا كان المستخدم له id صالح، نحدثه
+    if (user.id && user.id !== "" && !user.id.toString().startsWith("175")) {
+      const { data, error } = await supabase
         .from("users")
         .update(record)
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select()
+        .single();
 
       if (error) {
         console.error("خطأ Supabase في تحديث المستخدم:", error);
@@ -684,20 +685,23 @@ export class DataService {
           `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
         );
       }
+      return data;
     } else {
       // التحقق إذا كان المستخدم موجود مسبقاً بنفس اسم المستخدم
       const { data: existingUser } = await supabase
         .from("users")
         .select("id")
         .eq("username", user.username)
-        .single();
+        .maybeSingle();
 
       if (existingUser) {
         // تحديث المستخدم الموجود
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("users")
           .update(record)
-          .eq("id", existingUser.id);
+          .eq("id", existingUser.id)
+          .select()
+          .single();
 
         if (error) {
           console.error("خطأ Supabase في تحديث المستخدم:", error);
@@ -705,11 +709,14 @@ export class DataService {
             `خطأ في تحديث المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
           );
         }
+        return data;
       } else {
-        // إضافة مستخدم جديد
-        const { error } = await supabase
+        // إضافة مستخدم جديد (بدون تحديد id)
+        const { data, error } = await supabase
           .from("users")
-          .insert(record);
+          .insert(record)
+          .select()
+          .single();
 
         if (error) {
           console.error("خطأ Supabase في إضافة المستخدم:", error);
@@ -717,6 +724,7 @@ export class DataService {
             `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
           );
         }
+        return data;
       }
     }
   }

@@ -105,22 +105,24 @@ export default function Settings() {
       return;
     }
 
-    // التحقق من عدم وجود مستخدم باسم المستخدم نفسه
-    if (users.some((user) => user.username === newUser.username)) {
-      addNotification({
-        title: "خطأ",
-        message: "اسم المستخدم موجود بالفعل، يرجى اختيار اسم آخر",
-        type: "error",
-      });
-      return;
-    }
-
     try {
-      // حفظ في Supabase أولاً
-      await DataService.saveUser(newUser);
+      // حفظ في Supabase أولاً والحصول على البيانات المحفوظة
+      const savedUser = await DataService.saveUser(newUser);
 
-      // إضافة المستخدم محلياً
-      addUser(newUser);
+      // إضافة المستخدم محلياً بالبيانات الفعلية من قاعدة البيانات
+      const userWithCorrectId = {
+        id: savedUser.id.toString(),
+        username: savedUser.username,
+        password: savedUser.password,
+        role: savedUser.role,
+        permissions: savedUser.permissions ? JSON.parse(savedUser.permissions) : {
+          level: "read",
+          scope: "full",
+          pages: []
+        }
+      };
+
+      addUser(userWithCorrectId);
 
       addNotification({
         title: "تمت الإضافة",
@@ -128,7 +130,7 @@ export default function Settings() {
         type: "success",
       });
 
-      console.log("تمت إضافة مستخدم جديد:", newUser.username);
+      console.log("تمت إضافة مستخدم جديد:", savedUser);
 
       // إعادة تعيين نموذج المستخدم الجديد
       setNewUser({
@@ -141,6 +143,9 @@ export default function Settings() {
           pages: []
         }
       });
+
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في إضافة المستخدم:", error);
       addNotification({
@@ -154,10 +159,29 @@ export default function Settings() {
     }
   };
 
+  // إعادة تحميل المستخدمين من قاعدة البيانات
+  const reloadUsersFromDatabase = async () => {
+    try {
+      const usersFromDB = await DataService.getUsers();
+      console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
+      
+      // مسح المستخدمين الحاليين وإضافة الجدد
+      usersFromDB.forEach(dbUser => {
+        addUser(dbUser);
+      });
+    } catch (error) {
+      console.error("خطأ في إعادة تحميل المستخدمين:", error);
+    }
+  };
+
   // حذف مستخدم
   const handleDeleteUser = async (id: string) => {
     const userToDelete = users.find((user) => user.id === id);
     if (!userToDelete) return;
+
+    if (!confirm(`هل أنت متأكد من حذف المستخدم ${userToDelete.username}؟`)) {
+      return;
+    }
 
     try {
       // حذف من Supabase أولاً
@@ -171,6 +195,9 @@ export default function Settings() {
         message: `تم حذف المستخدم ${userToDelete.username} بنجاح من قاعدة البيانات`,
         type: "success",
       });
+
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في حذف المستخدم:", error);
       addNotification({
@@ -190,7 +217,7 @@ export default function Settings() {
     // إنشاء كلمة مرور جديدة للمستخدم
     const newPassword = prompt("أدخل كلمة المرور الجديدة:", "");
 
-    if (newPassword) {
+    if (newPassword && newPassword.trim() !== "") {
       try {
         // تحديث في Supabase أولاً
         const updatedUser = {
@@ -200,7 +227,7 @@ export default function Settings() {
           role: userToReset.role,
           permissions: userToReset.permissions,
         };
-        await DataService.saveUser(updatedUser);
+        const savedUser = await DataService.saveUser(updatedUser);
 
         // تحديث محلياً
         resetUserPassword(id, newPassword);
@@ -210,6 +237,9 @@ export default function Settings() {
           message: `تم إعادة تعيين كلمة مرور المستخدم ${userToReset.username} بنجاح في قاعدة البيانات`,
           type: "success",
         });
+
+        // إعادة تحميل المستخدمين من قاعدة البيانات
+        await reloadUsersFromDatabase();
       } catch (error) {
         console.error("خطأ في تحديث كلمة المرور:", error);
         addNotification({
@@ -255,7 +285,7 @@ export default function Settings() {
         role: userToUpdate.role,
         permissions: editingPermissions.permissions,
       };
-      await DataService.saveUser(updatedUser);
+      const savedUser = await DataService.saveUser(updatedUser);
 
       // تحديث محلياً
       await updateUserPermissions(editingPermissions.userId, editingPermissions.permissions);
@@ -275,6 +305,9 @@ export default function Settings() {
           pages: []
         }
       });
+
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في تحديث الصلاحيات:", error);
       addNotification({
@@ -295,12 +328,30 @@ export default function Settings() {
         const usersFromDB = await DataService.getUsers();
         console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
         
-        // مزامنة المستخدمين من قاعدة البيانات مع الحالة المحلية
-        // نتأكد من أن جميع المستخدمين في قاعدة البيانات موجودون محلياً
-        usersFromDB.forEach(dbUser => {
-          const existsLocally = users.some(localUser => localUser.username === dbUser.username);
-          if (!existsLocally) {
+        // مقارنة البيانات المحلية مع قاعدة البيانات
+        const currentUsernames = users.map(u => u.username);
+        const dbUsernames = usersFromDB.map(u => u.username);
+        
+        // إضافة المستخدمين المفقودين من قاعدة البيانات
+        const missingUsers = usersFromDB.filter(dbUser => 
+          !currentUsernames.includes(dbUser.username)
+        );
+        
+        if (missingUsers.length > 0) {
+          console.log("تم إضافة المستخدمين المفقودين:", missingUsers);
+          missingUsers.forEach(dbUser => {
             addUser(dbUser);
+          });
+        }
+
+        // إزالة المستخدمين الذين لم يعودوا موجودين في قاعدة البيانات
+        const usersToRemove = users.filter(localUser => 
+          !dbUsernames.includes(localUser.username)
+        );
+        
+        usersToRemove.forEach(userToRemove => {
+          if (userToRemove.id) {
+            deleteUser(userToRemove.id);
           }
         });
       } catch (error) {
@@ -309,7 +360,12 @@ export default function Settings() {
     };
 
     loadUsers();
-  }, [users, addUser]);
+    
+    // إعادة تحميل كل 30 ثانية للتأكد من التزامن
+    const interval = setInterval(loadUsers, 30000);
+    
+    return () => clearInterval(interval);
+  }, [users.length]); // تشغيل فقط عند تغيير عدد المستخدمين
 
   // إعداد الاشتراك للوقت الفعلي للمستخدمين
   useEffect(() => {
