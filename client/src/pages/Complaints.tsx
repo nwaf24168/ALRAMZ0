@@ -848,7 +848,9 @@ export default function Complaints() {
                             تاريخ الإنشاء
                           </div>
                           <div className="font-medium text-white">
-                            {formatDate(selectedComplaint.createdAt)}
+                            {new Date(selectedComplaint.createdAt).toLocaleDateString(
+                              "ar-EG",
+                            )}
                           </div>
                         </div>
                       </div>
@@ -866,6 +868,44 @@ export default function Complaints() {
                           </div>
                         </div>
                       </div>
+
+                      {/* معلومات آخر تحديث */}
+                      {selectedComplaint.updatedBy && selectedComplaint.updatedAt && (
+                        <>
+                          <div className="border-t border-gray-800/50 pt-4"></div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
+                            <div className="p-2 rounded-lg bg-blue-500/10">
+                              <Edit className="w-5 h-5 text-blue-400" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400">
+                                آخر تحديث بواسطة
+                              </div>
+                              <div className="font-medium text-white">
+                                {selectedComplaint.updatedBy}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
+                            <div className="p-2 rounded-lg bg-purple-500/10">
+                              <Calendar className="w-5 h-5 text-purple-400" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400">
+                                تاريخ آخر تحديث
+                              </div>
+                              <div className="font-medium text-white">
+                                {new Date(selectedComplaint.updatedAt).toLocaleDateString(
+                                  "ar-EG",
+                                )} - {new Date(selectedComplaint.updatedAt).toLocaleTimeString(
+                                  "ar-EG",
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -897,36 +937,59 @@ export default function Complaints() {
                   </div>
                 </div>
 
-                {/* معلومات التحديث */}
-                {selectedComplaint.updates &&
-                  selectedComplaint.updates.length > 0 && (
-                    <div className="bg-[#20232b] rounded-xl p-6 border border-gray-800/30">
-                      <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2 mb-4">
-                        <History className="w-4 h-4 text-blue-400" />
-                        سجل التحديثات
+                {/* تحديثات الشكوى */}
+                  {selectedComplaint.updates &&
+                    selectedComplaint.updates.length > 0 && (
+                    <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
+                      <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                        <History className="w-4 h-4 text-green-400" />
+                        سجل التحديثات ({selectedComplaint.updates.length})
                       </h3>
-                      <div className="space-y-4">
-                        {selectedComplaint.updates.map((update, index) => (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {selectedComplaint.updates
+                          .slice()
+                          .reverse()
+                          .map((update, index) => (
                           <div
                             key={index}
-                            className="p-4 bg-gray-800/30 rounded-lg"
+                            className="flex items-start gap-3 p-4 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-colors border border-gray-700/30"
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-blue-400" />
-                                <span className="text-sm text-gray-400">
+                            <div className="p-2 rounded-full bg-green-500/10 mt-1">
+                              <Edit className="w-4 h-4 text-green-400" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-blue-400">
                                   {update.updatedBy}
                                 </span>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(update.updatedAt).toLocaleDateString(
+                                    "ar-EG",
+                                  )}{" "}
+                                  -{" "}
+                                  {new Date(update.updatedAt).toLocaleTimeString(
+                                    "ar-EG",
+                                  )}
+                                </span>
                               </div>
-                              <span className="text-xs text-gray-500">
-                                {new Date(update.updatedAt).toLocaleString(
-                                  "ar-SA",
-                                )}
-                              </span>
+                              <p className="text-sm text-white mb-2">
+                                تم تحديث <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
+                              </p>
+                              <div className="text-xs space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400">من:</span>
+                                  <span className="text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                                    {update.oldValue || "فارغ"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400">إلى:</span>
+                                  <span className="text-green-400 bg-green-500/10 px-2 py-1 rounded">
+                                    {update.newValue || "فارغ"}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-sm text-white">
-                              تم تحديث {getFieldName(update.field)}
-                            </p>
                           </div>
                         ))}
                       </div>
