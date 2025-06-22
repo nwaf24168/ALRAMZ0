@@ -10,7 +10,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription 
+  DialogDescription,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { 
