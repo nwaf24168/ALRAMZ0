@@ -1,13 +1,22 @@
 
--- إضافة العمود created_at إلى جدول complaint_updates
-ALTER TABLE complaint_updates 
-ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+-- إنشاء جدول تحديثات الشكاوى مع التأكد من وجود جميع الأعمدة
+DROP TABLE IF EXISTS complaint_updates;
+
+CREATE TABLE complaint_updates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  complaint_id TEXT NOT NULL,
+  field_name TEXT NOT NULL,
+  old_value TEXT,
+  new_value TEXT,
+  updated_by TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
 
 -- إضافة فهرس لتحسين الأداء
 CREATE INDEX IF NOT EXISTS idx_complaint_updates_complaint_id ON complaint_updates(complaint_id);
 CREATE INDEX IF NOT EXISTS idx_complaint_updates_created_at ON complaint_updates(created_at);
 
--- تعديل RLS policies إذا لزم الأمر
+-- تمكين RLS
 ALTER TABLE complaint_updates ENABLE ROW LEVEL SECURITY;
 
 -- السماح بالقراءة والكتابة للجميع (يمكن تعديلها حسب الحاجة)

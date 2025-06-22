@@ -386,19 +386,28 @@ export class DataService {
       // حفظ التحديثات إذا كانت موجودة
       if (complaint.updates && complaint.updates.length > 0) {
         for (const update of complaint.updates) {
+          const updateRecord = {
+            complaint_id: complaint.id,
+            field_name: update.field,
+            old_value: update.oldValue || '',
+            new_value: update.newValue || '',
+            updated_by: update.updatedBy,
+            created_at: update.updatedAt || new Date().toISOString()
+          };
+
+          console.log('حفظ تحديث الشكوى:', updateRecord);
+
           const { error: updateError } = await supabase
             .from("complaint_updates")
-            .insert({
-              complaint_id: complaint.id,
-              field_name: update.field,
-              old_value: update.oldValue,
-              new_value: update.newValue,
-              updated_by: update.updatedBy,
-              // سيتم استخدام القيمة الافتراضية لـ created_at
-            });
+            .insert(updateRecord);
 
           if (updateError) {
             console.error("خطأ في حفظ تحديث الشكوى:", updateError);
+            throw new Error(
+              `خطأ في حفظ تحديث الشكوى: ${updateError.message || updateError.details || "خطأ غير معروف"}`,
+            );
+          } else {
+            console.log('تم حفظ التحديث بنجاح');
           }
         }
       }
@@ -432,19 +441,25 @@ export class DataService {
 
     const complaints = await Promise.all((data || []).map(async (record) => {
       // جلب التحديثات لكل شكوى
-      const { data: updatesData } = await supabase
+      const { data: updatesData, error: updatesError } = await supabase
         .from("complaint_updates")
         .select("*")
         .eq("complaint_id", record.complaint_id)
         .order("created_at", { ascending: false });
 
+      if (updatesError) {
+        console.error("خطأ في جلب تحديثات الشكوى:", updatesError);
+      }
+
       const updates = (updatesData || []).map(update => ({
         field: update.field_name,
-        oldValue: update.old_value,
-        newValue: update.new_value,
+        oldValue: update.old_value || '',
+        newValue: update.new_value || '',
         updatedBy: update.updated_by,
         updatedAt: update.created_at || new Date().toISOString(),
       }));
+
+      console.log(`تحديثات الشكوى ${record.complaint_id}:`, updates);
 
       return {
         id: record.complaint_id,
@@ -679,35 +694,6 @@ export class DataService {
         );
       }
     }
-  }
-    // إدارة التعليقات
-  static async getComments(): Promise<
-    Array<{
-      text: string;
-      date: string;
-      time: string;
-      username: string;
-    }>
-  > {
-    const { data, error } = await supabase
-      .from("comments")
-      .select("*")
-      .eq("period", 'weekly') // Fixed period to weekly for consistency
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("خطأ Supabase في جلب التعليقات:", error);
-      throw new Error(
-        `خطأ في جلب التعليقات: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-
-    return (data || []).map((comment) => ({
-      text: comment.text,
-      date: new Date(comment.created_at!).toLocaleDateString("ar-EG"),
-      time: new Date(comment.created_at!).toLocaleTimeString("ar-EG"),
-      username: comment.username,
-    }));
   }
 
   // إدارة سجلات الاستقبال
