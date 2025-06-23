@@ -17,6 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -409,7 +410,15 @@ export default function Complaints() {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "غير محدد";
+    
     const date = new Date(dateString);
+    
+    // التحقق من صحة التاريخ
+    if (isNaN(date.getTime())) {
+      return "تاريخ غير صحيح";
+    }
+    
     return new Intl.DateTimeFormat("ar-SA", {
       year: "numeric",
       month: "long",
