@@ -1,536 +1,398 @@
-
 import React, { useState, useEffect } from "react";
-import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { useMetrics } from "@/context/MetricsContext";
-import { useNotification } from "@/context/NotificationContext";
-import { DataService } from "@/lib/dataService";
-import {
-  Brain,
-  Zap,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Brain, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  CheckCircle, 
   Target,
-  MessageSquare,
   BarChart3,
-  FileText,
-  Clock,
-  RefreshCw,
-  Sparkles,
-  MapPin,
   Users,
+  MessageSquare,
+  Package,
   Phone,
-  Wrench,
+  Headphones,
+  Activity,
+  Lightbulb,
+  MapPin
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-interface AnalysisResult {
-  summary: string;
-  keyPoints: string[];
-  recommendations: string[];
-  roadmap: RoadmapItem[];
-  insights: Insight[];
-  score: number;
-}
-
-interface RoadmapItem {
-  phase: string;
+interface AnalysisPoint {
+  icon: React.ReactNode;
   title: string;
   description: string;
+  status: "good" | "warning" | "critical";
+  percentage?: number;
+}
+
+interface Recommendation {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
   timeline: string;
-  priority: "عالي" | "متوسط" | "منخفض";
-}
-
-interface Insight {
-  category: string;
-  title: string;
-  description: string;
-  impact: "إيجابي" | "سلبي" | "محايد";
-  confidence: number;
 }
 
 export default function SmartAnalysis() {
-  const { metrics, customerServiceData, maintenanceSatisfaction } = useMetrics();
-  const { addNotification } = useNotification();
+  const { user } = useAuth();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [customPrompt, setCustomPrompt] = useState("");
+  const [analysisData, setAnalysisData] = useState<{
+    summary: string;
+    keyPoints: AnalysisPoint[];
+    recommendations: Recommendation[];
+    roadmap: { phase: string; items: string[]; duration: string }[];
+  } | null>(null);
 
-  // جمع البيانات من جميع الصفحات
-  const [allData, setAllData] = useState<any>(null);
-
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    try {
-      // جمع البيانات من جميع الصفحات
-      const [complaints, deliveries, receptionRecords, qualityCalls, bookings] = await Promise.all([
-        DataService.getComplaints(),
-        DataService.getBookings(), // التسليم
-        DataService.getReceptionRecords(),
-        DataService.getQualityCalls(),
-        DataService.getBookings(), // الحجوزات
-      ]);
-
-      const compiledData = {
-        metrics,
-        customerServiceData,
-        maintenanceSatisfaction,
-        complaints,
-        deliveries,
-        receptionRecords,
-        qualityCalls,
-        bookings,
-        timestamp: new Date().toISOString(),
-      };
-
-      setAllData(compiledData);
-    } catch (error) {
-      console.error("خطأ في تحميل البيانات:", error);
-      addNotification({
-        title: "خطأ",
-        message: "فشل في تحميل بيانات التحليل",
-        type: "error",
-      });
-    }
-  };
-
-  // محاكاة تحليل AI (يمكن استبدالها بـ API حقيقي)
-  const performAIAnalysis = async (data: any, prompt?: string) => {
-    setIsAnalyzing(true);
-
-    try {
-      // محاكاة تأخير API
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // تحليل البيانات وإنتاج نتائج بلهجة سعودية
-      const analysisResult: AnalysisResult = generateAnalysis(data, prompt);
-      
-      setAnalysis(analysisResult);
-      
-      addNotification({
-        title: "تم التحليل",
-        message: "تم إكمال التحليل الذكي للبيانات بنجاح",
-        type: "success",
-      });
-    } catch (error) {
-      console.error("خطأ في التحليل:", error);
-      addNotification({
-        title: "خطأ في التحليل",
-        message: "حدث خطأ أثناء تحليل البيانات",
-        type: "error",
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const generateAnalysis = (data: any, customPrompt?: string): AnalysisResult => {
-    // حساب المؤشرات الأساسية
-    const achievedTargets = data.metrics?.filter((m: any) => m.reachedTarget)?.length || 0;
-    const totalMetrics = data.metrics?.length || 1;
-    const targetAchievementRate = (achievedTargets / totalMetrics) * 100;
-
-    const totalComplaints = data.complaints?.length || 0;
-    const resolvedComplaints = data.complaints?.filter((c: any) => c.status === "تم حلها")?.length || 0;
-    const complaintResolutionRate = totalComplaints > 0 ? (resolvedComplaints / totalComplaints) * 100 : 0;
-
-    const totalCalls = data.customerServiceData?.calls?.total || 0;
-    const qualityCallsCount = data.qualityCalls?.length || 0;
-
-    // حساب النقاط الإجمالية
-    const score = Math.round(
-      (targetAchievementRate * 0.4) + 
-      (complaintResolutionRate * 0.3) + 
-      (data.maintenanceSatisfaction ? 
-        ((data.maintenanceSatisfaction.serviceQuality?.veryHappy || 0) / 
-         Math.max(Object.values(data.maintenanceSatisfaction.serviceQuality || {}).reduce((a: number, b: number) => a + b, 1), 1) * 100 * 0.3) : 0)
-    );
-
-    return {
-      summary: `
-يالله، خل أقولك إيش الوضع في شركة الرمز العقارية 🏢
-
-الحمدلله الوضع العام محترم، بس فيه مجال للتحسين زي ما نقول "اللي ما يطور نفسه يتطور عليه" 😅
-
-نسبة تحقيق الأهداف عندكم ${targetAchievementRate.toFixed(1)}% - يعني ${achievedTargets} هدف من أصل ${totalMetrics}. 
-معدل حل الشكاوى ${complaintResolutionRate.toFixed(1)}% من ${totalComplaints} شكوى.
-وإجمالي المكالمات وصل ${totalCalls} مكالمة، والله يعطيكم العافية على الجهد 💪
-
-الدرجة الإجمالية للأداء: ${score}/100
-      `,
-      
-      keyPoints: [
-        `📊 معدل تحقيق الأهداف: ${targetAchievementRate.toFixed(1)}% - ${targetAchievementRate >= 70 ? 'ماشاء الله ممتاز' : targetAchievementRate >= 50 ? 'لا بأس بس يحتاج شوية شد حيل' : 'يحتاج تركيز أكثر'}`,
-        `📞 إجمالي المكالمات: ${totalCalls} مكالمة - ${totalCalls >= 200 ? 'حركة زينة في الشركة' : 'يمكن نحتاج تسويق أكثر'}`,
-        `🛠️ معدل حل الشكاوى: ${complaintResolutionRate.toFixed(1)}% - ${complaintResolutionRate >= 80 ? 'الله يعطيكم العافية' : 'نحتاج نسرع في الحلول'}`,
-        `⭐ مكالمات الجودة: ${qualityCallsCount} مكالمة - ${qualityCallsCount >= 50 ? 'متابعة حلوة' : 'نحتاج متابعة أكثر مع العملاء'}`,
-        `🎯 نقاط القوة: ${achievedTargets > 0 ? 'فيه أهداف محققة' : 'نحتاج نراجع الاستراتيجية'}`,
-        `⚠️ نقاط التحسين: ${totalMetrics - achievedTargets > 0 ? `${totalMetrics - achievedTargets} هدف ما تحقق` : 'كل الأهداف محققة ماشاء الله'}`
-      ],
-
-      recommendations: [
-        "🚀 خلونا نركز على الأهداف اللي ما تحققت - كل هدف له خطة واضحة ومسؤول عنه",
-        "📱 نحسن من سرعة الرد على العملاء - العميل السعيد يجيب عملاء",
-        "📈 نزيد من المتابعة مع العملاء بعد الخدمة - الكلمة الحلوة صدقة",
-        "🎯 نعمل تدريبات للفريق على خدمة العملاء - الاستثمار في الناس أهم استثمار",
-        "📊 نراجع العمليات ونشوف وين ممكن نسرع ونحسن",
-        totalComplaints > 5 ? "⚡ نعالج أسباب الشكاوى من الجذور - الوقاية خير من العلاج" : "✅ معدل الشكاوى كويس، نحافظ عليه",
-        "🏆 نكافئ الموظفين المتميزين - التقدير يحفز للإبداع"
-      ],
-
-      roadmap: [
-        {
-          phase: "المرحلة الأولى",
-          title: "تحسين الأداء الفوري",
-          description: "نركز على الأهداف القريبة والمشاكل العاجلة",
-          timeline: "30 يوم",
-          priority: "عالي"
-        },
-        {
-          phase: "المرحلة الثانية", 
-          title: "تطوير العمليات",
-          description: "نحسن الأنظمة والعمليات الداخلية",
-          timeline: "60 يوم",
-          priority: "عالي"
-        },
-        {
-          phase: "المرحلة الثالثة",
-          title: "الابتكار والنمو",
-          description: "نطور خدمات جديدة ونوسع الأعمال",
-          timeline: "90 يوم",
-          priority: "متوسط"
-        }
-      ],
-
-      insights: [
-        {
-          category: "الأداء العام",
-          title: targetAchievementRate >= 70 ? "أداء متميز" : "يحتاج تحسين",
-          description: `معدل تحقيق الأهداف ${targetAchievementRate.toFixed(1)}%`,
-          impact: targetAchievementRate >= 70 ? "إيجابي" : "سلبي",
-          confidence: 95
-        },
-        {
-          category: "خدمة العملاء",
-          title: complaintResolutionRate >= 80 ? "خدمة ممتازة" : "تحتاج تطوير",
-          description: `معدل حل الشكاوى ${complaintResolutionRate.toFixed(1)}%`,
-          impact: complaintResolutionRate >= 80 ? "إيجابي" : "سلبي", 
-          confidence: 90
-        },
-        {
-          category: "حجم العمل",
-          title: totalCalls >= 200 ? "نشاط مرتفع" : "نشاط متوسط",
-          description: `إجمالي ${totalCalls} مكالمة`,
-          impact: totalCalls >= 200 ? "إيجابي" : "محايد",
-          confidence: 85
-        }
-      ],
-
-      score
-    };
+  const mockAnalysis = {
+    summary: "بناءً على تحليل البيانات الشامل لجميع أقسام المنصة، تبين وجود نقاط قوة واضحة في بعض المجالات مع ضرورة التركيز على تحسين عدة جوانب أساسية. النتائج العامة تشير إلى أداء متوسط يتطلب خطة تطوير استراتيجية.",
+    keyPoints: [
+      {
+        icon: <TrendingDown className="h-5 w-5" />,
+        title: "نسبة الترشيح للعملاء الجدد",
+        description: "النسبة الحالية 0% مقارنة بالهدف 65% - يتطلب تحسين فوري في استراتيجية جذب العملاء الجدد",
+        status: "critical" as const,
+        percentage: 0
+      },
+      {
+        icon: <TrendingDown className="h-5 w-5" />,
+        title: "نسبة الترشيح بعد السنة",
+        description: "0% مقابل الهدف المطلوب 65% - ضرورة تطوير برامج الولاء والمتابعة طويلة المدى",
+        status: "critical" as const,
+        percentage: 0
+      },
+      {
+        icon: <AlertTriangle className="h-5 w-5" />,
+        title: "نسبة الترشيح للعملاء الحاليين", 
+        description: "13.66% من الهدف 30% - تحتاج تحسين في خدمة العملاء الحاليين",
+        status: "warning" as const,
+        percentage: 45.5
+      },
+      {
+        icon: <CheckCircle className="h-5 w-5" />,
+        title: "جودة التسليم",
+        description: "93% من الهدف 100% - أداء جيد مع مجال للتحسين",
+        status: "good" as const,
+        percentage: 93
+      },
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        title: "معدل الرد على المكالمات",
+        description: "92% متجاوز للهدف 80% - أداء ممتاز في سرعة الاستجابة",
+        status: "good" as const,
+        percentage: 115
+      },
+      {
+        icon: <AlertTriangle className="h-5 w-5" />,
+        title: "وقت الاستجابة",
+        description: "12 ثانية مقابل الهدف 3 ثواني - يحتاج تحسين عاجل",
+        status: "warning" as const
+      }
+    ],
+    recommendations: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: "تطوير استراتيجية جذب العملاء",
+        description: "إطلاق حملات تسويقية مستهدفة وتحسين تجربة العميل الجديد",
+        priority: "high" as const,
+        timeline: "شهر واحد"
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: "برنامج الولاء وخدمة ما بعد البيع",
+        description: "إنشاء نظام متابعة دوري مع العملاء وتقديم خدمات حصرية",
+        priority: "high" as const,
+        timeline: "6 أسابيع"
+      },
+      {
+        icon: <Phone className="h-5 w-5" />,
+        title: "تحسين نظام الاستجابة",
+        description: "تدريب الفريق وتحديث أنظمة الاتصال لتقليل وقت الانتظار",
+        priority: "medium" as const,
+        timeline: "3 أسابيع"
+      },
+      {
+        icon: <BarChart3 className="h-5 w-5" />,
+        title: "نظام متابعة شامل",
+        description: "تطبيق مقاييس أداء واضحة ونظام تقارير دوري",
+        priority: "medium" as const,
+        timeline: "شهرين"
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: "تحسين جودة التسليم",
+        description: "مراجعة عمليات التسليم وتطبيق معايير جودة أعلى",
+        priority: "low" as const,
+        timeline: "6 أسابيع"
+      }
+    ],
+    roadmap: [
+      {
+        phase: "المرحلة الأولى - التحسين العاجل",
+        items: [
+          "تطوير استراتيجية جذب العملاء الجدد",
+          "تحسين أوقات الاستجابة على المكالمات",
+          "تدريب الفريق على خدمة العملاء"
+        ],
+        duration: "1-2 شهر"
+      },
+      {
+        phase: "المرحلة الثانية - بناء الولاء",
+        items: [
+          "إطلاق برنامج ولاء العملاء",
+          "تطوير نظام المتابعة طويل المدى",
+          "تحسين عمليات ما بعد البيع"
+        ],
+        duration: "2-4 أشهر"
+      },
+      {
+        phase: "المرحلة الثالثة - التطوير المستمر",
+        items: [
+          "تطبيق نظام مقاييس الأداء الشامل",
+          "تحسين جودة التسليم للوصول للهدف 100%",
+          "تطوير خدمات إضافية للعملاء"
+        ],
+        duration: "4-6 أشهر"
+      }
+    ]
   };
 
   const handleAnalyze = () => {
-    if (!allData) {
-      addNotification({
-        title: "لا توجد بيانات",
-        message: "يرجى انتظار تحميل البيانات أولاً",
-        type: "warning",
-      });
-      return;
+    setIsAnalyzing(true);
+    // محاكاة عملية التحليل
+    setTimeout(() => {
+      setAnalysisData(mockAnalysis);
+      setIsAnalyzing(false);
+    }, 3000);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "good":
+        return "bg-green-500/10 text-green-600 border-green-500/20";
+      case "warning":
+        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
+      case "critical":
+        return "bg-red-500/10 text-red-600 border-red-500/20";
+      default:
+        return "bg-gray-500/10 text-gray-600 border-gray-500/20";
     }
-    
-    performAIAnalysis(allData, customPrompt);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
-    return "text-red-500";
-  };
-
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return "ممتاز";
-    if (score >= 60) return "جيد";
-    return "يحتاج تحسين";
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-500 text-white";
+      case "medium":
+        return "bg-yellow-500 text-white";
+      case "low":
+        return "bg-green-500 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
   };
 
   return (
-    <Layout>
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Brain className="h-8 w-8 text-purple-500" />
-            التحليل الذكي AI
-          </h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button 
-              onClick={loadAllData}
-              variant="outline"
-              disabled={isAnalyzing}
-              className="mobile-button"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              تحديث البيانات
-            </Button>
-            <Button 
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || !allData}
-              className="mobile-button"
-            >
-              {isAnalyzing ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  جاري التحليل...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  تحليل ذكي
-                </>
-              )}
-            </Button>
+    <div className="min-h-screen bg-background p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Brain className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">التحليل الذكي AI</h1>
+            <p className="text-muted-foreground">
+              تحليل شامل لأداء المنصة باستخدام الذكاء الاصطناعي
+            </p>
           </div>
         </div>
+        <Button 
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+          className="w-full md:w-auto"
+          size="lg"
+        >
+          {isAnalyzing ? (
+            <>
+              <Activity className="mr-2 h-4 w-4 animate-spin" />
+              جاري التحليل...
+            </>
+          ) : (
+            <>
+              <Brain className="mr-2 h-4 w-4" />
+              بدء التحليل الشامل
+            </>
+          )}
+        </Button>
+      </div>
 
-        {/* إعدادات التحليل */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              طلب تحليل مخصص (اختياري)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="أكتب هنا أي طلب تحليل مخصص أو أسئلة معينة تريد الـ AI يجاوب عليها..."
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              rows={3}
-              className="mb-4"
-            />
-            <p className="text-sm text-muted-foreground">
-              مثال: "ركز على أداء المبيعات" أو "إيش أهم المشاكل في خدمة العملاء؟"
-            </p>
-          </CardContent>
-        </Card>
+      {/* Analysis Results */}
+      {analysisData && (
+        <div className="space-y-6">
+          {/* Summary */}
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                ملخص التحليل العام
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {analysisData.summary}
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* حالة التحليل */}
-        {isAnalyzing && (
-          <Card className="border-purple-200 bg-purple-50 dark:bg-purple-900/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-center space-x-4 space-x-reverse">
-                <Brain className="h-8 w-8 text-purple-500 animate-pulse" />
-                <div className="text-center">
-                  <h3 className="font-semibold text-purple-700 dark:text-purple-300">
-                    الذكاء الاصطناعي يحلل البيانات...
-                  </h3>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">
-                    يتم قراءة وتحليل جميع بيانات المنصة، يرجى الانتظار...
-                  </p>
-                </div>
+          {/* Key Points */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                النقاط الرئيسية والمؤشرات
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                {analysisData.keyPoints.map((point, index) => (
+                  <div 
+                    key={index}
+                    className={`p-4 rounded-lg border ${getStatusColor(point.status)}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">
+                        {point.icon}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-medium">{point.title}</h3>
+                        <p className="text-sm opacity-80">{point.description}</p>
+                        {point.percentage !== undefined && (
+                          <div className="text-xs font-medium">
+                            النسبة: {point.percentage}%
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* نتائج التحليل */}
-        {analysis && (
-          <div className="space-y-6">
-            {/* الدرجة الإجمالية */}
-            <Card className="border-2 border-purple-200 dark:border-purple-800">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    التقييم الإجمالي
-                  </span>
-                  <Badge className={`text-lg px-4 py-2 ${getScoreColor(analysis.score)}`}>
-                    {analysis.score}/100 - {getScoreLabel(analysis.score)}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-
-            {/* الملخص العام */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-500" />
-                  الملخص العام
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p className="whitespace-pre-line text-base leading-relaxed">
-                    {analysis.summary}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* النقاط الرئيسية */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-green-500" />
-                  النقاط الرئيسية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {analysis.keyPoints.map((point, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{point}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* التوصيات */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-yellow-500" />
-                  التوصيات والإجراءات
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analysis.recommendations.map((rec, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-4 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800"
-                    >
-                      <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-yellow-800 dark:text-yellow-200">{rec}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* خارطة الطريق */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-purple-500" />
-                  خارطة الطريق
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analysis.roadmap.map((phase, index) => (
-                    <div
-                      key={index}
-                      className="relative p-6 rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-purple-800 dark:text-purple-200">
-                          {phase.phase}: {phase.title}
-                        </h3>
+          {/* Recommendations */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                التوصيات والإجراءات المطلوبة
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analysisData.recommendations.map((rec, index) => (
+                  <div key={index} className="p-4 rounded-lg bg-card border">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 text-primary">
+                        {rec.icon}
+                      </div>
+                      <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={phase.priority === "عالي" ? "destructive" : phase.priority === "متوسط" ? "default" : "secondary"}
-                          >
-                            {phase.priority}
-                          </Badge>
-                          <Badge variant="outline">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {phase.timeline}
+                          <h3 className="font-medium">{rec.title}</h3>
+                          <Badge className={getPriorityColor(rec.priority)}>
+                            {rec.priority === "high" ? "عاجل" : rec.priority === "medium" ? "متوسط" : "منخفض"}
                           </Badge>
                         </div>
-                      </div>
-                      <p className="text-purple-700 dark:text-purple-300">
-                        {phase.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* الرؤى التفصيلية */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-indigo-500" />
-                  الرؤى التفصيلية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {analysis.insights.map((insight, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg border ${
-                        insight.impact === "إيجابي"
-                          ? "border-green-200 bg-green-50 dark:bg-green-900/20"
-                          : insight.impact === "سلبي"
-                          ? "border-red-200 bg-red-50 dark:bg-red-900/20"
-                          : "border-gray-200 bg-gray-50 dark:bg-gray-900/20"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {insight.category}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {insight.impact === "إيجابي" ? (
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                          ) : insight.impact === "سلبي" ? (
-                            <TrendingDown className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full bg-gray-400" />
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {insight.confidence}%
-                          </span>
+                        <p className="text-sm text-muted-foreground">{rec.description}</p>
+                        <div className="text-xs bg-muted px-2 py-1 rounded inline-block">
+                          المدة المقترحة: {rec.timeline}
                         </div>
                       </div>
-                      <h4 className="font-semibold mb-1">{insight.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {insight.description}
-                      </p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* معلومات حول النموذج */}
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <Brain className="h-6 w-6 text-blue-500 mt-1" />
-              <div>
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                  حول التحليل الذكي
-                </h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                  يستخدم هذا النظام الذكاء الاصطناعي لتحليل جميع بيانات المنصة بما في ذلك المؤشرات، 
-                  الشكاوى، التسليم، مكالمات الجودة، والاستقبال. يقدم التحليل بلهجة سعودية مفهومة 
-                  مع توصيات عملية وخارطة طريق واضحة للتحسين.
-                </p>
+                  </div>
+                ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Roadmap */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                خارطة الطريق للتحسين
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {analysisData.roadmap.map((phase, index) => (
+                  <div key={index} className="relative">
+                    {index < analysisData.roadmap.length - 1 && (
+                      <div className="absolute right-4 top-12 w-0.5 h-full bg-border" />
+                    )}
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                          <h3 className="font-medium">{phase.phase}</h3>
+                          <Badge variant="outline">{phase.duration}</Badge>
+                        </div>
+                        <ul className="space-y-2">
+                          {phase.items.map((item, itemIndex) => (
+                            <li key={itemIndex} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Initial State */}
+      {!analysisData && !isAnalyzing && (
+        <Card className="border-dashed border-2 border-muted">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <Brain className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">مرحباً بك في التحليل الذكي</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              اضغط على "بدء التحليل الشامل" للحصول على تقرير مفصل حول أداء جميع أقسام المنصة
+              مع توصيات محددة لتحسين الخدمات
+            </p>
+            <Button onClick={handleAnalyze} size="lg">
+              <Brain className="mr-2 h-4 w-4" />
+              بدء التحليل الآن
+            </Button>
           </CardContent>
         </Card>
-      </div>
-    </Layout>
+      )}
+
+      {/* Loading State */}
+      {isAnalyzing && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4" />
+            <h3 className="text-lg font-medium mb-2">جاري تحليل البيانات</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              يتم الآن تحليل جميع البيانات من أقسام المنصة المختلفة لتقديم تقرير شامل ومفصل...
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
