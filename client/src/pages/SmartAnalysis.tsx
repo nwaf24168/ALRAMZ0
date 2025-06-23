@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,38 +63,38 @@ const analyzeMonthlyTrends = (data: any) => {
 
 const identifyCriticalIssues = (data: any) => {
   const issues = [];
-  
+
   if (data.complaints?.length > 10) {
     issues.push("ارتفاع عدد الشكاوى يتطلب اهتماماً فورياً");
   }
-  
+
   if ((data.customerServiceData?.calls?.complaints / data.customerServiceData?.calls?.total) > 0.1) {
     issues.push("نسبة مكالمات الشكاوى مرتفعة");
   }
-  
+
   const unresolved = data.complaints?.filter((c: any) => c.status !== "تم حلها")?.length || 0;
   if (unresolved > 5) {
     issues.push(`${unresolved} شكوى لم يتم حلها بعد`);
   }
-  
+
   return issues;
 };
 
 const identifyOpportunities = (data: any) => {
   const opportunities = [];
-  
+
   if (data.customerServiceData?.calls?.inquiries > 50) {
     opportunities.push("نسبة استفسارات عالية تدل على اهتمام العملاء");
   }
-  
+
   if (data.qualityCalls?.length > 15) {
     opportunities.push("متابعة جيدة لمكالمات الجودة");
   }
-  
+
   if (data.maintenanceSatisfaction?.serviceQuality?.veryHappy > 150) {
     opportunities.push("رضا عملاء ممتاز في الصيانة");
   }
-  
+
   return opportunities;
 };
 
@@ -106,7 +105,7 @@ const analyzeIssueCategories = (data: any) => {
     service: data.complaints?.filter((c: any) => c.type?.includes("خدمة"))?.length || 0,
     quality: data.complaints?.filter((c: any) => c.type?.includes("جودة"))?.length || 0
   };
-  
+
   return Object.entries(categories)
     .sort(([,a], [,b]) => b - a)
     .map(([category, count]) => ({ category, count }));
@@ -142,7 +141,7 @@ const generateSmartSummary = (metrics: any) => {
   } = metrics;
 
   let analysis = `🏢 تحليل شامل لأداء شركة الرمز العقارية\n\n`;
-  
+
   // تحليل الأداء العام
   if (score >= 80) {
     analysis += `ماشاء الله، الأداء العام ممتاز بدرجة ${score}/100! 🌟\n`;
@@ -155,7 +154,7 @@ const generateSmartSummary = (metrics: any) => {
   // تحليل الأهداف
   analysis += `\n📊 تحليل الأهداف:\n`;
   analysis += `حققتم ${achievedTargets} من أصل ${totalMetrics} أهداف (${targetAchievementRate.toFixed(1)}%)\n`;
-  
+
   if (targetAchievementRate >= 80) {
     analysis += `- إنجاز رائع! أهدافكم على الطريق الصحيح 🎯\n`;
   } else if (targetAchievementRate >= 60) {
@@ -167,11 +166,11 @@ const generateSmartSummary = (metrics: any) => {
   // تحليل الشكاوى
   analysis += `\n📞 تحليل الشكاوى والخدمة:\n`;
   analysis += `إجمالي الشكاوى: ${totalComplaints} شكوى، تم حل ${Math.round(complaintResolutionRate)}% منها\n`;
-  
+
   if (pendingComplaints > 0) {
     analysis += `- يوجد ${pendingComplaints} شكوى قيد المراجعة تحتاج متابعة\n`;
   }
-  
+
   if (complaintsPercentage < 5) {
     analysis += `- ممتاز! نسبة الشكاوى منخفضة (${complaintsPercentage.toFixed(1)}% من المكالمات)\n`;
   } else if (complaintsPercentage < 10) {
@@ -183,7 +182,7 @@ const generateSmartSummary = (metrics: any) => {
   // تحليل رضا العملاء
   analysis += `\n⭐ رضا العملاء:\n`;
   analysis += `معدل الرضا العام: ${satisfactionRate.toFixed(1)}%\n`;
-  
+
   if (satisfactionRate >= 85) {
     analysis += `- العملاء راضين جداً، الله يعطيكم العافية! 😊\n`;
   } else if (satisfactionRate >= 70) {
@@ -227,7 +226,7 @@ const generateSmartSummary = (metrics: any) => {
 
 const generateSmartKeyPoints = (metrics: any) => {
   const keyPoints = [];
-  
+
   // تحليل الأهداف
   keyPoints.push(
     `🎯 تحقيق الأهداف: ${metrics.achievedTargets}/${metrics.totalMetrics} (${metrics.targetAchievementRate.toFixed(1)}%) - ${
@@ -291,7 +290,7 @@ const generateSmartKeyPoints = (metrics: any) => {
 
 const generateSmartRecommendations = (analysis: any) => {
   const recommendations = [];
-  
+
   // توصيات بناءً على تحقيق الأهداف
   if (analysis.targetAchievementRate < 70) {
     recommendations.push("🎯 مراجعة عاجلة للأهداف غير المحققة ووضع خطط تنفيذية واضحة مع جدول زمني محدد");
@@ -305,7 +304,7 @@ const generateSmartRecommendations = (analysis: any) => {
     recommendations.push("⚡ تطوير نظام حل الشكاوى وتقليل زمن الاستجابة إلى أقل من 24 ساعة");
     recommendations.push("🔧 تدريب فريق خدمة العملاء على تقنيات حل المشاكل المتقدمة");
   }
-  
+
   if (analysis.pendingComplaints > 5) {
     recommendations.push(`🚨 حل عاجل للـ ${analysis.pendingComplaints} شكوى المعلقة خلال 48 ساعة القادمة`);
   }
@@ -331,7 +330,7 @@ const generateSmartRecommendations = (analysis: any) => {
   // توصيات عامة للتحسين
   recommendations.push("📈 تطبيق نظام KPI شهري لقياس الأداء وتحفيز الفرق");
   recommendations.push("🏆 برنامج مكافآت للموظفين المتميزين لتعزيز الأداء");
-  
+
   // توصيات بناءً على القضايا الحرجة
   if (analysis.criticalIssues && analysis.criticalIssues.length > 0) {
     recommendations.push("🚨 خطة طوارئ لمعالجة القضايا الحرجة المحددة خلال أسبوع");
@@ -347,7 +346,7 @@ const generateSmartRecommendations = (analysis: any) => {
 
 const generateSmartRoadmap = (analysis: any) => {
   const roadmap = [];
-  
+
   // المرحلة الأولى - الإجراءات العاجلة (0-30 يوم)
   const phase1Actions = [];
   if (analysis.criticalIssues && analysis.criticalIssues.length > 0) {
@@ -359,7 +358,7 @@ const generateSmartRoadmap = (analysis: any) => {
   if (analysis.targetAchievementRate < 60) {
     phase1Actions.push("مراجعة عاجلة للأهداف غير المحققة");
   }
-  
+
   roadmap.push({
     phase: "المرحلة الأولى",
     title: "الإجراءات العاجلة",
@@ -377,7 +376,7 @@ const generateSmartRoadmap = (analysis: any) => {
     phase2Actions.push("تطوير آليات متابعة الأهداف");
   }
   phase2Actions.push("تدريب الفرق وتطوير العمليات");
-  
+
   roadmap.push({
     phase: "المرحلة الثانية",
     title: "التطوير والتحسين",
@@ -400,7 +399,7 @@ const generateSmartRoadmap = (analysis: any) => {
 
 const generateSmartInsights = (metrics: any) => {
   const insights = [];
-  
+
   // رؤية الأداء العام
   insights.push({
     category: "الأداء العام",
@@ -525,15 +524,15 @@ export default function SmartAnalysis() {
     try {
       // تحليل البيانات الفعلية من المنصة
       console.log("بدء تحليل البيانات الفعلية:", data);
-      
+
       // محاكاة معالجة AI للبيانات
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // تحليل البيانات وإنتاج نتائج بناءً على البيانات الحقيقية
       const analysisResult: AnalysisResult = await generateRealAnalysis(data, prompt);
-      
+
       setAnalysis(analysisResult);
-      
+
       addNotification({
         title: "تم التحليل",
         message: "تم إكمال التحليل الذكي للبيانات الفعلية بنجاح",
@@ -600,7 +599,7 @@ export default function SmartAnalysis() {
 
     // تحليل فئات المشاكل الرئيسية
     const mainIssueCategories = analyzeIssueCategories(data);
-    
+
     // تحليل الأداء مقارنة بالفترات السابقة
     const performanceComparison = analyzePerformanceComparison(data);
 
@@ -626,7 +625,7 @@ export default function SmartAnalysis() {
 
     return {
       summary: smartSummary,
-      
+
       keyPoints: generateSmartKeyPoints({
         targetAchievementRate, achievedTargets, totalMetrics, complaintResolutionRate, 
         totalComplaints, pendingComplaints, totalCalls, complaintsPercentage, 
@@ -663,7 +662,7 @@ export default function SmartAnalysis() {
       });
       return;
     }
-    
+
     performAIAnalysis(allData, customPrompt);
   };
 
@@ -947,6 +946,5 @@ export default function SmartAnalysis() {
           </CardContent>
         </Card>
       </div>
-    </div>
   );
 }
