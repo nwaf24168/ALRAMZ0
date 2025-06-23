@@ -34,6 +34,7 @@ import { toast } from "@/components/ui/use-toast";
 import { DataService } from "@/lib/dataService";
 import { useAuth } from "@/context/AuthContext";
 import Layout from "@/components/layout/Layout";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ReceptionRecord {
   id: string;
@@ -60,6 +61,7 @@ export default function Reception() {
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [records, setRecords] = useState<ReceptionRecord[]>([]);
+  const [transferToComplaints, setTransferToComplaints] = useState(false);
 
   // بيانات النموذج
   const [date, setDate] = useState("");
@@ -398,6 +400,7 @@ export default function Reception() {
     setCustomerRequest("");
     setAction("");
     setStatus("");
+    setTransferToComplaints(false);
   };
 
   const handleCancelDialog = () => {
@@ -449,11 +452,52 @@ export default function Reception() {
           description: "تم تحديث السجل بنجاح",
         });
       } else {
-        await DataService.saveReceptionRecord(recordData);
-        toast({
-          title: "تم بنجاح", 
-          description: "تم إضافة السجل بنجاح",
-        });
+          const newRecord = await DataService.saveReceptionRecord(recordData);
+          if (transferToComplaints) {
+            // تحويل سجل الاستقبال إلى شكوى
+            const generateComplaintId = () => {
+              const timestamp = Date.now();
+              const random = Math.floor(Math.random() * 1000);
+              return `${timestamp}${random}`;
+            };
+
+            const complaintData = {
+              id: generateComplaintId(),
+              date: date,
+              customerName: customerName,
+              project: project,
+              unitNumber: phoneNumber, // نستخدم رقم الهاتف كرقم الوحدة أو يمكن تركه فارغ
+              source: "الاستقبال",
+              status: "جديدة",
+              description: `تم تحويل الطلب من الاستقبال - نوع الطلب: ${type}\nطلب العميل: ${customerRequest}`,
+              action: action || "",
+              duration: 0,
+              createdBy: user.username,
+              createdAt: new Date().toISOString(),
+              updatedBy: null,
+              updatedAt: null,
+              updates: [],
+            };
+
+            // حفظ الشكوى في قاعدة البيانات
+            await DataService.saveComplaint(complaintData);
+
+             // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+            await DataService.updateReceptionRecord(newRecord.id, {
+              ...newRecord,
+              status: "تم التحويل للشكاوى",
+              action: `${action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
+            });
+
+            toast({
+              title: "تم التحويل بنجاح",
+              description: `تم حفظ الطلب وتحويله إلى شكوى رقم ${complaintData.id}`,
+            });
+          }
+          toast({
+            title: "تم بنجاح",
+            description: "تم إضافة السجل بنجاح",
+          });
       }
 
       await loadReceptionRecords();
@@ -504,7 +548,7 @@ export default function Reception() {
 
     try {
       setLoading(true);
-      
+
       // تحويل سجل الاستقبال إلى شكوى
       const generateComplaintId = () => {
         const timestamp = Date.now();
@@ -751,13 +795,23 @@ export default function Reception() {
                     rows={3}
                   />
                 </div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Checkbox 
+                      id="transferToComplaints"
+                      checked={transferToComplaints}
+                      onCheckedChange={(checked) => setTransferToComplaints(checked)}
+                    />
+                    <Label htmlFor="transferToComplaints" className="text-sm font-medium">
+                      تحويل هذا الطلب إلى صفحة الشكاوى
+                    </Label>
+                  </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={handleCancelDialog}>
                   إلغاء
                 </Button>
                 <Button onClick={handleSaveRecord} disabled={loading}>
-                  حفظ
+                  {transferToComplaints ? "حفظ وتحويل للشكاوى" : "حفظ"}
                 </Button>
               </div>
             </DialogContent>

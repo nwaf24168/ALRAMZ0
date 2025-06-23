@@ -47,19 +47,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <NotificationProvider>
-        <MetricsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <HashRouter>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <HashRouter>
+        <AuthProvider>
+          <NotificationProvider>
+            <MetricsProvider>
               <AppRoutes />
-            </HashRouter>
-          </TooltipProvider>
-        </MetricsProvider>
-      </NotificationProvider>
-    </AuthProvider>
+            </MetricsProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </HashRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

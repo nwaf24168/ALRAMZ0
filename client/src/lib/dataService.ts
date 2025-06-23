@@ -1229,31 +1229,51 @@ export class DataService {
 
   static async saveComplaint(complaint: any): Promise<void> {
     try {
+      console.log('حفظ الشكوى:', complaint);
+
+      const complaintId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+
       const { error } = await supabase
         .from('complaints')
-        .insert([{
-          complaint_id: complaint.id,
-          date: complaint.date,
-          customer_name: complaint.customerName,
-          project: complaint.project,
-          unit_number: complaint.unitNumber,
-          source: complaint.source,
-          status: complaint.status,
-          description: complaint.description,
-          action: complaint.action,
-          duration: complaint.duration,
-          created_by: complaint.createdBy,
-          updated_by: complaint.updatedBy,
-          created_at: complaint.createdAt,
-          updated_at: complaint.updatedAt,
-        }]);
+        .insert({
+          id: complaintId,
+          ...complaint
+        });
 
       if (error) {
         console.error('خطأ في حفظ الشكوى:', error);
         throw error;
       }
+
+      console.log('تم حفظ الشكوى بنجاح');
     } catch (error) {
-      console.error('خطأ في saveComplaint:', error);
+      console.error('خطأ في حفظ الشكوى:', error);
+      throw error;
+    }
+  }
+
+  // حفظ بيانات الاستقبال
+  static async saveReceptionData(receptionData: any): Promise<void> {
+    try {
+      console.log('حفظ بيانات الاستقبال:', receptionData);
+
+      const receptionId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+
+      const { error } = await supabase
+        .from('reception_calls')
+        .insert({
+          id: receptionId,
+          ...receptionData
+        });
+
+      if (error) {
+        console.error('خطأ في حفظ بيانات الاستقبال:', error);
+        throw error;
+      }
+
+      console.log('تم حفظ بيانات الاستقبال بنجاح');
+    } catch (error) {
+      console.error('خطأ في حفظ بيانات الاستقبال:', error);
       throw error;
     }
   }
