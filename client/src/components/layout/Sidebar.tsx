@@ -83,6 +83,11 @@ export default function Sidebar() {
     <div className="flex flex-col h-full">
       <div className="p-3 md:p-4 border-b">
         <div className="flex flex-col items-center justify-center p-2">
+          <img
+            src="/images/logo.png"
+            alt="شركة الرمز العقارية"
+            className="h-12 md:h-16 w-auto mb-2 object-contain"
+          />
           <h1 className="text-lg md:text-xl font-bold mb-1 text-center">
             شركة الرمز العقارية
           </h1>
