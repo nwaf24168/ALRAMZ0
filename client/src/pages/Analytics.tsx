@@ -323,8 +323,8 @@ export default function Analytics() {
                     {metrics.slice(0, 8).map((metric, index) => (
                       <div key={index} className={`flex items-center justify-between p-3 rounded-lg border ${
                         metric.reachedTarget 
-                          ? 'bg-green-50 border-green-200' 
-                          : 'bg-red-50 border-red-200'
+                          ? 'bg-green-900/20 border-green-800/30 dark:bg-green-900/30 dark:border-green-700/50' 
+                          : 'bg-red-900/20 border-red-800/30 dark:bg-red-900/30 dark:border-red-700/50'
                       }`}>
                         <div className="flex-1">
                           <p className="font-medium text-sm">{metric.title}</p>
@@ -475,25 +475,25 @@ export default function Analytics() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="p-3 bg-blue-900/20 border border-blue-800/30 dark:bg-blue-900/30 dark:border-blue-700/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-blue-800">جودة الخدمة</h4>
+                        <h4 className="font-medium text-blue-700 dark:text-blue-300">جودة الخدمة</h4>
                         <Badge className="bg-blue-600">{serviceQualityScore}%</Badge>
                       </div>
                       <Progress value={serviceQualityScore} className="h-2" />
                     </div>
 
-                    <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="p-3 bg-green-900/20 border border-green-800/30 dark:bg-green-900/30 dark:border-green-700/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-green-800">سرعة الإغلاق</h4>
+                        <h4 className="font-medium text-green-700 dark:text-green-300">سرعة الإغلاق</h4>
                         <Badge className="bg-green-600">{closureTimeScore}%</Badge>
                       </div>
                       <Progress value={closureTimeScore} className="h-2" />
                     </div>
 
-                    <div className="p-3 bg-purple-50 rounded-lg">
+                    <div className="p-3 bg-purple-900/20 border border-purple-800/30 dark:bg-purple-900/30 dark:border-purple-700/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-purple-800">الحل من أول مرة</h4>
+                        <h4 className="font-medium text-purple-700 dark:text-purple-300">الحل من أول مرة</h4>
                         <Badge className="bg-purple-600">{firstTimeResolutionScore}%</Badge>
                       </div>
                       <Progress value={firstTimeResolutionScore} className="h-2" />
@@ -559,7 +559,7 @@ export default function Analytics() {
                       .filter(metric => !metric.reachedTarget)
                       .slice(0, 6)
                       .map((metric, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-900/20 border border-red-800/30 dark:bg-red-900/30 dark:border-red-700/50 rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium text-sm">{metric.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -589,7 +589,7 @@ export default function Analytics() {
                       .filter(metric => metric.reachedTarget)
                       .slice(0, 6)
                       .map((metric, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div key={index} className="flex items-center justify-between p-3 bg-green-900/20 border border-green-800/30 dark:bg-green-900/30 dark:border-green-700/50 rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium text-sm">{metric.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -650,7 +650,7 @@ export default function Analytics() {
                       </h4>
                       <div className="space-y-2">
                         {serviceQualityScore < 70 && (
-                          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800">
+                          <div className="p-2 bg-amber-900/20 border border-amber-800/30 dark:bg-amber-900/30 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-300">
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="h-4 w-4" />
                               <span className="text-sm">تحسين جودة الخدمة المقدمة للعملاء</span>
@@ -658,7 +658,7 @@ export default function Analytics() {
                           </div>
                         )}
                         {customerServiceData.maintenance.inProgress > customerServiceData.maintenance.resolved && (
-                          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800">
+                          <div className="p-2 bg-amber-900/20 border border-amber-800/30 dark:bg-amber-900/30 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-300">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
                               <span className="text-sm">تسريع معالجة طلبات الصيانة المعلقة</span>
@@ -666,7 +666,7 @@ export default function Analytics() {
                           </div>
                         )}
                         {metrics.filter(m => !m.reachedTarget).length > metrics.length / 2 && (
-                          <div className="p-2 bg-red-50 rounded border border-red-200 text-red-800">
+                          <div className="p-2 bg-red-900/20 border border-red-800/30 dark:bg-red-900/30 dark:border-red-700/50 rounded text-red-700 dark:text-red-300">
                             <div className="flex items-center gap-2">
                               <Target className="h-4 w-4" />
                               <span className="text-sm">مراجعة استراتيجية تحقيق الأهداف</span>
@@ -674,7 +674,7 @@ export default function Analytics() {
                           </div>
                         )}
                         {serviceQualityScore >= 80 && (
-                          <div className="p-2 bg-green-50 rounded border border-green-200 text-green-800">
+                          <div className="p-2 bg-green-900/20 border border-green-800/30 dark:bg-green-900/30 dark:border-green-700/50 rounded text-green-700 dark:text-green-300">
                             <div className="flex items-center gap-2">
                               <CheckCircle className="h-4 w-4" />
                               <span className="text-sm">الحفاظ على مستوى الخدمة الممتاز</span>
