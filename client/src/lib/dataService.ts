@@ -999,31 +999,36 @@ export class DataService {
   }
 
   static async createUser(userData: Omit<User, 'id'>): Promise<User> {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{
-        username: userData.username,
-        password: userData.password,
-        role: userData.role,
-        permissions: JSON.stringify(userData.permissions)
-      }])
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          username: userData.username,
+          password: userData.password,
+          role: userData.role,
+          permissions: JSON.stringify(userData.permissions)
+        }])
+        .select()
+        .single();
 
-    if (error) {
-      console.error('خطأ في إنشاء المستخدم:', error);
-      throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
+      if (error) {
+        console.error('خطأ في إنشاء المستخدم:', error);
+        throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
+      }
+
+      return {
+        id: data.id.toString(),
+        username: data.username,
+        password: data.password,
+        role: data.role,
+        permissions: typeof data.permissions === 'string' 
+          ? JSON.parse(data.permissions) 
+          : data.permissions || { level: 'read', scope: 'full', pages: [] }
+      };
+    } catch (error) {
+      console.error('خطأ عام في إنشاء المستخدم:', error);
+      throw error;
     }
-
-    return {
-      id: data.id.toString(),
-      username: data.username,
-      password: data.password,
-      role: data.role,
-      permissions: typeof data.permissions === 'string' 
-        ? JSON.parse(data.permissions) 
-        : data.permissions || { level: 'read', scope: 'full', pages: [] }
-    };
   }
 
   static async updateUser(id: string, userData: Partial<Omit<User, 'id'>>): Promise<User> {
