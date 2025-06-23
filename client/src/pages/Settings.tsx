@@ -43,7 +43,7 @@ import { Edit2, Trash2, UserPlus } from "lucide-react";
 
 export default function Settings() {
   const { addNotification } = useNotification();
-  const { users, addUser, deleteUser, resetUserPassword, updateUserPermissions } = useAuth();
+  const { users, addUser, deleteUser, resetUserPassword, updateUserPermissions, reloadUsers } = useAuth();
   const { canAccessPage, hasEditAccess, isReadOnly } = usePermissions();
   const [realtimeChannel, setRealtimeChannel] =
     useState<RealtimeChannel | null>(null);
@@ -145,7 +145,7 @@ export default function Settings() {
       });
 
       // إعادة تحميل المستخدمين من قاعدة البيانات
-      await reloadUsersFromDatabase();
+      await reloadUsers();
     } catch (error) {
       console.error("خطأ في إضافة المستخدم:", error);
       addNotification({
@@ -156,17 +156,6 @@ export default function Settings() {
             : "حدث خطأ أثناء إضافة المستخدم",
         type: "error",
       });
-    }
-  };
-
-  // إعادة تحميل المستخدمين من قاعدة البيانات
-  const reloadUsersFromDatabase = async () => {
-    try {
-      const usersFromDB = await DataService.getUsers();
-      console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
-      // ملاحظة: سيتم تحديث القائمة تلقائياً من خلال AuthContext
-    } catch (error) {
-      console.error("خطأ في إعادة تحميل المستخدمين:", error);
     }
   };
 
@@ -193,7 +182,7 @@ export default function Settings() {
       });
 
       // إعادة تحميل المستخدمين من قاعدة البيانات
-      await reloadUsersFromDatabase();
+      await reloadUsers();
     } catch (error) {
       console.error("خطأ في حذف المستخدم:", error);
       addNotification({
@@ -235,7 +224,7 @@ export default function Settings() {
         });
 
         // إعادة تحميل المستخدمين من قاعدة البيانات
-        await reloadUsersFromDatabase();
+        await reloadUsers();
       } catch (error) {
         console.error("خطأ في تحديث كلمة المرور:", error);
         addNotification({
@@ -303,7 +292,7 @@ export default function Settings() {
       });
 
       // إعادة تحميل المستخدمين من قاعدة البيانات
-      await reloadUsersFromDatabase();
+      await reloadUsers();
     } catch (error) {
       console.error("خطأ في تحديث الصلاحيات:", error);
       addNotification({

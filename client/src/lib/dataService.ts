@@ -16,6 +16,18 @@ import {
 } from "@/context/MetricsContext";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
+export interface User {
+  id: string;
+  username: string;
+  password?: string;
+  role: string;
+  permissions: {
+    level: string;
+    scope: string;
+    pages: string[];
+  };
+}
+
 export class DataService {
   // حفظ وتحديث المؤشرات
   static async saveMetric(
@@ -675,7 +687,7 @@ export class DataService {
       // إذا كان المستخدم له id صالح ولا يبدأ بـ temp، نحدثه
       if (user.id && user.id !== "" && !user.id.toString().startsWith("temp") && !user.id.toString().startsWith("175")) {
         console.log("تحديث مستخدم موجود بـ id:", user.id);
-        
+
         // التحقق من وجود المستخدم أولاً
         const { data: existingUserCheck, error: checkError } = await supabase
           .from("users")
@@ -693,7 +705,7 @@ export class DataService {
           // إذا لم يوجد المستخدم، ننشئه كمستخدم جديد
           const insertRecord = { ...record };
           delete insertRecord.id;
-          
+
           const { data, error } = await supabase
             .from("users")
             .insert(insertRecord)
@@ -758,11 +770,11 @@ export class DataService {
         } else {
           // إضافة مستخدم جديد تماماً (Supabase سيولد id تلقائياً)
           console.log("إضافة مستخدم جديد:", record);
-          
+
           // التأكد من عدم إرسال id في البيانات
           const insertRecord = { ...record };
           delete insertRecord.id;
-          
+
           const { data, error } = await supabase
             .from("users")
             .insert(insertRecord)
@@ -771,11 +783,11 @@ export class DataService {
 
           if (error) {
             console.error("خطأ Supabase في إضافة المستخدم الجديد:", error);
-            
+
             // إذا كان الخطأ متعلق بالـ id، نحاول مرة أخرى مع تحديد id يدوياً
             if (error.code === "23502" && error.message.includes("id")) {
               console.log("محاولة إضافة مستخدم بـ id تسلسلي...");
-              
+
               // الحصول على أعلى id موجود
               const { data: maxIdData } = await supabase
                 .from("users")
@@ -783,16 +795,16 @@ export class DataService {
                 .order("id", { ascending: false })
                 .limit(1)
                 .single();
-              
+
               const nextId = maxIdData ? maxIdData.id + 1 : 1;
-              
+
               const recordWithId = { ...insertRecord, id: nextId };
               const { data: retryData, error: retryError } = await supabase
                 .from("users")
                 .insert(recordWithId)
                 .select()
                 .single();
-              
+
               if (retryError) {
                 console.error("خطأ في المحاولة الثانية:", retryError);
                 throw new Error(
@@ -801,7 +813,7 @@ export class DataService {
               }
               return retryData;
             }
-            
+
             throw new Error(
               `خطأ في إضافة المستخدم: ${error.message || error.details || "خطأ غير معروف"}`,
             );
@@ -964,44 +976,157 @@ export class DataService {
     }
   }
 
-  static async getUsers(): Promise<any[]> {
+  static async getUsers(): Promise<User[]> {
     const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("خطأ Supabase في جلب المستخدمين:", error);
-      throw new Error(
-        `خطأ في جلب المستخدمين: ${error.message || error.details || "خطأ غير معروف"}`
-      );
+      console.error('خطأ في جلب المستخدمين:', error);
+      throw new Error(`فشل في جلب المستخدمين: ${error.message}`);
     }
 
-    return (data || []).map((record) => ({
-      id: record.id.toString(),
-      username: record.username,
-      password: record.password_hash || record.password,
-      role: record.role,
-      permissions: record.permissions ? JSON.parse(record.permissions) : {
-        level: "read",
-        scope: "full",
-        pages: []
-      }
-    }));
+    return data?.map(user => ({
+      id: user.id.toString(),
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      permissions: typeof user.permissions === 'string' 
+        ? JSON.parse(user.permissions) 
+        : user.permissions || { level: 'read', scope: 'full', pages: [] }
+    })) || [];
   }
 
-  static async deleteUser(userId: string): Promise<void> {
-    const { error } = await supabase
-      .from("users")
-      .delete()
-      .eq("id", userId);
+  static async createUser(userData: Omit<User, 'id'>): Promise<User> {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{
+        username: userData.username,
+        password: userData.password,
+        role: userData.role,
+        permissions: JSON.stringify(userData.permissions)
+      }])
+      .select()
+      .single();
 
     if (error) {
-      console.error("خطأ Supabase في حذف المستخدم:", error);
-      throw new Error(
-        `خطأ في حذف المستخدم: ${error.message || error.details || "خطأ غير معروف"}`
-      );
+      console.error('خطأ في إنشاء المستخدم:', error);
+      throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
     }
+
+    return {
+      id: data.id.toString(),
+      username: data.username,
+      password: data.password,
+      role: data.role,
+      permissions: typeof data.permissions === 'string' 
+        ? JSON.parse(data.permissions) 
+        : data.permissions || { level: 'read', scope: 'full', pages: [] }
+    };
+  }
+
+  static async updateUser(id: string, userData: Partial<Omit<User, 'id'>>): Promise<User> {
+    const updateData: any = {};
+
+    if (userData.username) updateData.username = userData.username;
+    if (userData.password) updateData.password = userData.password;
+    if (userData.role) updateData.role = userData.role;
+    if (userData.permissions) updateData.permissions = JSON.stringify(userData.permissions);
+
+    updateData.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', parseInt(id))
+      .select()
+      .single();
+
+    if (error) {
+      console.error('خطأ في تحديث المستخدم:', error);
+      throw new Error(`فشل في تحديث المستخدم: ${error.message}`);
+    }
+
+    return {
+      id: data.id.toString(),
+      username: data.username,
+      password: data.password,
+      role: data.role,
+      permissions: typeof data.permissions === 'string' 
+        ? JSON.parse(data.permissions) 
+        : data.permissions || { level: 'read', scope: 'full', pages: [] }
+    };
+  }
+
+  static async deleteUser(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', parseInt(id));
+
+    if (error) {
+      console.error('خطأ في حذف المستخدم:', error);
+      throw new Error(`فشل في حذف المستخدم: ${error.message}`);
+    }
+  }
+
+  static async resetUserPassword(id: string, newPassword: string): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        password: newPassword,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', parseInt(id));
+
+    if (error) {
+      console.error('خطأ في إعادة تعيين كلمة المرور:', error);
+      throw new Error(`فشل في إعادة تعيين كلمة المرور: ${error.message}`);
+    }
+  }
+
+  static async updateUserPermissions(id: string, permissions: User['permissions']): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        permissions: JSON.stringify(permissions),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', parseInt(id));
+
+    if (error) {
+      console.error('خطأ في تحديث صلاحيات المستخدم:', error);
+      throw new Error(`فشل في تحديث صلاحيات المستخدم: ${error.message}`);
+    }
+  }
+
+  static async authenticateUser(username: string, password: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // لا يوجد مستخدم بهذه البيانات
+        return null;
+      }
+      console.error('خطأ في المصادقة:', error);
+      throw new Error(`فشل في المصادقة: ${error.message}`);
+    }
+
+    return {
+      id: data.id.toString(),
+      username: data.username,
+      password: data.password,
+      role: data.role,
+      permissions: typeof data.permissions === 'string' 
+        ? JSON.parse(data.permissions) 
+        : data.permissions || { level: 'read', scope: 'full', pages: [] }
+    };
   }
 
   // إعداد الاشتراكات للوقت الفعلي
