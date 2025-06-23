@@ -74,11 +74,6 @@ export default function Sidebar() {
       path: "/reception",
     },
     {
-      title: "التحليل الذكي AI",
-      icon: <Brain className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
-      path: "/smart-analysis",
-    },
-    {
       title: "الإعدادات",
       icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/settings",
@@ -261,7 +256,6 @@ function DeliveryAnalysis() {
             <td>2,687,500</td>
             <td></td>
             <td>محمد شعيب</td>
-            <td></td>
             <td></td>
             <td></td>
             <td></td>
