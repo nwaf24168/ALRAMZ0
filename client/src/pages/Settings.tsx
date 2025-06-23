@@ -144,6 +144,8 @@ export default function Settings() {
         }
       });
 
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في إضافة المستخدم:", error);
       addNotification({
@@ -157,7 +159,16 @@ export default function Settings() {
     }
   };
 
-  // ملاحظة: لا حاجة لتحميل المستخدمين يدوياً، سيتم ذلك تلقائياً من خلال AuthContext
+  // إعادة تحميل المستخدمين من قاعدة البيانات
+  const reloadUsersFromDatabase = async () => {
+    try {
+      const usersFromDB = await DataService.getUsers();
+      console.log("إعادة تحميل المستخدمين من قاعدة البيانات:", usersFromDB);
+      // ملاحظة: سيتم تحديث القائمة تلقائياً من خلال AuthContext
+    } catch (error) {
+      console.error("خطأ في إعادة تحميل المستخدمين:", error);
+    }
+  };
 
   // حذف مستخدم
   const handleDeleteUser = async (id: string) => {
@@ -180,6 +191,9 @@ export default function Settings() {
         message: `تم حذف المستخدم ${userToDelete.username} بنجاح من قاعدة البيانات`,
         type: "success",
       });
+
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في حذف المستخدم:", error);
       addNotification({
@@ -219,6 +233,9 @@ export default function Settings() {
           message: `تم إعادة تعيين كلمة مرور المستخدم ${userToReset.username} بنجاح في قاعدة البيانات`,
           type: "success",
         });
+
+        // إعادة تحميل المستخدمين من قاعدة البيانات
+        await reloadUsersFromDatabase();
       } catch (error) {
         console.error("خطأ في تحديث كلمة المرور:", error);
         addNotification({
@@ -274,6 +291,7 @@ export default function Settings() {
         message: `تم تحديث صلاحيات المستخدم ${userToUpdate.username} بنجاح`,
         type: "success",
       });
+
       // إعادة تعيين state
       setEditingPermissions({
         userId: null,
@@ -284,6 +302,8 @@ export default function Settings() {
         }
       });
 
+      // إعادة تحميل المستخدمين من قاعدة البيانات
+      await reloadUsersFromDatabase();
     } catch (error) {
       console.error("خطأ في تحديث الصلاحيات:", error);
       addNotification({
@@ -296,6 +316,38 @@ export default function Settings() {
       });
     }
   };
+
+  // تحميل المستخدمين من Supabase عند تحميل المكون
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const usersFromDB = await DataService.getUsers();
+        console.log("المستخدمون من قاعدة البيانات:", usersFromDB);
+
+        // إنشاء خريطة للمستخدمين الموجودين حالياً
+        const currentUsersMap = new Map();
+        users.forEach(user => {
+          currentUsersMap.set(user.id, user);
+        });
+
+        // إضافة المستخدمين الجدد من قاعدة البيانات فقط
+        usersFromDB.forEach(dbUser => {
+          if (!currentUsersMap.has(dbUser.id)) {
+            console.log("إضافة مستخدم جديد من قاعدة البيانات:", dbUser);
+            addUser(dbUser);
+          }
+        });
+
+      } catch (error) {
+        console.error("خطأ في تحميل المستخدمين:", error);
+      }
+    };
+
+    // تحميل المستخدمين فقط عند تحميل المكون لأول مرة
+    if (users.length === 0) {
+      loadUsers();
+    }
+  }, []); // تشغيل مرة واحدة فقط عند تحميل المكون
 
   // إعداد الاشتراك للوقت الفعلي للمستخدمين
   useEffect(() => {
@@ -355,9 +407,7 @@ export default function Settings() {
             <CardDescription>إضافة وتعديل وحذف مستخدمي النظام</CardDescription>
           </CardHeader>
           <CardContent>
-            <This code removes the manual user loading and reloading logic, relying on AuthContext to manage user data synchronization with the database.
-```typescript
-h3 className="text-lg font-semibold mb-4">المستخدمون الحاليون</h3>
+            <h3 className="text-lg font-semibold mb-4">المستخدمون الحاليون</h3>
 
             <div className="rounded-md border mb-8">
               <Table>

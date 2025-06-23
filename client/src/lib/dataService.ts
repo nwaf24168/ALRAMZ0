@@ -665,13 +665,11 @@ export class DataService {
         username: user.username,
         password: user.password,
         role: user.role,
-        permissions: typeof user.permissions === 'string' 
-          ? user.permissions 
-          : JSON.stringify(user.permissions || {
-              level: "read",
-              scope: "full",
-              pages: []
-            })
+        permissions: JSON.stringify(user.permissions || {
+          level: "read",
+          scope: "full",
+          pages: []
+        })
       };
 
       // إذا كان المستخدم له id صالح ولا يبدأ بـ temp، نحدثه

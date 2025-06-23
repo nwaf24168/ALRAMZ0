@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { DataService } from '@/lib/dataService';
 
 interface User {
   id: string;
@@ -19,89 +18,163 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  addUser: (userData: User) => Promise<void>;
+  addUser: (userData: Omit<User, "id">) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   resetUserPassword: (id: string, newPassword: string) => Promise<void>;
   updateUserPermissions: (id: string, permissions: User['permissions']) => Promise<void>;
-  loadUsersFromDB: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Initialize default admin user if no users exist
+const initializeDefaultAdmin = () => {
+  const savedUsers = localStorage.getItem('auth_users');
+  const defaultUsers = [
+    {
+      id: "1",
+      username: "admin",
+      password: "admin123",
+      role: "مدير النظام",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "2",
+      username: "abdulsalam",
+      password: "Alramz2025",
+      role: "مدير ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "3",
+      username: "aljawhara",
+      password: "Alramz2025",
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "4",
+      username: "khulood",
+      password: "Alramz2025",
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "5",
+      username: "adnan",
+      password: "Alramz2025",
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "6",
+      username: "lateefa",
+      password: "Alramz2025",
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "edit" as const,
+        scope: "full" as const,
+        pages: []
+      }
+    },
+    {
+      id: "7",
+      username: "nawaf",
+      password: "Alramz2025",
+      role: "موظف ادارة راحة العملاء",
+      permissions: {
+        level: "read" as const,
+        scope: "limited" as const,
+        pages: ["delivery"]
+      }
+    }
+  ];
+
+  // تحقق من وجود المستخدمين وتحديثهم إذا لزم الأمر
+  if (!savedUsers || JSON.parse(savedUsers).length === 0) {
+    localStorage.setItem('auth_users', JSON.stringify(defaultUsers));
+    console.log('تم تهيئة المستخدمين الافتراضيين:', defaultUsers);
+    return defaultUsers;
+  }
+
+  // تحقق من وجود جميع المستخدمين المطلوبين
+  const currentUsers = JSON.parse(savedUsers);
+  const missingUsers = defaultUsers.filter(defaultUser => 
+    !currentUsers.some(currentUser => currentUser.username === defaultUser.username)
+  );
+
+  if (missingUsers.length > 0) {
+    const updatedUsers = [...currentUsers, ...missingUsers];
+    localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+    console.log('تم إضافة المستخدمين المفقودين:', missingUsers);
+    return updatedUsers;
+  }
+
+  return currentUsers;
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
-  // تحميل المستخدمين من قاعدة البيانات
-  const loadUsersFromDB = async () => {
-    try {
-      console.log('تحميل المستخدمين من قاعدة البيانات...');
-      const usersFromDB = await DataService.getUsers();
-      console.log('المستخدمون المحملون من قاعدة البيانات:', usersFromDB);
-      setUsers(usersFromDB);
-    } catch (error) {
-      console.error('خطأ في تحميل المستخدمين من قاعدة البيانات:', error);
-      // في حالة الخطأ، إنشاء مستخدم admin افتراضي
-      await createDefaultAdmin();
-    }
-  };
-
-  // إنشاء مستخدم admin افتراضي إذا لم يوجد
-  const createDefaultAdmin = async () => {
-    try {
-      const defaultAdmin = {
-        username: "admin",
-        password: "admin123",
-        role: "مدير النظام",
-        permissions: {
-          level: "edit" as const,
-          scope: "full" as const,
-          pages: []
-        }
-      };
-
-      console.log('إنشاء مستخدم admin افتراضي...');
-      const savedAdmin = await DataService.saveUser(defaultAdmin);
-      console.log('تم إنشاء مستخدم admin افتراضي:', savedAdmin);
-
-      // إعادة تحميل المستخدمين
-      await loadUsersFromDB();
-    } catch (error) {
-      console.error('خطأ في إنشاء مستخدم admin افتراضي:', error);
-    }
-  };
-
   useEffect(() => {
-    // تحميل المستخدمين عند بدء التطبيق
-    loadUsersFromDB();
+    const initialUsers = initializeDefaultAdmin();
+    setUsers(initialUsers);
+    console.log('تم تحميل المستخدمين:', initialUsers);
 
-    // استرداد المستخدم المحفوظ في الجلسة
-    const savedUser = sessionStorage.getItem('current_user');
+    // استرداد المستخدم المحفوظ عند تحديث الصفحة
+    const savedUser = localStorage.getItem('current_user');
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
-        console.log('تم استرداد المستخدم من الجلسة:', parsedUser.username);
+        console.log('تم استرداد المستخدم من localStorage:', parsedUser.username);
       } catch (error) {
         console.error('خطأ في استرداد بيانات المستخدم:', error);
-        sessionStorage.removeItem('current_user');
+        localStorage.removeItem('current_user');
       }
     }
   }, []);
 
+  const loadUsers = () => {
+    const savedUsers = localStorage.getItem('auth_users');
+    if (savedUsers) {
+      const parsedUsers = JSON.parse(savedUsers);
+      setUsers(parsedUsers);
+      console.log('تم إعادة تحميل المستخدمين:', parsedUsers);
+    }
+  };
+
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('محاولة تسجيل الدخول للمستخدم:', username);
-
-      // التحقق من قاعدة البيانات مباشرة
-      const usersFromDB = await DataService.getUsers();
-      const user = usersFromDB.find((u: User) => 
+      const localUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const user = localUsers.find((u: User) => 
         u.username === username && u.password === password
       );
 
       if (user) {
         setUser(user);
-        sessionStorage.setItem('current_user', JSON.stringify(user));
+        localStorage.setItem('current_user', JSON.stringify(user));
         console.log('تم تسجيل الدخول بنجاح للمستخدم:', user.username, 'بدور:', user.role);
         return true;
       }
@@ -116,124 +189,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setUser(null);
-    sessionStorage.removeItem('current_user');
-    console.log('تم تسجيل الخروج');
+    localStorage.removeItem('current_user');
+    console.log('تم تسجيل الخروج وحذف بيانات المستخدم من localStorage');
   };
 
-  const addUser = async (userData: User) => {
+  // دالة لإزالة المستخدمين المكررين
+  const removeDuplicateUsers = (userList: User[]): User[] => {
+    const uniqueUsers = new Map<string, User>();
+    userList.forEach(user => {
+      // استخدام id كمفتاح فريد، أو username كبديل إذا لم يكن id متوفراً
+      const key = user.id || user.username;
+      uniqueUsers.set(key, user);
+    });
+    return Array.from(uniqueUsers.values());
+  };
+
+  const addUser = async (userData: Omit<User, "id">) => {
     try {
-      console.log('إضافة مستخدم جديد إلى قاعدة البيانات:', userData);
-
-      // حفظ في قاعدة البيانات
-      const savedUser = await DataService.saveUser(userData);
-      console.log('تم حفظ المستخدم في قاعدة البيانات:', savedUser);
-
-      // تحديث القائمة المحلية
-      const userToAdd = {
-        id: savedUser.id.toString(),
-        username: savedUser.username,
-        password: savedUser.password,
-        role: savedUser.role,
-        permissions: savedUser.permissions ? JSON.parse(savedUser.permissions) : userData.permissions
+      const newUser = {
+        id: Date.now().toString(),
+        ...userData
       };
 
-      setUsers(prevUsers => {
-        // التحقق من عدم وجود المستخدم مسبقاً
-        const existingIndex = prevUsers.findIndex(u => u.id === userToAdd.id);
-        if (existingIndex !== -1) {
-          // تحديث المستخدم الموجود
-          const updatedUsers = [...prevUsers];
-          updatedUsers[existingIndex] = userToAdd;
-          return updatedUsers;
-        } else {
-          // إضافة مستخدم جديد
-          return [...prevUsers, userToAdd];
-        }
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      // التحقق من عدم وجود المستخدم مسبقاً
+      const existingUserIndex = currentUsers.findIndex(u => u.id === newUser.id || u.username === newUser.username);
+      if (existingUserIndex !== -1) {
+        // إذا كان المستخدم موجود، نقوم بتحديثه بدلاً من إضافته
+        currentUsers[existingUserIndex] = newUser;
+        localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+        setUsers([...currentUsers]);
+        return;
+      }
+      // إضافة المستخدم الجديد
+      currentUsers.push(newUser);
+      localStorage.setItem('auth_users', JSON.stringify(currentUsers));
+      setUsers((prevUsers) => {
+        const updatedUsers = [...prevUsers, newUser];
+        return removeDuplicateUsers(updatedUsers);
       });
-
     } catch (error) {
-      console.error('خطأ في إضافة المستخدم:', error);
+      console.error('Error adding user:', error);
       throw error;
     }
   };
 
   const deleteUser = async (id: string) => {
     try {
-      console.log('حذف المستخدم من قاعدة البيانات:', id);
-
-      // حذف من قاعدة البيانات
-      await DataService.deleteUser(id);
-      console.log('تم حذف المستخدم من قاعدة البيانات');
-
-      // تحديث القائمة المحلية
-      setUsers(prevUsers => prevUsers.filter(u => u.id !== id));
-
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const updatedUsers = currentUsers.filter((u: User) => u.id !== id);
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
     } catch (error) {
-      console.error('خطأ في حذف المستخدم:', error);
+      console.error('Error deleting user:', error);
       throw error;
     }
   };
 
   const resetUserPassword = async (id: string, newPassword: string) => {
     try {
-      console.log('تحديث كلمة مرور المستخدم:', id);
-
-      // العثور على المستخدم
-      const userToUpdate = users.find(u => u.id === id);
-      if (!userToUpdate) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      // تحديث في قاعدة البيانات
-      const updatedUserData = {
-        ...userToUpdate,
-        password: newPassword
-      };
-
-      await DataService.saveUser(updatedUserData);
-      console.log('تم تحديث كلمة المرور في قاعدة البيانات');
-
-      // تحديث القائمة المحلية
-      setUsers(prevUsers => 
-        prevUsers.map(u => 
-          u.id === id ? { ...u, password: newPassword } : u
-        )
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const updatedUsers = currentUsers.map((u: User) => 
+        u.id === id ? { ...u, password: newPassword } : u
       );
-
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
     } catch (error) {
-      console.error('خطأ في تحديث كلمة المرور:', error);
+      console.error('Error resetting password:', error);
       throw error;
     }
   };
 
   const updateUserPermissions = async (id: string, permissions: User['permissions']) => {
     try {
-      console.log('تحديث صلاحيات المستخدم:', id, permissions);
-
-      // العثور على المستخدم
-      const userToUpdate = users.find(u => u.id === id);
-      if (!userToUpdate) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      // تحديث في قاعدة البيانات
-      const updatedUserData = {
-        ...userToUpdate,
-        permissions
-      };
-
-      await DataService.saveUser(updatedUserData);
-      console.log('تم تحديث الصلاحيات في قاعدة البيانات');
-
-      // تحديث القائمة المحلية
-      setUsers(prevUsers => 
-        prevUsers.map(u => 
-          u.id === id ? { ...u, permissions } : u
-        )
+      const currentUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+      const updatedUsers = currentUsers.map((u: User) => 
+        u.id === id ? { ...u, permissions } : u
       );
-
+      localStorage.setItem('auth_users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
     } catch (error) {
-      console.error('خطأ في تحديث الصلاحيات:', error);
+      console.error('Error updating permissions:', error);
       throw error;
     }
   };
@@ -248,8 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addUser,
       deleteUser,
       resetUserPassword,
-      updateUserPermissions,
-      loadUsersFromDB
+      updateUserPermissions
     }}>
       {children}
     </AuthContext.Provider>
