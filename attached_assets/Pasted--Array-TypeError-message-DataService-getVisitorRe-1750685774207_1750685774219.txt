@@ -1,0 +1,14 @@
+التعليقات: 
+Array []
+خطأ في تحميل سجلات الزوار: 
+TypeError {}
+message: "DataService.getVisitorRecords is not a function"
+stack: "TypeError: DataService.getVisitorRecords is not a function↵ at loadVisitorRecords (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/VisitorReception.tsx?t=1750685748741:67:38)↵ at https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/VisitorReception.tsx?t=1750685748741:59:5↵ at commitHookEffectListMount (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:16915:34)↵ at commitPassiveMountOnFiber (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:18156:19)↵ at commitPassiveMountEffects_complete (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:18129:17)↵ at commitPassiveMountEffects_begin (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:18119:15)↵ at commitPassiveMountEffects (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:18109:11)↵ at flushPassiveEffectsImpl (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:19490:11)↵ at flushPassiveEffects (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:19447:22)↵ at performSyncWorkOnRoot (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=cb6b3ee9:18868:11)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
