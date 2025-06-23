@@ -17,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -884,9 +883,10 @@ export default function Complaints() {
                             تاريخ الإنشاء
                           </div>
                           <div className="font-medium text-white">
-                            {new Date(selectedComplaint.createdAt).toLocaleDateString(
-                              "ar-EG",
-                            )}
+                            {selectedComplaint.createdAt ? 
+                                  new Date(selectedComplaint.createdAt).toLocaleDateString("ar-EG") : 
+                                  "غير محدد"
+                                }
                           </div>
                         </div>
                       </div>
@@ -932,11 +932,10 @@ export default function Complaints() {
                                 تاريخ آخر تحديث
                               </div>
                               <div className="font-medium text-white">
-                                {new Date(selectedComplaint.updatedAt).toLocaleDateString(
-                                  "ar-EG",
-                                )} - {new Date(selectedComplaint.updatedAt).toLocaleTimeString(
-                                  "ar-EG",
-                                )}
+                                {selectedComplaint.updatedAt ? 
+                                  `${new Date(selectedComplaint.updatedAt).toLocaleDateString("ar-EG")} - ${new Date(selectedComplaint.updatedAt).toLocaleTimeString("ar-EG")}` :
+                                  "غير محدد"
+                                }
                               </div>
                             </div>
                           </div>
