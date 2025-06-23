@@ -16,7 +16,7 @@ export default function Header() {
       <div className="container flex h-12 md:h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
           <img
-            src="/imag/3.svg"
+            src="/images/logo.png"
             alt="شركة الرمز العقارية"
             className="h-6 md:h-8 w-auto flex-shrink-0"
           />
