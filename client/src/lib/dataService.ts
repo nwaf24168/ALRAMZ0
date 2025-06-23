@@ -440,17 +440,18 @@ export class DataService {
   }
 
   static async getComplaints(): Promise<any[]> {
-    const { data, error } = await supabase
-      .from("complaints")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("complaints")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("خطأ Supabase في جلب الشكاوى:", error);
-      throw new Error(
-        `خطأ في جلب الشكاوى: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
+      if (error) {
+        console.error("خطأ Supabase في جلب الشكاوى:", error);
+        throw new Error(
+          `خطأ في جلب الشكاوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
 
     const complaints = await Promise.all((data || []).map(async (record) => {
       // جلب التحديثات لكل شكوى
@@ -497,6 +498,10 @@ export class DataService {
     }));
 
     return complaints;
+    } catch (error) {
+      console.error('خطأ في getComplaints:', error);
+      throw error;
+    }
   }
 
   static async deleteComplaint(complaintId: string): Promise<void> {
@@ -944,7 +949,7 @@ export class DataService {
     return data || [];
   }
 
-  static async updateQualityCall(id: string, updates: any): Promise<void> {
+  static async updateQualityCall(id: string, updates: any): Promise<void>{
     const { error } = await supabase
       .from("quality_calls")
       .update({
@@ -1157,5 +1162,99 @@ export class DataService {
 
   static removeRealtimeSubscription(channel: RealtimeChannel): void {
     supabase.removeChannel(channel);
+  }
+
+  static async getComplaints(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('خطأ في جلب الشكاوى:', error);
+        throw error;
+      }
+
+    const complaints = await Promise.all((data || []).map(async (record) => {
+      // جلب التحديثات لكل شكوى
+      const { data: updatesData, error: updatesError } = await supabase
+        .from("complaint_updates")
+        .select("*")
+        .eq("complaint_id", record.complaint_id)
+        .order("updated_at", { ascending: false });
+
+      let updates = [];
+      if (updatesError) {
+        console.error("خطأ في جلب تحديثات الشكوى:", updatesError);
+        // في حالة وجود خطأ، نعيد مصفوفة فارغة بدلاً من التوقف
+        updates = [];
+      } else {
+        updates = (updatesData || []).map(update => ({
+          field: update.field_name,
+          oldValue: update.old_value || '',
+          newValue: update.new_value || '',
+          updatedBy: update.updated_by,
+          updatedAt: update.updated_at || new Date().toISOString(),
+        }));
+      }
+
+      console.log(`تحديثات الشكوى ${record.complaint_id}:`, updates);
+
+      return {
+        id: record.complaint_id,
+        date: record.date,
+        customerName: record.customer_name,
+        project: record.project,
+        unitNumber: record.unit_number || "",
+        source: record.source,
+        status: record.status,
+        description: record.description,
+        action: record.action || "",
+        duration: record.duration || 0,
+        createdBy: record.created_by,
+        updatedBy: record.updated_by,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+        updates: updates,
+      };
+    }));
+
+    return complaints;
+    } catch (error) {
+      console.error('خطأ في getComplaints:', error);
+      throw error;
+    }
+  }
+
+  static async saveComplaint(complaint: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .insert([{
+          complaint_id: complaint.id,
+          date: complaint.date,
+          customer_name: complaint.customerName,
+          project: complaint.project,
+          unit_number: complaint.unitNumber,
+          source: complaint.source,
+          status: complaint.status,
+          description: complaint.description,
+          action: complaint.action,
+          duration: complaint.duration,
+          created_by: complaint.createdBy,
+          updated_by: complaint.updatedBy,
+          created_at: complaint.createdAt,
+          updated_at: complaint.updatedAt,
+        }]);
+
+      if (error) {
+        console.error('خطأ في حفظ الشكوى:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('خطأ في saveComplaint:', error);
+      throw error;
+    }
   }
 }

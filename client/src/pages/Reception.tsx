@@ -29,7 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search, Upload, ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { DataService } from "@/lib/dataService";
 import { useAuth } from "@/context/AuthContext";
@@ -51,7 +51,7 @@ interface ReceptionRecord {
 
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة"];
-const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل"];
+const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل", "تم التحويل للشكاوى"];
 
 export default function Reception() {
   const { user } = useAuth();
@@ -492,6 +492,74 @@ export default function Reception() {
     }
   };
 
+  const handleConvertToComplaint = async (record: ReceptionRecord) => {
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // تحويل سجل الاستقبال إلى شكوى
+      const generateComplaintId = () => {
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000);
+        return `${timestamp}${random}`;
+      };
+
+      const complaintData = {
+        id: generateComplaintId(),
+        date: record.date,
+        customerName: record.customerName,
+        project: record.project,
+        unitNumber: record.phoneNumber, // نستخدم رقم الهاتف كرقم الوحدة أو يمكن تركه فارغ
+        source: "الاستقبال",
+        status: "جديدة",
+        description: `تم تحويل الطلب من الاستقبال - نوع الطلب: ${record.type}\nطلب العميل: ${record.customerRequest}`,
+        action: record.action || "",
+        duration: 0,
+        createdBy: user.username,
+        createdAt: new Date().toISOString(),
+        updatedBy: null,
+        updatedAt: null,
+        updates: [],
+      };
+
+      // حفظ الشكوى في قاعدة البيانات
+      await DataService.saveComplaint(complaintData);
+
+      // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+      await DataService.updateReceptionRecord(record.id, {
+        ...record,
+        status: "تم التحويل للشكاوى",
+        action: `${record.action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
+      });
+
+      // إعادة تحميل البيانات
+      await loadReceptionRecords();
+
+      toast({
+        title: "تم التحويل بنجاح",
+        description: `تم تحويل الطلب إلى شكوى رقم ${complaintData.id}`,
+      });
+
+    } catch (error) {
+      console.error("خطأ في تحويل الطلب إلى شكوى:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحويل الطلب إلى شكوى",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "مكتمل":
@@ -500,6 +568,8 @@ export default function Reception() {
         return "bg-yellow-100 text-yellow-800";
       case "مؤجل":
         return "bg-red-100 text-red-800";
+      case "تم التحويل للشكاوى":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-blue-100 text-blue-800";
     }
@@ -727,11 +797,11 @@ export default function Reception() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">اليوم</CardTitle>
+              <CardTitle className="text-sm font-medium">محول للشكاوى</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {records.filter(r => r.date === new Date().toISOString().split('T')[0]).length}
+              <div className="text-2xl font-bold text-purple-600">
+                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
               </div>
             </CardContent>
           </Card>
@@ -807,6 +877,16 @@ export default function Reception() {
                           <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
                             <Edit className="h-4 w-4" />
                           </Button>
+                          {record.status !== "تم التحويل للشكاوى" && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleConvertToComplaint(record)}
+                              title="تحويل إلى شكوى"
+                            >
+                              <ArrowRight className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
