@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ import {
   MapPin
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { DataService } from "@/lib/dataService";
+import { useMetrics } from "@/context/MetricsContext";
 
 interface AnalysisPoint {
   icon: React.ReactNode;
@@ -42,6 +45,7 @@ interface Recommendation {
 
 export default function SmartAnalysis() {
   const { user } = useAuth();
+  const { metrics, customerServiceData } = useMetrics();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<{
     summary: string;
@@ -50,124 +54,206 @@ export default function SmartAnalysis() {
     roadmap: { phase: string; items: string[]; duration: string }[];
   } | null>(null);
 
-  const mockAnalysis = {
-    summary: "بناءً على تحليل البيانات الشامل لجميع أقسام المنصة، تبين وجود نقاط قوة واضحة في بعض المجالات مع ضرورة التركيز على تحسين عدة جوانب أساسية. النتائج العامة تشير إلى أداء متوسط يتطلب خطة تطوير استراتيجية.",
-    keyPoints: [
-      {
-        icon: <TrendingDown className="h-5 w-5" />,
-        title: "نسبة الترشيح للعملاء الجدد",
-        description: "النسبة الحالية 0% مقارنة بالهدف 65% - يتطلب تحسين فوري في استراتيجية جذب العملاء الجدد",
-        status: "critical" as const,
-        percentage: 0
-      },
-      {
-        icon: <TrendingDown className="h-5 w-5" />,
-        title: "نسبة الترشيح بعد السنة",
-        description: "0% مقابل الهدف المطلوب 65% - ضرورة تطوير برامج الولاء والمتابعة طويلة المدى",
-        status: "critical" as const,
-        percentage: 0
-      },
-      {
-        icon: <AlertTriangle className="h-5 w-5" />,
-        title: "نسبة الترشيح للعملاء الحاليين", 
-        description: "13.66% من الهدف 30% - تحتاج تحسين في خدمة العملاء الحاليين",
-        status: "warning" as const,
-        percentage: 45.5
-      },
-      {
-        icon: <CheckCircle className="h-5 w-5" />,
-        title: "جودة التسليم",
-        description: "93% من الهدف 100% - أداء جيد مع مجال للتحسين",
-        status: "good" as const,
-        percentage: 93
-      },
-      {
-        icon: <TrendingUp className="h-5 w-5" />,
-        title: "معدل الرد على المكالمات",
-        description: "92% متجاوز للهدف 80% - أداء ممتاز في سرعة الاستجابة",
-        status: "good" as const,
-        percentage: 115
-      },
-      {
-        icon: <AlertTriangle className="h-5 w-5" />,
-        title: "وقت الاستجابة",
-        description: "12 ثانية مقابل الهدف 3 ثواني - يحتاج تحسين عاجل",
-        status: "warning" as const
+  const [realData, setRealData] = useState({
+    complaints: [],
+    qualityCalls: [],
+    receptionRecords: [],
+    bookings: []
+  });
+
+  // جلب البيانات الحقيقية
+  useEffect(() => {
+    const fetchRealData = async () => {
+      try {
+        const [complaints, qualityCalls, receptionRecords, bookings] = await Promise.all([
+          DataService.getComplaints(),
+          DataService.getQualityCalls(),
+          DataService.getReceptionRecords(),
+          DataService.getBookings()
+        ]);
+
+        setRealData({
+          complaints,
+          qualityCalls,
+          receptionRecords,
+          bookings
+        });
+      } catch (error) {
+        console.error('خطأ في جلب البيانات الحقيقية:', error);
       }
-    ],
-    recommendations: [
-      {
-        icon: <Users className="h-5 w-5" />,
-        title: "تطوير استراتيجية جذب العملاء",
-        description: "إطلاق حملات تسويقية مستهدفة وتحسين تجربة العميل الجديد",
-        priority: "high" as const,
-        timeline: "شهر واحد"
-      },
-      {
+    };
+
+    fetchRealData();
+  }, []);
+
+  // تحليل البيانات الحقيقية
+  const analyzeRealData = () => {
+    const analysis = {
+      summary: "",
+      keyPoints: [] as AnalysisPoint[],
+      recommendations: [] as Recommendation[],
+      roadmap: [] as { phase: string; items: string[]; duration: string }[]
+    };
+
+    // تحليل المؤشرات الحقيقية
+    if (metrics && metrics.length > 0) {
+      metrics.forEach((metric, index) => {
+        let status: "good" | "warning" | "critical" = "good";
+        let percentage = 0;
+
+        // استخراج القيم الرقمية
+        const currentValue = parseFloat(metric.value.replace('%', '')) || 0;
+        const targetValue = parseFloat(metric.target.replace('%', '').replace(' ثواني', '')) || 100;
+
+        if (metric.isLowerBetter) {
+          percentage = targetValue > 0 ? Math.max(0, 100 - ((currentValue - targetValue) / targetValue * 100)) : 0;
+          status = currentValue <= targetValue ? "good" : currentValue <= targetValue * 1.5 ? "warning" : "critical";
+        } else {
+          percentage = targetValue > 0 ? (currentValue / targetValue) * 100 : 0;
+          status = percentage >= 90 ? "good" : percentage >= 60 ? "warning" : "critical";
+        }
+
+        let description = `القيمة الحالية ${metric.value} مقابل الهدف ${metric.target}`;
+        
+        if (status === "critical") {
+          description += " - يتطلب تدخل عاجل";
+        } else if (status === "warning") {
+          description += " - يحتاج تحسين";
+        } else {
+          description += " - أداء جيد";
+        }
+
+        analysis.keyPoints.push({
+          icon: status === "good" ? <CheckCircle className="h-5 w-5" /> : 
+                status === "warning" ? <AlertTriangle className="h-5 w-5" /> : 
+                <TrendingDown className="h-5 w-5" />,
+          title: metric.title,
+          description,
+          status,
+          percentage: Math.round(percentage)
+        });
+      });
+    }
+
+    // تحليل الشكاوى
+    const totalComplaints = realData.complaints.length;
+    const openComplaints = realData.complaints.filter(c => c.status !== 'مغلقة').length;
+    const avgResolutionTime = realData.complaints.length > 0 
+      ? realData.complaints.reduce((sum, c) => sum + (c.duration || 0), 0) / realData.complaints.length 
+      : 0;
+
+    if (totalComplaints > 0) {
+      analysis.keyPoints.push({
+        icon: openComplaints > totalComplaints * 0.3 ? <AlertTriangle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />,
+        title: "إدارة الشكاوى",
+        description: `إجمالي الشكاوى: ${totalComplaints}، المفتوحة: ${openComplaints}، متوسط وقت الحل: ${avgResolutionTime.toFixed(1)} يوم`,
+        status: openComplaints > totalComplaints * 0.3 ? "warning" : "good"
+      });
+    }
+
+    // تحليل مكالمات الجودة
+    const totalQualityCalls = realData.qualityCalls.length;
+    const qualifiedCalls = realData.qualityCalls.filter(c => c.qualification_status === 'مؤهل').length;
+    const qualificationRate = totalQualityCalls > 0 ? (qualifiedCalls / totalQualityCalls) * 100 : 0;
+
+    if (totalQualityCalls > 0) {
+      analysis.keyPoints.push({
+        icon: qualificationRate >= 70 ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />,
+        title: "جودة المكالمات",
+        description: `إجمالي المكالمات: ${totalQualityCalls}، نسبة التأهيل: ${qualificationRate.toFixed(1)}%`,
+        status: qualificationRate >= 70 ? "good" : "warning",
+        percentage: Math.round(qualificationRate)
+      });
+    }
+
+    // إنشاء الملخص
+    const criticalIssues = analysis.keyPoints.filter(p => p.status === "critical").length;
+    const warningIssues = analysis.keyPoints.filter(p => p.status === "warning").length;
+    const goodMetrics = analysis.keyPoints.filter(p => p.status === "good").length;
+
+    analysis.summary = `بناءً على تحليل البيانات الفعلية للمنصة، تبين وجود ${criticalIssues} نقاط تحتاج تدخل عاجل، و${warningIssues} نقاط تحتاج تحسين، بينما ${goodMetrics} مؤشر يظهر أداءً جيداً. إجمالي الشكاوى المسجلة ${totalComplaints} شكوى، ومكالمات الجودة ${totalQualityCalls} مكالمة. النظام يحتاج خطة تحسين شاملة للوصول للأهداف المطلوبة.`;
+
+    // التوصيات بناءً على البيانات الحقيقية
+    if (criticalIssues > 0) {
+      analysis.recommendations.push({
+        icon: <AlertTriangle className="h-5 w-5" />,
+        title: "معالجة النقاط الحرجة فوراً",
+        description: `هناك ${criticalIssues} مؤشر في الوضع الحرج يتطلب تدخل عاجل لتجنب تدهور الخدمة`,
+        priority: "high",
+        timeline: "أسبوع واحد"
+      });
+    }
+
+    if (openComplaints > 5) {
+      analysis.recommendations.push({
         icon: <MessageSquare className="h-5 w-5" />,
-        title: "برنامج الولاء وخدمة ما بعد البيع",
-        description: "إنشاء نظام متابعة دوري مع العملاء وتقديم خدمات حصرية",
-        priority: "high" as const,
-        timeline: "6 أسابيع"
-      },
-      {
+        title: "تسريع حل الشكاوى المفتوحة",
+        description: `يوجد ${openComplaints} شكوى مفتوحة تحتاج متابعة وحل سريع`,
+        priority: "high",
+        timeline: "أسبوعين"
+      });
+    }
+
+    if (qualificationRate < 70 && totalQualityCalls > 0) {
+      analysis.recommendations.push({
         icon: <Phone className="h-5 w-5" />,
-        title: "تحسين نظام الاستجابة",
-        description: "تدريب الفريق وتحديث أنظمة الاتصال لتقليل وقت الانتظار",
-        priority: "medium" as const,
-        timeline: "3 أسابيع"
-      },
-      {
+        title: "تحسين جودة المكالمات",
+        description: `نسبة التأهيل الحالية ${qualificationRate.toFixed(1)}% تحتاج تحسين لتصل 80%`,
+        priority: "medium",
+        timeline: "شهر واحد"
+      });
+    }
+
+    if (warningIssues > 0) {
+      analysis.recommendations.push({
         icon: <BarChart3 className="h-5 w-5" />,
-        title: "نظام متابعة شامل",
-        description: "تطبيق مقاييس أداء واضحة ونظام تقارير دوري",
-        priority: "medium" as const,
-        timeline: "شهرين"
+        title: "تطوير المؤشرات التحذيرية",
+        description: `${warningIssues} مؤشر في المنطقة التحذيرية يحتاج خطة تحسين`,
+        priority: "medium",
+        timeline: "6 أسابيع"
+      });
+    }
+
+    // خارطة الطريق
+    analysis.roadmap = [
+      {
+        phase: "المرحلة الأولى - التدخل العاجل",
+        items: [
+          criticalIssues > 0 ? `معالجة ${criticalIssues} مؤشر حرج` : "مراجعة المؤشرات الحالية",
+          openComplaints > 0 ? `حل ${openComplaints} شكوى مفتوحة` : "تطوير نظام الشكاوى",
+          "تحسين أوقات الاستجابة"
+        ],
+        duration: "1-2 أسبوع"
       },
       {
-        icon: <Target className="h-5 w-5" />,
-        title: "تحسين جودة التسليم",
-        description: "مراجعة عمليات التسليم وتطبيق معايير جودة أعلى",
-        priority: "low" as const,
-        timeline: "6 أسابيع"
-      }
-    ],
-    roadmap: [
-      {
-        phase: "المرحلة الأولى - التحسين العاجل",
+        phase: "المرحلة الثانية - التحسين المستمر",
         items: [
-          "تطوير استراتيجية جذب العملاء الجدد",
-          "تحسين أوقات الاستجابة على المكالمات",
-          "تدريب الفريق على خدمة العملاء"
+          "رفع نسبة التأهيل في مكالمات الجودة",
+          `تحسين ${warningIssues} مؤشر في المنطقة التحذيرية`,
+          "تطوير خدمة العملاء"
         ],
         duration: "1-2 شهر"
       },
       {
-        phase: "المرحلة الثانية - بناء الولاء",
+        phase: "المرحلة الثالثة - التطوير الاستراتيجي",
         items: [
-          "إطلاق برنامج ولاء العملاء",
-          "تطوير نظام المتابعة طويل المدى",
-          "تحسين عمليات ما بعد البيع"
+          "الوصول لجميع الأهداف المحددة",
+          "تطبيق نظام مراقبة مستمر",
+          "تطوير خدمات إضافية"
         ],
         duration: "2-4 أشهر"
-      },
-      {
-        phase: "المرحلة الثالثة - التطوير المستمر",
-        items: [
-          "تطبيق نظام مقاييس الأداء الشامل",
-          "تحسين جودة التسليم للوصول للهدف 100%",
-          "تطوير خدمات إضافية للعملاء"
-        ],
-        duration: "4-6 أشهر"
       }
-    ]
+    ];
+
+    return analysis;
   };
 
   const handleAnalyze = () => {
     setIsAnalyzing(true);
-    // محاكاة عملية التحليل
+    // محاكاة وقت التحليل
     setTimeout(() => {
-      setAnalysisData(mockAnalysis);
+      const analysis = analyzeRealData();
+      setAnalysisData(analysis);
       setIsAnalyzing(false);
     }, 3000);
   };
@@ -199,7 +285,7 @@ export default function SmartAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -209,7 +295,7 @@ export default function SmartAnalysis() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">التحليل الذكي AI</h1>
             <p className="text-muted-foreground">
-              تحليل شامل لأداء المنصة باستخدام الذكاء الاصطناعي
+              تحليل شامل لأداء المنصة باستخدام البيانات الحقيقية
             </p>
           </div>
         </div>
@@ -231,6 +317,42 @@ export default function SmartAnalysis() {
             </>
           )}
         </Button>
+      </div>
+
+      {/* Data Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{realData.complaints.length}</div>
+              <div className="text-sm text-muted-foreground">الشكاوى</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{realData.qualityCalls.length}</div>
+              <div className="text-sm text-muted-foreground">مكالمات الجودة</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{realData.receptionRecords.length}</div>
+              <div className="text-sm text-muted-foreground">سجلات الاستقبال</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{realData.bookings.length}</div>
+              <div className="text-sm text-muted-foreground">الحجوزات</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Analysis Results */}
@@ -256,7 +378,7 @@ export default function SmartAnalysis() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                النقاط الرئيسية والمؤشرات
+                النقاط الرئيسية والمؤشرات الفعلية
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -371,7 +493,7 @@ export default function SmartAnalysis() {
             <h3 className="text-lg font-medium mb-2">مرحباً بك في التحليل الذكي</h3>
             <p className="text-muted-foreground mb-6 max-w-md">
               اضغط على "بدء التحليل الشامل" للحصول على تقرير مفصل حول أداء جميع أقسام المنصة
-              مع توصيات محددة لتحسين الخدمات
+              باستخدام البيانات الحقيقية من قاعدة البيانات
             </p>
             <Button onClick={handleAnalyze} size="lg">
               <Brain className="mr-2 h-4 w-4" />
@@ -386,9 +508,11 @@ export default function SmartAnalysis() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4" />
-            <h3 className="text-lg font-medium mb-2">جاري تحليل البيانات</h3>
+            <h3 className="text-lg font-medium mb-2">جاري تحليل البيانات الحقيقية</h3>
             <p className="text-muted-foreground text-center max-w-md">
-              يتم الآن تحليل جميع البيانات من أقسام المنصة المختلفة لتقديم تقرير شامل ومفصل...
+              يتم الآن تحليل البيانات الفعلية من قاعدة البيانات: {realData.complaints.length} شكوى، 
+              {realData.qualityCalls.length} مكالمة جودة، {realData.receptionRecords.length} سجل استقبال، 
+              {realData.bookings.length} حجز...
             </p>
           </CardContent>
         </Card>
