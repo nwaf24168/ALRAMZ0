@@ -186,6 +186,13 @@ export default function Analytics() {
               أسبوعي
             </Button>
             <Button
+              variant={currentPeriod === "monthly" ? "default" : "outline"}
+              onClick={() => setCurrentPeriod("monthly")}
+              className="mobile-button"
+            >
+              شهري
+            </Button>
+            <Button
               variant={currentPeriod === "yearly" ? "default" : "outline"}
               onClick={() => setCurrentPeriod("yearly")}
               className="mobile-button"
