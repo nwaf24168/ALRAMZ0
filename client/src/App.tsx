@@ -51,19 +51,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <HashRouter>
-        <AuthProvider>
-          <NotificationProvider>
-            <MetricsProvider>
-              <AppRoutes />
-            </MetricsProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <AppRoutes />
       </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 const AppRoutes = () => {
+  return (
+    <AuthProvider>
+      <NotificationProvider>
+        <MetricsProvider>
+          <AppRoutesInner />
+        </MetricsProvider>
+      </NotificationProvider>
+    </AuthProvider>
+  );
+};
+
+const AppRoutesInner = () => {
   const { isAuthenticated } = useAuth();
 
   return (
