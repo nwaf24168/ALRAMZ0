@@ -126,6 +126,10 @@ export default function Delivery() {
     return matchesSearch && matchesStatus;
   });
 
+  const generateId = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
   const handleSave = async () => {
     if (!formData.customerName || !formData.project || !formData.deliveryType) {
       addNotification({
@@ -141,7 +145,7 @@ export default function Delivery() {
 
       const recordData = {
         ...formData,
-        id: editingRecord ? editingRecord.id : `delivery_${Date.now()}`,
+        id: editingRecord ? editingRecord.id : generateId(),
         createdBy: user?.username || "unknown",
         updatedBy: editingRecord ? user?.username : undefined,
       };

@@ -238,9 +238,7 @@ export default function Complaints() {
   };
 
   const generateComplaintId = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `${timestamp}${random}`;
+    return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
   const handleAddComplaint = async () => {
@@ -470,7 +468,7 @@ export default function Complaints() {
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl md:text-2xl font-bold">
-            سجل الشكاوى {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}
+            اتصالات خدمة العملاء {readOnly && <span className="text-sm text-gray-500">(قراءة فقط)</span>}
           </h1>
           {hasEditAccess("complaints") && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -986,7 +984,7 @@ export default function Complaints() {
                       </span>
                     )}
                   </h3>
-                  
+
                   {selectedComplaint.updates && selectedComplaint.updates.length > 0 ? (
                     <div className="space-y-4 max-h-80 overflow-y-auto">
                       {selectedComplaint.updates
@@ -1001,12 +999,12 @@ export default function Complaints() {
                           {index < selectedComplaint.updates.length - 1 && (
                             <div className="absolute left-6 bottom-0 w-0.5 h-4 bg-gradient-to-b from-blue-500/50 to-transparent"></div>
                           )}
-                          
+
                           <div className="flex items-start gap-4">
                             <div className="p-2.5 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30">
                               <Edit className="w-4 h-4 text-blue-400" />
                             </div>
-                            
+
                             <div className="flex-1 space-y-3">
                               {/* رأس التحديث */}
                               <div className="flex items-center justify-between">
@@ -1038,7 +1036,7 @@ export default function Complaints() {
                                   <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
                                   تم تحديث حقل: <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
                                 </p>
-                                
+
                                 <div className="grid grid-cols-1 gap-3">
                                   {/* القيمة القديمة */}
                                   <div className="flex items-start gap-3">
@@ -1051,7 +1049,7 @@ export default function Complaints() {
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {/* القيمة الجديدة */}
                                   <div className="flex items-start gap-3">
                                     <div className="flex items-center gap-2 min-w-0">

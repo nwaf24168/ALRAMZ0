@@ -456,9 +456,7 @@ export default function Reception() {
           if (transferToComplaints) {
             // تحويل سجل الاستقبال إلى شكوى
             const generateComplaintId = () => {
-              const timestamp = Date.now();
-              const random = Math.floor(Math.random() * 1000);
-              return `${timestamp}${random}`;
+              return Math.floor(1000 + Math.random() * 9000).toString();
             };
 
             const complaintData = {
@@ -551,9 +549,7 @@ export default function Reception() {
 
       // تحويل سجل الاستقبال إلى شكوى
       const generateComplaintId = () => {
-        const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 1000);
-        return `${timestamp}${random}`;
+        return Math.floor(1000 + Math.random() * 9000).toString();
       };
 
       const complaintData = {
@@ -636,7 +632,7 @@ export default function Reception() {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">الاستقبال</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">اتصالات خدمة العملاء</h1>
           <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"

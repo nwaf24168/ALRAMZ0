@@ -112,6 +112,10 @@ const QualityCalls = () => {
     loadQualityCallsFromDB();
   }, [loadQualityCallsFromDB]);
 
+  const generateCallId = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
   // تحديث القائمة المفلترة عند تغيير البحث أو الفلتر
   useEffect(() => {
     let filtered = customers;
@@ -135,7 +139,7 @@ const QualityCalls = () => {
   const saveCustomerToDB = async (customer: Customer) => {
     try {
       const qualityCallData = {
-        callId: `QC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        callId: generateCallId(),
         callDate: new Date().toLocaleDateString('ar-SA'),
         customerName: customer.customerName,
         phoneNumber: customer.phoneNumber,
@@ -590,7 +594,7 @@ const QualityCalls = () => {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">مكالمات الجودة</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">اتصالات خدمة العملاء</h1>
           <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"

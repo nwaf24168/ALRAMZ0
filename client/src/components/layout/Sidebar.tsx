@@ -69,7 +69,7 @@ export default function Sidebar() {
       path: "/quality-calls",
     },
     {
-      title: "الاستقبال",
+      title: "اتصالات خدمة العملاء",
       icon: <Headphones className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/reception",
     },
