@@ -138,7 +138,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-            <Route path="/reception" element={<Reception />} />
+            <Route 
+              path="/reception" 
+              element={
+                <ProtectedRoute>
+                  <Reception />
+                </ProtectedRoute>
+              } 
+            />
         <Route
           path="/settings"
           element={

@@ -874,12 +874,21 @@ export class DataService {
     return data || [];
   }
 
-  static async updateReceptionRecord(id: string, updates: any): Promise<void> {
+  static async updateReceptionRecord(id: string, recordData: any): Promise<void> {
     const { error } = await supabase
       .from("reception_records")
       .update({
-        ...updates,
-        updated_by: updates.updatedBy,
+        date: recordData.date,
+        customer_name: recordData.customerName,
+        phone_number: recordData.phoneNumber,
+        project: recordData.project,
+        employee: recordData.employee,
+        contact_method: recordData.contactMethod,
+        type: recordData.type,
+        customer_request: recordData.customerRequest,
+        action: recordData.action,
+        status: recordData.status,
+        updated_by: recordData.updatedBy,
       })
       .eq("id", id);
 
@@ -1164,5 +1173,149 @@ export class DataService {
     supabase.removeChannel(channel);
   }
 
-  
+  static async saveComplaint(complaint: any): Promise<void> {
+    const record: ComplaintRecord = {
+      complaint_id: complaint.id,
+      date: complaint.date,
+      customer_name: complaint.customerName,
+      project: complaint.project,
+      unit_number: complaint.unitNumber,
+      source: complaint.source,
+      status: complaint.status,
+      description: complaint.description,
+      action: complaint.action,
+      duration: complaint.duration || 0,
+      created_by: complaint.createdBy,
+      updated_by: complaint.updatedBy,
+    };
+
+    // التحقق إذا كانت الشكوى موجودة مسبقاً
+    const { data: existingComplaint } = await supabase
+      .from("complaints")
+      .select("id")
+      .eq("complaint_id", complaint.id)
+      .single();
+
+    if (existingComplaint) {
+      // تحديث الشكوى الموجودة
+      const { error } = await supabase
+        .from("complaints")
+        .update(record)
+        .eq("complaint_id", complaint.id);
+
+      if (error) {
+        console.error("خطأ Supabase في تحديث الشكوى:", error);
+        throw new Error(
+          `خطأ في تحديث الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+
+      // حفظ التحديثات إذا كانت موجودة
+      if (complaint.updates && complaint.updates.length > 0) {
+        for (const update of complaint.updates) {
+          const updateRecord = {
+            complaint_id: complaint.id,
+            field_name: update.field,
+            old_value: update.oldValue || '',
+            new_value: update.newValue || '',
+            updated_by: update.updatedBy,
+            updated_at: update.updatedAt || new Date().toISOString()
+          };
+
+          console.log('حفظ تحديث الشكوى:', updateRecord);
+
+          const { data, error: updateError } = await supabase
+            .from("complaint_updates")
+            .insert(updateRecord)
+            .select();
+
+          if (updateError) {
+            console.error("خطأ في حفظ تحديث الشكوى:", updateError);
+            throw new Error(
+              `خطأ في حفظ تحديث الشكوى: ${updateError.message || updateError.details || "خطأ غير معروف"}`,
+            );
+          } else {
+            console.log('تم حفظ التحديث بنجاح:', data);
+          }
+        }
+      }
+    } else {
+      // إضافة شكوى جديدة
+      const { error } = await supabase
+        .from("complaints")
+        .insert(record);
+
+      if (error) {
+        console.error("خطأ Supabase في إضافة الشكوى:", error);
+        throw new Error(
+          `خطأ في إضافة الشكوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+    }
+  }
+
+  static async getComplaints(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from("complaints")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("خطأ Supabase في جلب الشكاوى:", error);
+        throw new Error(
+          `خطأ في جلب الشكاوى: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+
+    const complaints = await Promise.all((data || []).map(async (record) => {
+      // جلب التحديثات لكل شكوى
+      const { data: updatesData, error: updatesError } = await supabase
+        .from("complaint_updates")
+        .select("*")
+        .eq("complaint_id", record.complaint_id)
+        .order("updated_at", { ascending: false });
+
+      let updates = [];
+      if (updatesError) {
+        console.error("خطأ في جلب تحديثات الشكوى:", updatesError);
+        // في حالة وجود خطأ، نعيد مصفوفة فارغة بدلاً من التوقف
+        updates = [];
+      } else {
+        updates = (updatesData || []).map(update => ({
+          field: update.field_name,
+          oldValue: update.old_value || '',
+          newValue: update.new_value || '',
+          updatedBy: update.updated_by,
+          updatedAt: update.updated_at || new Date().toISOString(),
+        }));
+      }
+
+      console.log(`تحديثات الشكوى ${record.complaint_id}:`, updates);
+
+      return {
+        id: record.complaint_id,
+        date: record.date,
+        customerName: record.customer_name,
+        project: record.project,
+        unitNumber: record.unit_number || "",
+        source: record.source,
+        status: record.status,
+        description: record.description,
+        action: record.action || "",
+        duration: record.duration || 0,
+        createdBy: record.created_by,
+        updatedBy: record.updated_by,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        updates: updates,
+      };
+    }));
+
+    return complaints;
+    } catch (error) {
+      console.error('خطأ في getComplaints:', error);
+      throw error;
+    }
+  }
 }
