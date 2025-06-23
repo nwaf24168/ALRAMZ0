@@ -78,6 +78,11 @@ export default function Sidebar() {
       icon: <Settings className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
       path: "/settings",
     },
+    {
+      title: "استقبال الزوار",
+      icon: <User className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />,
+      path: "/visitor-reception",
+    },
   ];
 
   const SidebarContent = () => (

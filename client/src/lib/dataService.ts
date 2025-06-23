@@ -915,23 +915,23 @@ export class DataService {
   }
 
   // إدارة مكالمات الجودة
-  static async saveQualityCall(record: any): Promise<void> {
+  static async saveQualityCall(call: any): Promise<void> {
     const { error } = await supabase
       .from("quality_calls")
       .insert({
-        call_id: record.callId,
-        call_date: record.callDate,
-        customer_name: record.customerName,
-        phone_number: record.phoneNumber,
-        project: record.project || 'مشروع افتراضي',
-        unit_number: record.unitNumber,
-        call_type: record.callType || 'مكالمة جودة',
-        call_duration: record.callDuration,
-        evaluation_score: record.evaluationScore,
-        qualification_status: record.qualificationStatus || 'غير مؤهل',
-        qualification_reason: record.qualificationReason,
-        notes: record.notes,
-        created_by: record.createdBy || 'مجهول'
+        call_id: call.callId,
+        call_date: call.callDate,
+        customer_name: call.customerName,
+        phone_number: call.phoneNumber,
+        project: call.project || 'مشروع افتراضي',
+        unit_number: call.unitNumber,
+        call_type: call.callType || 'مكالمة جودة',
+        call_duration: call.callDuration,
+        evaluation_score: call.evaluationScore,
+        qualification_status: call.qualificationStatus || 'غير مؤهل',
+        qualification_reason: call.qualificationReason,
+        notes: call.notes,
+        created_by: call.createdBy || 'مجهول'
       });
 
     if (error) {

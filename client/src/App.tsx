@@ -21,8 +21,9 @@ import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import QualityCalls from "./pages/QualityCalls";
 import Reception from "./pages/Reception";
+import VisitorReception from "@/pages/VisitorReception";
+import QualityCalls from "./pages/QualityCalls";
 
 
 const queryClient = new QueryClient({
@@ -144,14 +145,9 @@ const AppRoutesInner = () => {
             </ProtectedRoute>
           }
         />
-            <Route 
-              path="/reception" 
-              element={
-                <ProtectedRoute>
-                  <Reception />
-                </ProtectedRoute>
-              } 
-            />
+            <Route path="/reception" element={<ProtectedRoute><Reception /></ProtectedRoute>} />
+          <Route path="/visitor-reception" element={<ProtectedRoute><VisitorReception /></ProtectedRoute>} />
+          
         <Route
           path="/settings"
           element={
