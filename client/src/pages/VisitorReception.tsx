@@ -207,7 +207,7 @@ export default function VisitorReception() {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">الاستقبال</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">استقبال الزوار</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleOpenDialog} className="mobile-button">
