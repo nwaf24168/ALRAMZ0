@@ -107,6 +107,7 @@ interface FormData {
 import { usePermissions } from "@/hooks/usePermissions";
 
 export default function DataEntry() {
+  const { user } = useAuth();
   const {
     metrics,
     updateMetric,
