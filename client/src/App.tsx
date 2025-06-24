@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <>{children}</>; <>{children}</>;
 };
 
 const AppRoutesInner = () => {
