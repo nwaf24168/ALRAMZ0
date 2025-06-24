@@ -569,10 +569,11 @@ export class DataService {
 
   static async saveBooking(booking: any): Promise<void> {
     try {
-      const record: BookingRecord = {
-        booking_id: booking.id,
+      const record = {
+        booking_id: booking.bookingId || booking.id,
         booking_date: booking.bookingDate,
         customer_name: booking.customerName,
+        customer_phone: booking.customerPhone,
         project: booking.project,
         building: booking.building || "1",
         unit: booking.unit,
@@ -586,13 +587,15 @@ export class DataService {
         electricity_transfer_date: booking.electricityTransferDate,
         water_transfer_date: booking.waterTransferDate,
         delivery_date: booking.deliveryDate,
+        project_notes: booking.projectNotes,
         status: booking.status || "مجدول",
-        status_sales_filled: booking.status_sales_filled || false,
-        status_projects_filled: booking.status_projects_filled || false,
-        status_customer_filled: booking.status_customer_filled || false,
+        status_sales_filled: booking.statusSalesFilled || false,
+        status_projects_filled: booking.statusProjectsFilled || false,
+        status_customer_filled: booking.statusCustomerFilled || false,
         is_evaluated: booking.isEvaluated || false,
         evaluation_score: booking.evaluationScore,
         created_by: booking.createdBy,
+        updated_by: booking.updatedBy,
       };
 
       const { error } = await supabase
@@ -940,7 +943,7 @@ export class DataService {
         `خطأ في حفظ مكالمة الجودة: ${error.message || error.details || "خطأ غير معروف"}`
       );
     }
-  }
+}
 
   static async getQualityCalls(): Promise<any[]> {
     const { data, error } = await supabase
