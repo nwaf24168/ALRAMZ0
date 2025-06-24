@@ -1014,6 +1014,22 @@ export class DataService {
 
   static async createUser(userData: Omit<User, 'id'>): Promise<User> {
     try {
+      // التحقق أولاً إذا كان المستخدم موجود مسبقاً
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, username')
+        .eq('username', userData.username)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('خطأ في التحقق من وجود المستخدم:', checkError);
+        throw new Error(`خطأ في التحقق من المستخدم: ${checkError.message}`);
+      }
+
+      if (existingUser) {
+        throw new Error(`اسم المستخدم "${userData.username}" موجود مسبقاً. يرجى اختيار اسم مختلف.`);
+      }
+
       const { data, error } = await supabase
         .from('users')
         .insert([{
@@ -1027,6 +1043,12 @@ export class DataService {
 
       if (error) {
         console.error('خطأ في إنشاء المستخدم:', error);
+
+        // معالجة خاصة لخطأ اسم المستخدم المكرر
+        if (error.code === '23505' && error.message.includes('users_username_key')) {
+          throw new Error(`اسم المستخدم "${userData.username}" موجود مسبقاً. يرجى اختيار اسم مختلف.`);
+        }
+
         throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
       }
 
@@ -1233,7 +1255,7 @@ export class DataService {
     }
   }
 
-  // دوال حجوزات التسليم
+  // دوال التسليم
   static async getDeliveryBookings(): Promise<any[]> {
     try {
       const { data, error } = await supabase
@@ -1242,60 +1264,76 @@ export class DataService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('خطأ Supabase في جلب حجوزات التسليم:', error);
+        console.error('خطأ في جلب حجوزات التسليم:', error);
         throw error;
       }
 
       console.log('تم تحميل حجوزات التسليم من قاعدة البيانات:', data?.length || 0);
       return data || [];
     } catch (error) {
-      console.error('خطأ في تحميل حجوزات التسليم:', error);
+      console.error('خطأ في getDeliveryBookings:', error);
       throw error;
     }
   }
 
   static async createDeliveryBooking(bookingData: any): Promise<any> {
     try {
+      // تحديد الحالة بناءً على المراحل المكتملة
+      const status = this.calculateBookingStatus(bookingData);
+
+      const dataToInsert = {
+        ...bookingData,
+        status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('delivery_bookings')
-        .insert([{
-          ...bookingData,
-          created_by: bookingData.created_by || 'النظام'
-        }])
+        .insert([dataToInsert])
         .select()
         .single();
 
       if (error) {
-        console.error('خطأ Supabase في إنشاء حجز التسليم:', error);
+        console.error('خطأ في إنشاء حجز التسليم:', error);
         throw error;
       }
 
-      console.log('تم إنشاء حجز التسليم في Supabase:', data);
+      console.log('تم إنشاء حجز التسليم بنجاح:', data);
       return data;
     } catch (error) {
-      console.error('خطأ في إنشاء حجز التسليم:', error);
+      console.error('خطأ في createDeliveryBooking:', error);
       throw error;
     }
   }
 
   static async updateDeliveryBooking(id: number, bookingData: any): Promise<any> {
     try {
+      // تحديد الحالة بناءً على المراحل المكتملة
+      const status = this.calculateBookingStatus(bookingData);
+
+      const dataToUpdate = {
+        ...bookingData,
+        status,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('delivery_bookings')
-        .update(bookingData)
+        .update(dataToUpdate)
         .eq('id', id)
         .select()
         .single();
 
       if (error) {
-        console.error('خطأ Supabase في تحديث حجز التسليم:', error);
+        console.error('خطأ في تحديث حجز التسليم:', error);
         throw error;
       }
 
-      console.log('تم تحديث حجز التسليم في Supabase:', data);
+      console.log('تم تحديث حجز التسليم بنجاح:', data);
       return data;
     } catch (error) {
-      console.error('خطأ في تحديث حجز التسليم:', error);
+      console.error('خطأ في updateDeliveryBooking:', error);
       throw error;
     }
   }
@@ -1308,14 +1346,27 @@ export class DataService {
         .eq('id', id);
 
       if (error) {
-        console.error('خطأ Supabase في حذف حجز التسليم:', error);
+        console.error('خطأ في حذف حجز التسليم:', error);
         throw error;
       }
 
-      console.log('تم حذف حجز التسليم من Supabase');
+      console.log('تم حذف حجز التسليم بنجاح');
     } catch (error) {
-      console.error('خطأ في حذف حجز التسليم:', error);
+      console.error('خطأ في deleteDeliveryBooking:', error);
       throw error;
+    }
+  }
+
+  // دالة مساعدة لحساب حالة الحجز
+  private static calculateBookingStatus(booking: any): string {
+    if (booking.customer_service_completed) {
+      return "مكتمل";
+    } else if (booking.projects_completed) {
+      return "في راحة العملاء";
+    } else if (booking.sales_completed) {
+      return "في إدارة المشاريع";
+    } else {
+      return "في المبيعات";
     }
   }
 

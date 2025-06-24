@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2 } from "lucide-react";
+import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2, BarChart3, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
@@ -61,6 +63,7 @@ export default function Delivery() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const [formData, setFormData] = useState<DeliveryBooking>({
     customer_name: "",
@@ -81,11 +84,10 @@ export default function Delivery() {
 
   useEffect(() => {
     loadBookings();
-
-    // إعداد تحديث دوري للبيانات كل 5 ثواني
+    // إعداد تحديث دوري للبيانات كل 30 ثانية
     const interval = setInterval(() => {
       loadBookings();
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -94,6 +96,7 @@ export default function Delivery() {
     try {
       setLoading(true);
       const data = await DataService.getDeliveryBookings();
+      console.log("تم تحميل حجوزات التسليم من قاعدة البيانات:", data.length);
       setBookings(data);
     } catch (error) {
       console.error("خطأ في تحميل الحجوزات:", error);
@@ -107,19 +110,39 @@ export default function Delivery() {
     }
   };
 
+  // تحديد الحالة بناءً على المراحل المكتملة
+  const getBookingStatus = (booking: DeliveryBooking): string => {
+    if (booking.customer_service_completed) {
+      return "مكتمل";
+    } else if (booking.projects_completed) {
+      return "في راحة العملاء";
+    } else if (booking.sales_completed) {
+      return "في إدارة المشاريع";
+    } else {
+      return "في المبيعات";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
 
+      // تحديث المرحلة والحالة بناءً على البيانات
+      const dataToSave = {
+        ...formData,
+        created_by: formData.created_by || user?.username,
+        status: getBookingStatus(formData)
+      };
+
       if (selectedBooking?.id) {
-        await DataService.updateDeliveryBooking(selectedBooking.id, formData);
+        await DataService.updateDeliveryBooking(selectedBooking.id, dataToSave);
         toast({
           title: "تم التحديث",
           description: "تم تحديث بيانات الحجز بنجاح"
         });
       } else {
-        await DataService.createDeliveryBooking(formData);
+        await DataService.createDeliveryBooking(dataToSave);
         toast({
           title: "تم الحفظ",
           description: "تم إضافة الحجز الجديد بنجاح"
@@ -183,12 +206,10 @@ export default function Delivery() {
     try {
       setLoading(true);
       await DataService.deleteDeliveryBooking(bookingId);
-
       toast({
         title: "تم الحذف",
         description: "تم حذف الحجز بنجاح"
       });
-
       await loadBookings();
     } catch (error) {
       console.error("خطأ في حذف الحجز:", error);
@@ -205,13 +226,13 @@ export default function Delivery() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "في المبيعات":
-        return <Badge variant="secondary">في المبيعات</Badge>;
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">في المبيعات</Badge>;
       case "في إدارة المشاريع":
-        return <Badge variant="outline">في إدارة المشاريع</Badge>;
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800">في إدارة المشاريع</Badge>;
       case "في راحة العملاء":
-        return <Badge variant="default">في راحة العملاء</Badge>;
+        return <Badge variant="default" className="bg-purple-100 text-purple-800">في راحة العملاء</Badge>;
       case "مكتمل":
-        return <Badge variant="destructive">مكتمل</Badge>;
+        return <Badge variant="destructive" className="bg-green-100 text-green-800">مكتمل</Badge>;
       default:
         return <Badge>غير محدد</Badge>;
     }
@@ -222,96 +243,149 @@ export default function Delivery() {
 
     switch (stage) {
       case "sales":
-        return user?.role?.includes("مبيعات") || user?.role?.includes("مدير");
+        return user?.role?.includes("مبيعات") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
       case "projects":
-        return user?.role?.includes("مشاريع") || user?.role?.includes("مدير");
+        return user?.role?.includes("مشاريع") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
       case "customer_service":
-        return user?.role?.includes("راحة العملاء") || user?.role?.includes("مدير");
+        return user?.role?.includes("راحة العملاء") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
       default:
         return false;
     }
+  };
+
+  // تصفية البيانات حسب الحالة
+  const filteredBookings = filterStatus === "all" 
+    ? bookings 
+    : bookings.filter(booking => getBookingStatus(booking) === filterStatus);
+
+  // إحصائيات سريعة
+  const stats = {
+    inSales: bookings.filter(b => getBookingStatus(b) === "في المبيعات").length,
+    inProjects: bookings.filter(b => getBookingStatus(b) === "في إدارة المشاريع").length,
+    inCustomerService: bookings.filter(b => getBookingStatus(b) === "في راحة العملاء").length,
+    completed: bookings.filter(b => getBookingStatus(b) === "مكتمل").length,
+    total: bookings.length
   };
 
   return (
     <Layout>
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">إدارة التسليم</h1>
-          <Button 
-            onClick={() => {
-              resetForm();
-              setIsDialogOpen(true);
-            }}
-            disabled={loading}
-          >
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة حجز جديد
-          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">إدارة التسليم</h1>
+            <p className="text-muted-foreground mt-1">
+              إدارة مراحل التسليم الثلاث: المبيعات، إدارة المشاريع، راحة العملاء
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/delivery-analytics">
+              <Button variant="outline">
+                <BarChart3 className="ml-2 h-4 w-4" />
+                تحليلات التسليم
+              </Button>
+            </Link>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setIsDialogOpen(true);
+              }}
+              disabled={loading}
+            >
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة حجز جديد
+            </Button>
+          </div>
         </div>
 
-        {/* إحصائيات سريعة */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+        {/* إحصائيات سريعة محسنة */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Building className="h-5 w-5 text-blue-500" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">في المبيعات</p>
-                  <p className="text-2xl font-bold">
-                    {bookings.filter(b => b.status === "في المبيعات").length}
-                  </p>
+                  <p className="text-sm font-medium text-blue-700">في المبيعات</p>
+                  <p className="text-2xl font-bold text-blue-900">{stats.inSales}</p>
                 </div>
+                <Building className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-orange-500" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">في إدارة المشاريع</p>
-                  <p className="text-2xl font-bold">
-                    {bookings.filter(b => b.status === "في إدارة المشاريع").length}
-                  </p>
+                  <p className="text-sm font-medium text-orange-700">في إدارة المشاريع</p>
+                  <p className="text-2xl font-bold text-orange-900">{stats.inProjects}</p>
                 </div>
+                <Calendar className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-green-500" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">في راحة العملاء</p>
-                  <p className="text-2xl font-bold">
-                    {bookings.filter(b => b.status === "في راحة العملاء").length}
-                  </p>
+                  <p className="text-sm font-medium text-purple-700">في راحة العملاء</p>
+                  <p className="text-2xl font-bold text-purple-900">{stats.inCustomerService}</p>
                 </div>
+                <User className="h-8 w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-purple-500" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">مكتمل</p>
-                  <p className="text-2xl font-bold">
-                    {bookings.filter(b => b.status === "مكتمل").length}
-                  </p>
+                  <p className="text-sm font-medium text-green-700">مكتمل</p>
+                  <p className="text-2xl font-bold text-green-900">{stats.completed}</p>
                 </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">إجمالي الحجوزات</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-gray-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* فلتر الحالة */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="status-filter">تصفية حسب الحالة:</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الحجوزات</SelectItem>
+                <SelectItem value="في المبيعات">في المبيعات</SelectItem>
+                <SelectItem value="في إدارة المشاريع">في إدارة المشاريع</SelectItem>
+                <SelectItem value="في راحة العملاء">في راحة العملاء</SelectItem>
+                <SelectItem value="مكتمل">مكتمل</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline">
+            {loading ? "جاري التحديث..." : `آخر تحديث: ${new Date().toLocaleTimeString('ar-SA')}`}
+          </Badge>
         </div>
 
         {/* جدول الحجوزات */}
         <Card>
           <CardHeader>
-            <CardTitle>قائمة الحجوزات</CardTitle>
+            <CardTitle>قائمة الحجوزات ({filteredBookings.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -319,27 +393,43 @@ export default function Delivery() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>اسم العميل</TableHead>
+                    <TableHead>رقم العميل</TableHead>
                     <TableHead>المشروع</TableHead>
-                    <TableHead>العمارة</TableHead>
-                    <TableHead>الوحدة</TableHead>
+                    <TableHead>العمارة/الوحدة</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>تاريخ الحجز</TableHead>
+                    <TableHead>موظف المبيعات</TableHead>
+                    <TableHead>المراحل</TableHead>
                     <TableHead>الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookings.map((booking) => (
+                  {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell className="font-medium">{booking.customer_name}</TableCell>
-                      <TableCell>{booking.project}</TableCell>
-                      <TableCell>{booking.building}</TableCell>
-                      <TableCell>{booking.unit}</TableCell>
-                      <TableCell>{getStatusBadge(booking.status || "غير محدد")}</TableCell>
+                      <TableCell>{booking.customer_phone || '-'}</TableCell>
+                      <TableCell>{booking.project || '-'}</TableCell>
+                      <TableCell>{`${booking.building || '-'} / ${booking.unit || '-'}`}</TableCell>
+                      <TableCell>{getStatusBadge(getBookingStatus(booking))}</TableCell>
                       <TableCell>
                         {booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('ar-SA') : '-'}
                       </TableCell>
+                      <TableCell>{booking.sales_employee || '-'}</TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
+                        <div className="flex gap-1">
+                          <Badge variant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
+                            مبيعات
+                          </Badge>
+                          <Badge variant={booking.projects_completed ? "default" : "secondary"} className="text-xs">
+                            مشاريع
+                          </Badge>
+                          <Badge variant={booking.customer_service_completed ? "default" : "secondary"} className="text-xs">
+                            عملاء
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
                           <Button
                             variant="outline"
                             size="sm"
@@ -367,6 +457,13 @@ export default function Delivery() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredBookings.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        {loading ? "جاري تحميل البيانات..." : "لا توجد حجوزات"}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -375,47 +472,68 @@ export default function Delivery() {
 
         {/* نافذة الحوار للإضافة/التعديل */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-xl">
                 {isViewMode ? "عرض" : selectedBooking ? "تعديل" : "إضافة"} حجز
+                {selectedBooking && (
+                  <span className="mr-2">
+                    {getStatusBadge(getBookingStatus(selectedBooking))}
+                  </span>
+                )}
               </DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="sales">المبيعات</TabsTrigger>
+                  <TabsTrigger 
+                    value="sales"
+                    className={formData.sales_completed ? "bg-green-100 text-green-800" : ""}
+                  >
+                    مرحلة المبيعات
+                    {formData.sales_completed && <CheckCircle className="mr-1 h-4 w-4" />}
+                  </TabsTrigger>
                   <TabsTrigger 
                     value="projects"
+                    className={formData.projects_completed ? "bg-green-100 text-green-800" : ""}
                     disabled={!canEditStage("projects") && !isViewMode}
                   >
                     إدارة المشاريع
+                    {formData.projects_completed && <CheckCircle className="mr-1 h-4 w-4" />}
                   </TabsTrigger>
                   <TabsTrigger 
                     value="customer_service"
+                    className={formData.customer_service_completed ? "bg-green-100 text-green-800" : ""}
                     disabled={!canEditStage("customer_service") && !isViewMode}
                   >
                     راحة العملاء
+                    {formData.customer_service_completed && <CheckCircle className="mr-1 h-4 w-4" />}
                   </TabsTrigger>
                 </TabsList>
 
                 {/* مرحلة المبيعات */}
                 <TabsContent value="sales" className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 className="font-semibold text-blue-800 mb-2">المرحلة الأولى: المبيعات</h3>
+                    <p className="text-sm text-blue-600">يتم تعبئة هذه البيانات من قبل قسم المبيعات</p>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="booking_date">تاريخ الحجز</Label>
+                      <Label htmlFor="booking_date">تاريخ الحجز *</Label>
                       <Input
                         id="booking_date"
                         type="date"
                         value={formData.booking_date || ""}
                         onChange={(e) => setFormData({...formData, booking_date: e.target.value})}
                         disabled={!canEditStage("sales")}
+                        required
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="customer_name">اسم العميل</Label>
+                      <Label htmlFor="customer_name">اسم العميل *</Label>
                       <Input
                         id="customer_name"
                         value={formData.customer_name}
@@ -432,6 +550,7 @@ export default function Delivery() {
                         value={formData.customer_phone || ""}
                         onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
                         disabled={!canEditStage("sales")}
+                        placeholder="05xxxxxxxx"
                       />
                     </div>
 
@@ -453,6 +572,7 @@ export default function Delivery() {
                         value={formData.building || ""}
                         onChange={(e) => setFormData({...formData, building: e.target.value})}
                         disabled={!canEditStage("sales")}
+                        placeholder="رقم أو اسم العمارة"
                       />
                     </div>
 
@@ -463,17 +583,27 @@ export default function Delivery() {
                         value={formData.unit || ""}
                         onChange={(e) => setFormData({...formData, unit: e.target.value})}
                         disabled={!canEditStage("sales")}
+                        placeholder="رقم الوحدة"
                       />
                     </div>
 
                     <div>
                       <Label htmlFor="payment_method">طريقة الدفع</Label>
-                      <Input
-                        id="payment_method"
+                      <Select
                         value={formData.payment_method || ""}
-                        onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
+                        onValueChange={(value) => setFormData({...formData, payment_method: value})}
                         disabled={!canEditStage("sales")}
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر طريقة الدفع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="نقد">نقد</SelectItem>
+                          <SelectItem value="بنك">بنك</SelectItem>
+                          <SelectItem value="تقسيط">تقسيط</SelectItem>
+                          <SelectItem value="شيك">شيك</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -494,13 +624,14 @@ export default function Delivery() {
                     </div>
 
                     <div>
-                      <Label htmlFor="unit_value">قيمة الوحدة</Label>
+                      <Label htmlFor="unit_value">قيمة الوحدة (ريال)</Label>
                       <Input
                         id="unit_value"
                         type="number"
                         value={formData.unit_value || ""}
                         onChange={(e) => setFormData({...formData, unit_value: parseFloat(e.target.value)})}
                         disabled={!canEditStage("sales")}
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -526,19 +657,26 @@ export default function Delivery() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
                     <Checkbox
                       id="sales_completed"
                       checked={formData.sales_completed || false}
                       onCheckedChange={(checked) => setFormData({...formData, sales_completed: !!checked})}
                       disabled={!canEditStage("sales")}
                     />
-                    <Label htmlFor="sales_completed">تم تعبئة البيانات من قبل المبيعات</Label>
+                    <Label htmlFor="sales_completed" className="font-medium">
+                      ✅ تم تعبئة البيانات من قبل المبيعات وجاهزة للمرحلة التالية
+                    </Label>
                   </div>
                 </TabsContent>
 
                 {/* مرحلة إدارة المشاريع */}
                 <TabsContent value="projects" className="space-y-4">
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <h3 className="font-semibold text-orange-800 mb-2">المرحلة الثانية: إدارة المشاريع</h3>
+                    <p className="text-sm text-orange-600">يتم تعبئة هذه البيانات من قبل قسم إدارة المشاريع</p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="construction_completion_date">تاريخ انتهاء أعمال البناء</Label>
@@ -603,31 +741,42 @@ export default function Delivery() {
                       value={formData.project_notes || ""}
                       onChange={(e) => setFormData({...formData, project_notes: e.target.value})}
                       disabled={!canEditStage("projects")}
+                      placeholder="اكتب أي ملاحظات خاصة بالمشروع..."
+                      rows={3}
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
                     <Checkbox
                       id="projects_completed"
                       checked={formData.projects_completed || false}
                       onCheckedChange={(checked) => setFormData({...formData, projects_completed: !!checked})}
                       disabled={!canEditStage("projects")}
                     />
-                    <Label htmlFor="projects_completed">تم تعبئة البيانات من قبل إدارة المشاريع</Label>
+                    <Label htmlFor="projects_completed" className="font-medium">
+                      ✅ تم تعبئة البيانات من قبل إدارة المشاريع وجاهزة للمرحلة التالية
+                    </Label>
                   </div>
                 </TabsContent>
 
                 {/* مرحلة راحة العملاء */}
                 <TabsContent value="customer_service" className="space-y-4">
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <h3 className="font-semibold text-purple-800 mb-2">المرحلة الثالثة: راحة العملاء</h3>
+                    <p className="text-sm text-purple-600">يتم تعبئة هذه البيانات من قبل قسم راحة العملاء</p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
                       <Checkbox
                         id="customer_evaluation_done"
                         checked={formData.customer_evaluation_done || false}
                         onCheckedChange={(checked) => setFormData({...formData, customer_evaluation_done: !!checked})}
                         disabled={!canEditStage("customer_service")}
                       />
-                      <Label htmlFor="customer_evaluation_done">هل تم تقييم العميل؟</Label>
+                      <Label htmlFor="customer_evaluation_done" className="font-medium">
+                        هل تم تقييم العميل؟
+                      </Label>
                     </div>
 
                     <div>
@@ -640,24 +789,45 @@ export default function Delivery() {
                         value={formData.evaluation_percentage || ""}
                         onChange={(e) => setFormData({...formData, evaluation_percentage: parseFloat(e.target.value)})}
                         disabled={!canEditStage("customer_service") || !formData.customer_evaluation_done}
+                        placeholder="من 0 إلى 100"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  {formData.evaluation_percentage && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm font-medium">تقييم العميل:</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              formData.evaluation_percentage >= 80 ? 'bg-green-500' :
+                              formData.evaluation_percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${formData.evaluation_percentage}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{formData.evaluation_percentage}%</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
                     <Checkbox
                       id="customer_service_completed"
                       checked={formData.customer_service_completed || false}
                       onCheckedChange={(checked) => setFormData({...formData, customer_service_completed: !!checked})}
                       disabled={!canEditStage("customer_service")}
                     />
-                    <Label htmlFor="customer_service_completed">تم تعبئة البيانات من قبل راحة العملاء</Label>
+                    <Label htmlFor="customer_service_completed" className="font-medium">
+                      ✅ تم إنهاء جميع إجراءات راحة العملاء - الحجز مكتمل
+                    </Label>
                   </div>
                 </TabsContent>
               </Tabs>
 
               {!isViewMode && (
-                <div className="flex justify-end space-x-2 pt-4">
+                <div className="flex justify-end space-x-2 pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
@@ -666,7 +836,7 @@ export default function Delivery() {
                     إلغاء
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {loading ? "جاري الحفظ..." : "حفظ"}
+                    {loading ? "جاري الحفظ..." : selectedBooking ? "تحديث" : "حفظ"}
                   </Button>
                 </div>
               )}
