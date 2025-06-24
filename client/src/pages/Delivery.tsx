@@ -81,25 +81,13 @@ export default function Delivery() {
 
   useEffect(() => {
     loadBookings();
-    
-    // إعداد Supabase Realtime للتحديث الفوري
-    const deliveryChannel = DataService.setupRealtimeSubscription(
-      'delivery_bookings',
-      (payload) => {
-        console.log('تحديث فوري لحجوزات التسليم:', payload);
-        loadBookings();
-      }
-    );
-    
-    // إعداد التحديث التلقائي كل دقيقة كخطة احتياطية
+
+    // إعداد تحديث دوري للبيانات كل 5 ثواني
     const interval = setInterval(() => {
       loadBookings();
-    }, 60000);
+    }, 5000);
 
-    return () => {
-      DataService.removeRealtimeSubscription(deliveryChannel);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const loadBookings = async () => {
@@ -195,7 +183,7 @@ export default function Delivery() {
     try {
       setLoading(true);
       await DataService.deleteDeliveryBooking(bookingId);
-      
+
       toast({
         title: "تم الحذف",
         description: "تم حذف الحجز بنجاح"
