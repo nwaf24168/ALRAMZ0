@@ -158,15 +158,15 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <HashRouter>
+      <HashRouter>
+        <AuthProvider>
           <NotificationProvider>
             <MetricsProvider>
               <AppRoutesInner />
             </MetricsProvider>
           </NotificationProvider>
-        </HashRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
