@@ -83,6 +83,7 @@ CREATE TRIGGER update_delivery_bookings_updated_at
 CREATE OR REPLACE FUNCTION update_booking_status()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- تحديث الحالة بناءً على المراحل المكتملة
     IF NEW.customer_service_completed = TRUE THEN
         NEW.status = 'مكتمل';
     ELSIF NEW.projects_completed = TRUE THEN
@@ -92,6 +93,9 @@ BEGIN
     ELSE
         NEW.status = 'في المبيعات';
     END IF;
+    
+    -- السماح للمراحل اللاحقة بالتعديل حتى لو لم تكن المرحلة السابقة مكتملة
+    -- (هذا يعطي مرونة أكثر في الاستخدام)
     
     RETURN NEW;
 END;

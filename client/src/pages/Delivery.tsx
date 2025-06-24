@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle } from "lucide-react";
+import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
@@ -170,6 +170,31 @@ export default function Delivery() {
     setIsDialogOpen(true);
   };
 
+  const handleDelete = async (bookingId: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الحجز؟")) return;
+
+    try {
+      setLoading(true);
+      await DataService.deleteDeliveryBooking(bookingId);
+      
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف الحجز بنجاح"
+      });
+
+      await loadBookings();
+    } catch (error) {
+      console.error("خطأ في حذف الحجز:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في حذف الحجز"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "في المبيعات":
@@ -192,9 +217,9 @@ export default function Delivery() {
       case "sales":
         return user?.role?.includes("مبيعات") || user?.role?.includes("مدير");
       case "projects":
-        return (user?.role?.includes("مشاريع") || user?.role?.includes("مدير")) && formData.sales_completed;
+        return user?.role?.includes("مشاريع") || user?.role?.includes("مدير");
       case "customer_service":
-        return (user?.role?.includes("راحة العملاء") || user?.role?.includes("مدير")) && formData.projects_completed;
+        return user?.role?.includes("راحة العملاء") || user?.role?.includes("مدير");
       default:
         return false;
     }
@@ -322,6 +347,15 @@ export default function Delivery() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(booking.id!)}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -345,8 +379,18 @@ export default function Delivery() {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="sales">المبيعات</TabsTrigger>
-                  <TabsTrigger value="projects">إدارة المشاريع</TabsTrigger>
-                  <TabsTrigger value="customer_service">راحة العملاء</TabsTrigger>
+                  <TabsTrigger 
+                    value="projects"
+                    disabled={!canEditStage("projects") && !isViewMode}
+                  >
+                    إدارة المشاريع
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="customer_service"
+                    disabled={!canEditStage("customer_service") && !isViewMode}
+                  >
+                    راحة العملاء
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* مرحلة المبيعات */}
