@@ -388,13 +388,13 @@ export default function DataEntry() {
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !user) return;
 
     try {
       // حفظ التعليق في Supabase
       await DataService.saveComment(
         newComment.trim(),
-        user?.username || "مجهول",
+        user.username || "مجهول",
         currentPeriod,
       );
 
