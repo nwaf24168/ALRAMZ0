@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,152 +12,222 @@ import {
   Zap,
   Activity,
   Package,
+  Users,
 } from "lucide-react";
 import { DataService } from "@/lib/dataService";
 
-interface Booking {
-  id: string;
-  bookingDate: string;
-  customerName: string;
-  project: string;
-  building: string;
-  unit: string;
-  paymentMethod: string;
-  saleType: string;
-  unitValue: number;
-  transferDate: string;
-  salesEmployee: string;
-  constructionEndDate?: string;
-  finalReceiptDate?: string;
-  electricityTransferDate?: string;
-  waterTransferDate?: string;
-  deliveryDate?: string;
-  isEvaluated?: boolean;
-  evaluationScore?: number;
+interface DeliveryBooking {
+  id?: number;
+  booking_date?: string;
+  customer_name: string;
+  project?: string;
+  building?: string;
+  unit?: string;
+  payment_method?: string;
+  sale_type?: string;
+  unit_value?: number;
+  handover_date?: string;
+  sales_employee?: string;
+  construction_completion_date?: string;
+  final_handover_date?: string;
+  electricity_meter_transfer_date?: string;
+  water_meter_transfer_date?: string;
+  customer_delivery_date?: string;
+  status?: string;
+  customer_evaluation_done?: boolean;
+  evaluation_percentage?: number;
+  sales_completed?: boolean;
+  projects_completed?: boolean;
+  customer_service_completed?: boolean;
+  created_at?: string;
 }
 
 interface DeliveryMetrics {
-  monthlyUnits: number;
-  yearlyUnits: number;
+  totalBookings: number;
+  salesStage: number;
+  projectsStage: number;
+  customerServiceStage: number;
+  completed: number;
+  monthlyBookings: number;
+  yearlyBookings: number;
   avgElectricityTransferDays: number;
   avgWaterTransferDays: number;
   customerSatisfactionRate: number;
   avgDeliveryDays: number;
   totalSalesValue: number;
-  avgCashTransferDays: number;
-  avgBankTransferDays: number;
+  avgCashHandoverDays: number;
+  avgBankHandoverDays: number;
+  avgConstructionDays: number;
+  salesCompletionRate: number;
 }
 
 export default function DeliveryAnalytics() {
   const [currentPeriod, setCurrentPeriod] = useState<"monthly" | "yearly">("monthly");
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<DeliveryBooking[]>([]);
+  const [loading, setLoading] = useState(false);
   const [metrics, setMetrics] = useState<DeliveryMetrics>({
-    monthlyUnits: 0,
-    yearlyUnits: 0,
+    totalBookings: 0,
+    salesStage: 0,
+    projectsStage: 0,
+    customerServiceStage: 0,
+    completed: 0,
+    monthlyBookings: 0,
+    yearlyBookings: 0,
     avgElectricityTransferDays: 0,
     avgWaterTransferDays: 0,
     customerSatisfactionRate: 0,
     avgDeliveryDays: 0,
     totalSalesValue: 0,
-    avgCashTransferDays: 0,
-    avgBankTransferDays: 0,
+    avgCashHandoverDays: 0,
+    avgBankHandoverDays: 0,
+    avgConstructionDays: 0,
+    salesCompletionRate: 0,
   });
 
-  // تحميل البيانات
-  useEffect(() => {
-    const loadBookings = async () => {
-      try {
-        const bookingsFromDB = await DataService.getBookings();
-        setBookings(bookingsFromDB);
-        calculateMetrics(bookingsFromDB);
-      } catch (error) {
-        console.error("خطأ في تحميل الحجوزات:", error);
-      }
-    };
+  // تحميل البيانات من نفس مصدر قسم التسليم
+  const loadBookings = async () => {
+    try {
+      setLoading(true);
+      const bookingsFromDB = await DataService.getDeliveryBookings();
+      console.log("تم تحميل حجوزات التسليم للتحليل:", bookingsFromDB);
+      setBookings(bookingsFromDB);
+      calculateMetrics(bookingsFromDB);
+    } catch (error) {
+      console.error("خطأ في تحميل حجوزات التسليم:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadBookings();
+    
+    // إعداد Supabase Realtime للتحديث الفوري
+    const deliveryChannel = DataService.setupRealtimeSubscription(
+      'delivery_bookings',
+      (payload) => {
+        console.log('تحديث فوري لحجوزات التسليم في التحليل:', payload);
+        loadBookings();
+      }
+    );
+    
+    // إعداد التحديث التلقائي كل دقيقة كخطة احتياطية
+    const interval = setInterval(() => {
+      loadBookings();
+    }, 60000);
+
+    return () => {
+      DataService.removeRealtimeSubscription(deliveryChannel);
+      clearInterval(interval);
+    };
   }, []);
 
-  // حساب المؤشرات
-  const calculateMetrics = (bookings: Booking[]) => {
+  useEffect(() => {
+    calculateMetrics(bookings);
+  }, [currentPeriod, bookings]);
+
+  // حساب المؤشرات بناءً على البيانات المحدثة
+  const calculateMetrics = (bookings: DeliveryBooking[]) => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
     // فلترة البيانات حسب الفترة
     const monthlyBookings = bookings.filter(booking => {
-      const bookingDate = new Date(booking.bookingDate);
+      if (!booking.booking_date) return false;
+      const bookingDate = new Date(booking.booking_date);
       return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
     });
 
     const yearlyBookings = bookings.filter(booking => {
-      const bookingDate = new Date(booking.bookingDate);
+      if (!booking.booking_date) return false;
+      const bookingDate = new Date(booking.booking_date);
       return bookingDate.getFullYear() === currentYear;
     });
 
-    // حساب المؤشرات
-    const monthlyUnits = monthlyBookings.length;
-    const yearlyUnits = yearlyBookings.length;
+    const relevantBookings = currentPeriod === "monthly" ? monthlyBookings : yearlyBookings;
+
+    // حساب المؤشرات الأساسية
+    const totalBookings = bookings.length;
+    const salesStage = bookings.filter(b => b.status === "في المبيعات").length;
+    const projectsStage = bookings.filter(b => b.status === "في إدارة المشاريع").length;
+    const customerServiceStage = bookings.filter(b => b.status === "في راحة العملاء").length;
+    const completed = bookings.filter(b => b.status === "مكتمل").length;
 
     // حساب متوسط أيام نقل الكهرباء
     const electricityTransferDays = bookings
-      .filter(b => b.electricityTransferDate && b.transferDate)
+      .filter(b => b.electricity_meter_transfer_date && b.handover_date)
       .map(b => {
-        const transferDate = new Date(b.transferDate);
-        const electricityDate = new Date(b.electricityTransferDate!);
-        return Math.abs((electricityDate.getTime() - transferDate.getTime()) / (1000 * 60 * 60 * 24));
+        const handoverDate = new Date(b.handover_date!);
+        const electricityDate = new Date(b.electricity_meter_transfer_date!);
+        return Math.abs((electricityDate.getTime() - handoverDate.getTime()) / (1000 * 60 * 60 * 24));
       });
 
     // حساب متوسط أيام نقل المياه
     const waterTransferDays = bookings
-      .filter(b => b.waterTransferDate && b.transferDate)
+      .filter(b => b.water_meter_transfer_date && b.handover_date)
       .map(b => {
-        const transferDate = new Date(b.transferDate);
-        const waterDate = new Date(b.waterTransferDate!);
-        return Math.abs((waterDate.getTime() - transferDate.getTime()) / (1000 * 60 * 60 * 24));
+        const handoverDate = new Date(b.handover_date!);
+        const waterDate = new Date(b.water_meter_transfer_date!);
+        return Math.abs((waterDate.getTime() - handoverDate.getTime()) / (1000 * 60 * 60 * 24));
       });
 
     // حساب رضا العملاء
-    const evaluatedBookings = bookings.filter(b => b.isEvaluated && b.evaluationScore);
+    const evaluatedBookings = bookings.filter(b => b.customer_evaluation_done && b.evaluation_percentage);
     const satisfactionRate = evaluatedBookings.length > 0 
-      ? (evaluatedBookings.reduce((sum, b) => sum + (b.evaluationScore || 0), 0) / evaluatedBookings.length) * 10
+      ? evaluatedBookings.reduce((sum, b) => sum + (b.evaluation_percentage || 0), 0) / evaluatedBookings.length
       : 0;
 
     // حساب متوسط أيام التسليم
     const deliveryDays = bookings
-      .filter(b => b.deliveryDate && b.electricityTransferDate)
+      .filter(b => b.customer_delivery_date && b.electricity_meter_transfer_date)
       .map(b => {
-        const electricityDate = new Date(b.electricityTransferDate!);
-        const deliveryDate = new Date(b.deliveryDate!);
+        const electricityDate = new Date(b.electricity_meter_transfer_date!);
+        const deliveryDate = new Date(b.customer_delivery_date!);
         return Math.abs((deliveryDate.getTime() - electricityDate.getTime()) / (1000 * 60 * 60 * 24));
       });
 
     // حساب قيمة المبيعات
-    const totalSalesValue = currentPeriod === "monthly" 
-      ? monthlyBookings.reduce((sum, b) => sum + b.unitValue, 0)
-      : yearlyBookings.reduce((sum, b) => sum + b.unitValue, 0);
+    const totalSalesValue = relevantBookings.reduce((sum, b) => sum + (b.unit_value || 0), 0);
 
     // حساب أيام الإفراغ للكاش
-    const cashTransferDays = bookings
-      .filter(b => b.paymentMethod === "نقدي" && b.transferDate)
+    const cashHandoverDays = bookings
+      .filter(b => b.payment_method === "نقدي" && b.handover_date && b.booking_date)
       .map(b => {
-        const bookingDate = new Date(b.bookingDate);
-        const transferDate = new Date(b.transferDate);
-        return Math.abs((transferDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
+        const bookingDate = new Date(b.booking_date!);
+        const handoverDate = new Date(b.handover_date!);
+        return Math.abs((handoverDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
       });
 
     // حساب أيام الإفراغ للتحويل البنكي
-    const bankTransferDays = bookings
-      .filter(b => b.paymentMethod === "تحويل بنكي" && b.transferDate)
+    const bankHandoverDays = bookings
+      .filter(b => b.payment_method === "تحويل بنكي" && b.handover_date && b.booking_date)
       .map(b => {
-        const bookingDate = new Date(b.bookingDate);
-        const transferDate = new Date(b.transferDate);
-        return Math.abs((transferDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
+        const bookingDate = new Date(b.booking_date!);
+        const handoverDate = new Date(b.handover_date!);
+        return Math.abs((handoverDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
       });
 
+    // حساب متوسط أيام البناء
+    const constructionDays = bookings
+      .filter(b => b.construction_completion_date && b.booking_date)
+      .map(b => {
+        const bookingDate = new Date(b.booking_date!);
+        const constructionDate = new Date(b.construction_completion_date!);
+        return Math.abs((constructionDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
+      });
+
+    // حساب معدل إتمام المبيعات
+    const salesCompletionRate = totalBookings > 0 ? ((totalBookings - salesStage) / totalBookings) * 100 : 0;
+
     setMetrics({
-      monthlyUnits,
-      yearlyUnits,
+      totalBookings,
+      salesStage,
+      projectsStage,
+      customerServiceStage,
+      completed,
+      monthlyBookings: monthlyBookings.length,
+      yearlyBookings: yearlyBookings.length,
       avgElectricityTransferDays: electricityTransferDays.length > 0 
         ? electricityTransferDays.reduce((sum, days) => sum + days, 0) / electricityTransferDays.length 
         : 0,
@@ -168,12 +239,16 @@ export default function DeliveryAnalytics() {
         ? deliveryDays.reduce((sum, days) => sum + days, 0) / deliveryDays.length 
         : 0,
       totalSalesValue,
-      avgCashTransferDays: cashTransferDays.length > 0 
-        ? cashTransferDays.reduce((sum, days) => sum + days, 0) / cashTransferDays.length 
+      avgCashHandoverDays: cashHandoverDays.length > 0 
+        ? cashHandoverDays.reduce((sum, days) => sum + days, 0) / cashHandoverDays.length 
         : 0,
-      avgBankTransferDays: bankTransferDays.length > 0 
-        ? bankTransferDays.reduce((sum, days) => sum + days, 0) / bankTransferDays.length 
+      avgBankHandoverDays: bankHandoverDays.length > 0 
+        ? bankHandoverDays.reduce((sum, days) => sum + days, 0) / bankHandoverDays.length 
         : 0,
+      avgConstructionDays: constructionDays.length > 0 
+        ? constructionDays.reduce((sum, days) => sum + days, 0) / constructionDays.length 
+        : 0,
+      salesCompletionRate,
     });
   };
 
@@ -197,10 +272,76 @@ export default function DeliveryAnalytics() {
             >
               سنوي
             </Button>
+            <Button
+              variant="outline"
+              onClick={loadBookings}
+              disabled={loading}
+              className="mobile-button"
+            >
+              {loading ? "جاري التحديث..." : "تحديث البيانات"}
+            </Button>
           </div>
         </div>
 
-        {/* مؤشرات الأداء */}
+        {/* إحصائيات المراحل */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">إجمالي الحجوزات</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalBookings}</div>
+              <p className="text-xs text-muted-foreground">حجز إجمالي</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">في المبيعات</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{metrics.salesStage}</div>
+              <p className="text-xs text-muted-foreground">حجز</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">في إدارة المشاريع</CardTitle>
+              <Calendar className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{metrics.projectsStage}</div>
+              <p className="text-xs text-muted-foreground">حجز</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">في راحة العملاء</CardTitle>
+              <ThumbsUp className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{metrics.customerServiceStage}</div>
+              <p className="text-xs text-muted-foreground">حجز</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">مكتمل</CardTitle>
+              <Home className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{metrics.completed}</div>
+              <p className="text-xs text-muted-foreground">حجز</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* مؤشرات الأداء التفصيلية */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {/* عدد الوحدات المباعة */}
           <Card>
@@ -212,140 +353,132 @@ export default function DeliveryAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {currentPeriod === "monthly" ? metrics.monthlyUnits : metrics.yearlyUnits}
+                {currentPeriod === "monthly" ? metrics.monthlyBookings : metrics.yearlyBookings}
               </div>
-              <p className="text-xs text-muted-foreground">
-                وحدة سكنية
-              </p>
+              <p className="text-xs text-muted-foreground">وحدة سكنية</p>
+            </CardContent>
+          </Card>
+
+          {/* معدل إتمام المبيعات */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">معدل إتمام المبيعات</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(metrics.salesCompletionRate)}%</div>
+              <p className="text-xs text-muted-foreground">من إجمالي الحجوزات</p>
             </CardContent>
           </Card>
 
           {/* أيام نقل عدادات الكهرباء */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                أيام نقل عدادات الكهرباء
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">أيام نقل عدادات الكهرباء</CardTitle>
               <Zap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.avgElectricityTransferDays)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                يوم في المتوسط
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgElectricityTransferDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم في المتوسط</p>
             </CardContent>
           </Card>
 
           {/* أيام نقل عدادات المياه */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                أيام نقل عدادات المياه
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">أيام نقل عدادات المياه</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.avgWaterTransferDays)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                يوم في المتوسط
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgWaterTransferDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم في المتوسط</p>
             </CardContent>
           </Card>
 
           {/* نسبة رضا العميل */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                نسبة رضا العميل عن الاستلام
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">نسبة رضا العميل عن الاستلام</CardTitle>
               <ThumbsUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.customerSatisfactionRate)}%
-              </div>
-              <p className="text-xs text-muted-foreground">
-                معدل الرضا العام
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.customerSatisfactionRate)}%</div>
+              <p className="text-xs text-muted-foreground">معدل الرضا العام</p>
             </CardContent>
           </Card>
 
           {/* أيام التسليم للعميل */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                أيام التسليم للعميل
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">أيام التسليم للعميل</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.avgDeliveryDays)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                يوم من نقل الكهرباء للتسليم
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgDeliveryDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم من نقل الكهرباء للتسليم</p>
             </CardContent>
           </Card>
 
           {/* قيمة المبيعات */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                قيمة المبيعات بالريال
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">قيمة المبيعات بالريال</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {(metrics.totalSalesValue / 1000000).toFixed(1)}م
               </div>
-              <p className="text-xs text-muted-foreground">
-                مليون ريال سعودي
-              </p>
+              <p className="text-xs text-muted-foreground">مليون ريال سعودي</p>
             </CardContent>
           </Card>
 
           {/* أيام الإفراغ للكاش */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                أيام الإفراغ (عملاء الكاش)
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">أيام الإفراغ (عملاء الكاش)</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.avgCashTransferDays)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                يوم من الحجز للإفراغ
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgCashHandoverDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم من الحجز للإفراغ</p>
             </CardContent>
           </Card>
 
           {/* أيام الإفراغ للتحويل */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                أيام الإفراغ (عملاء التحويل)
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">أيام الإفراغ (عملاء التحويل)</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(metrics.avgBankTransferDays)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                يوم من الحجز للإفراغ
-              </p>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgBankHandoverDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم من الحجز للإفراغ</p>
+            </CardContent>
+          </Card>
+
+          {/* متوسط أيام البناء */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">متوسط أيام البناء</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(metrics.avgConstructionDays)}</div>
+              <p className="text-xs text-muted-foreground">يوم من الحجز لإنهاء البناء</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* معلومات التحديث */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>آخر تحديث: {new Date().toLocaleString('ar-SA')}</span>
+              <span>إجمالي الحجوزات في النظام: {metrics.totalBookings}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

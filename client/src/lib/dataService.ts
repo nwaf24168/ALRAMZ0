@@ -1249,6 +1249,7 @@ export class DataService {
         throw error;
       }
 
+      console.log('تم تحميل حجوزات التسليم من قاعدة البيانات:', data?.length || 0);
       return data || [];
     } catch (error) {
       console.error('خطأ في تحميل حجوزات التسليم:', error);

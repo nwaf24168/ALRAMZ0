@@ -81,6 +81,25 @@ export default function Delivery() {
 
   useEffect(() => {
     loadBookings();
+    
+    // إعداد Supabase Realtime للتحديث الفوري
+    const deliveryChannel = DataService.setupRealtimeSubscription(
+      'delivery_bookings',
+      (payload) => {
+        console.log('تحديث فوري لحجوزات التسليم:', payload);
+        loadBookings();
+      }
+    );
+    
+    // إعداد التحديث التلقائي كل دقيقة كخطة احتياطية
+    const interval = setInterval(() => {
+      loadBookings();
+    }, 60000);
+
+    return () => {
+      DataService.removeRealtimeSubscription(deliveryChannel);
+      clearInterval(interval);
+    };
   }, []);
 
   const loadBookings = async () => {
