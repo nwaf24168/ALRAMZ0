@@ -391,6 +391,7 @@ export default function Delivery() {
                         value={formData.project || ""}
                         onChange={(e) => setFormData({...formData, project: e.target.value})}
                         disabled={!canEditStage("sales")}
+                        placeholder="أدخل اسم المشروع"
                       />
                     </div>
 

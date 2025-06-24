@@ -227,7 +227,7 @@ export class DataService {
   static async getSatisfaction(
     period: "weekly" | "yearly",
   ): Promise<MaintenanceSatisfactionData> {
-    const { data, error } } = await supabase
+    const { data, error } = await supabase
       .from("satisfaction")
       .select("*")
       .eq("period", period);
