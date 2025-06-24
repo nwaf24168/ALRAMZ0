@@ -227,7 +227,7 @@ export class DataService {
   static async getSatisfaction(
     period: "weekly" | "yearly",
   ): Promise<MaintenanceSatisfactionData> {
-    const { data, error } = await supabase
+    const { data, error } } = await supabase
       .from("satisfaction")
       .select("*")
       .eq("period", period);
@@ -1233,6 +1233,91 @@ export class DataService {
       throw new Error(
         `خطأ في حذف سجل الزائر: ${error.message || error.details || "خطأ غير معروف"}`,
       );
+    }
+  }
+
+  // دوال حجوزات التسليم
+  static async getDeliveryBookings(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('خطأ Supabase في جلب حجوزات التسليم:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('خطأ في تحميل حجوزات التسليم:', error);
+      throw error;
+    }
+  }
+
+  static async createDeliveryBooking(bookingData: any): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_bookings')
+        .insert([{
+          ...bookingData,
+          created_by: bookingData.created_by || 'النظام'
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ Supabase في إنشاء حجز التسليم:', error);
+        throw error;
+      }
+
+      console.log('تم إنشاء حجز التسليم في Supabase:', data);
+      return data;
+    } catch (error) {
+      console.error('خطأ في إنشاء حجز التسليم:', error);
+      throw error;
+    }
+  }
+
+  static async updateDeliveryBooking(id: number, bookingData: any): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_bookings')
+        .update(bookingData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('خطأ Supabase في تحديث حجز التسليم:', error);
+        throw error;
+      }
+
+      console.log('تم تحديث حجز التسليم في Supabase:', data);
+      return data;
+    } catch (error) {
+      console.error('خطأ في تحديث حجز التسليم:', error);
+      throw error;
+    }
+  }
+
+  static async deleteDeliveryBooking(id: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('delivery_bookings')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('خطأ Supabase في حذف حجز التسليم:', error);
+        throw error;
+      }
+
+      console.log('تم حذف حجز التسليم من Supabase');
+    } catch (error) {
+      console.error('خطأ في حذف حجز التسليم:', error);
+      throw error;
     }
   }
 
