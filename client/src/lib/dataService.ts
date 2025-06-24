@@ -1148,6 +1148,91 @@ export class DataService {
     };
   }
 
+  // إدارة سجلات الزوار
+  static async saveVisitorRecord(record: any): Promise<void> {
+    const { error } = await supabase
+      .from("visitor_records")
+      .insert({
+        name: record.name,
+        phone_number: record.phoneNumber,
+        visit_reason: record.visitReason,
+        requested_employee: record.requestedEmployee,
+        date: record.date,
+        time: record.time,
+        created_by: record.createdBy,
+      });
+
+    if (error) {
+      console.error("خطأ Supabase في حفظ سجل الزائر:", error);
+      throw new Error(
+        `خطأ في حفظ سجل الزائر: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
+  static async getVisitorRecords(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("visitor_records")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("خطأ Supabase في جلب سجلات الزوار:", error);
+      throw new Error(
+        `خطأ في جلب سجلات الزوار: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+
+    return (data || []).map((record) => ({
+      id: record.id,
+      name: record.name,
+      phoneNumber: record.phone_number,
+      visitReason: record.visit_reason,
+      requestedEmployee: record.requested_employee,
+      date: record.date,
+      time: record.time,
+      createdBy: record.created_by,
+      createdAt: record.created_at,
+      updatedAt: record.updated_at,
+    }));
+  }
+
+  static async updateVisitorRecord(id: string, recordData: any): Promise<void> {
+    const { error } = await supabase
+      .from("visitor_records")
+      .update({
+        name: recordData.name,
+        phone_number: recordData.phoneNumber,
+        visit_reason: recordData.visitReason,
+        requested_employee: recordData.requestedEmployee,
+        date: recordData.date,
+        time: recordData.time,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("خطأ Supabase في تحديث سجل الزائر:", error);
+      throw new Error(
+        `خطأ في تحديث سجل الزائر: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
+  static async deleteVisitorRecord(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("visitor_records")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("خطأ Supabase في حذف سجل الزائر:", error);
+      throw new Error(
+        `خطأ في حذف سجل الزائر: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
   // إعداد الاشتراكات للوقت الفعلي
   static setupRealtimeSubscription(
     table: string,
