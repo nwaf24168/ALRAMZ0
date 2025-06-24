@@ -103,17 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('تم إضافة المستخدم بنجاح:', newUser);
     } catch (error) {
       console.error('خطأ في إضافة المستخدم:', error);
-      
-      // تحسين رسائل الخطأ للمستخدم
-      if (error instanceof Error) {
-        if (error.message.includes('موجود مسبقاً')) {
-          throw new Error(error.message);
-        } else if (error.message.includes('duplicate key')) {
-          throw new Error(`اسم المستخدم "${userData.username}" موجود مسبقاً. يرجى اختيار اسم مختلف.`);
-        }
-      }
-      
-      throw new Error('فشل في إضافة المستخدم. يرجى المحاولة مرة أخرى.');
+      throw error;
     }
   };
 

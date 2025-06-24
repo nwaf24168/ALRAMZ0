@@ -1014,22 +1014,6 @@ export class DataService {
 
   static async createUser(userData: Omit<User, 'id'>): Promise<User> {
     try {
-      // التحقق أولاً إذا كان المستخدم موجود مسبقاً
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id, username')
-        .eq('username', userData.username)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('خطأ في التحقق من وجود المستخدم:', checkError);
-        throw new Error(`خطأ في التحقق من المستخدم: ${checkError.message}`);
-      }
-
-      if (existingUser) {
-        throw new Error(`اسم المستخدم "${userData.username}" موجود مسبقاً. يرجى اختيار اسم مختلف.`);
-      }
-
       const { data, error } = await supabase
         .from('users')
         .insert([{
@@ -1043,12 +1027,6 @@ export class DataService {
 
       if (error) {
         console.error('خطأ في إنشاء المستخدم:', error);
-        
-        // معالجة خاصة لخطأ اسم المستخدم المكرر
-        if (error.code === '23505' && error.message.includes('users_username_key')) {
-          throw new Error(`اسم المستخدم "${userData.username}" موجود مسبقاً. يرجى اختيار اسم مختلف.`);
-        }
-        
         throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
       }
 
