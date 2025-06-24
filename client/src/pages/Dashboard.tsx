@@ -244,15 +244,13 @@ const CustomerServiceStats = () => {
           currentPeriod,
         );
 
-        // تحديث الحالة المحلية
-        const updatedComments = maintenanceSatisfaction.comments.filter(
-          (_, index) => index !== indexToDelete,
-        );
-
-        setMaintenanceSatisfaction((prev) => ({
-          ...prev,
-          comments: updatedComments,
-        }));
+        // تحديث الحالة المحلية باستخدام الدالة الصحيحة من MetricsContext
+        updateMaintenanceSatisfactionData({
+          ...maintenanceSatisfaction,
+          comments: maintenanceSatisfaction.comments.filter(
+            (_, index) => index !== indexToDelete,
+          ),
+        });
 
         console.log("تم حذف التعليق بنجاح");
       }

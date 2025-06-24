@@ -321,12 +321,9 @@ export class DataService {
     }));
   }
 
-  // حذف تعليق
-  static async deleteComment(commentId: number): Promise<void> {
-    const { error } = await supabase
-      .from("comments")
-      .delete()
-      .eq("id", commentId);
+  // حذف تعليق حسب الـ ID
+  static async deleteComment(id: number): Promise<void> {
+    const { error } = await supabase.from("comments").delete().eq("id", id);
 
     if (error) {
       console.error("خطأ Supabase في حذف التعليق:", error);
@@ -336,7 +333,7 @@ export class DataService {
     }
   }
 
-  // حذف تعليق بالنص والمستخدم (للتوافق مع الواجهة الحالية)
+  // حذف تعليق حسب المحتوى والمستخدم والفترة
   static async deleteCommentByContent(
     text: string,
     username: string,
