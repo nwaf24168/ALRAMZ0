@@ -1123,68 +1123,138 @@ export default function Delivery() {
                 </TabsContent>
 
                 {/* مرحلة راحة العملاء */}
-                <TabsContent value="customer_service" className="space-y-4">
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <h3 className="font-semibold text-purple-800 mb-2">المرحلة الثالثة: راحة العملاء</h3>
-                    <p className="text-sm text-purple-600">يتم تعبئة هذه البيانات من قبل قسم راحة العملاء</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
-                      <Checkbox
-                        id="customer_evaluation_done"
-                        checked={formData.customer_evaluation_done || false}
-                        onCheckedChange={(checked) => setFormData({...formData, customer_evaluation_done: !!checked})}
-                        disabled={!canEditStage("customer_service")}
-                      />
-                      <Label htmlFor="customer_evaluation_done" className="font-medium">
-                        هل تم تقييم العميل؟
-                      </Label>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="evaluation_percentage">نسبة التقييم (%)</Label>
-                      <Input
-                        id="evaluation_percentage"
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={formData.evaluation_percentage || ""}
-                        onChange={(e) => setFormData({...formData, evaluation_percentage: parseFloat(e.target.value)})}
-                        disabled={!canEditStage("customer_service") || !formData.customer_evaluation_done}
-                        placeholder="من 0 إلى 100"
-                      />
-                    </div>
-                  </div>
-
-                  {formData.evaluation_percentage && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium">تقييم العميل:</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              formData.evaluation_percentage >= 80 ? 'bg-green-500' :
-                              formData.evaluation_percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${formData.evaluation_percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{formData.evaluation_percentage}%</span>
+                <TabsContent value="customer_service" className="space-y-6">
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-purple-800">المرحلة الثالثة: راحة العملاء</h3>
+                        <p className="text-sm text-purple-600 mt-1">يتم تعبئة هذه البيانات من قبل قسم راحة العملاء</p>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
-                    <Checkbox
-                      id="customer_service_completed"
-                      checked={formData.customer_service_completed || false}
-                      onCheckedChange={(checked) => setFormData({...formData, customer_service_completed: !!checked})}
-                      disabled={!canEditStage("customer_service")}
-                    />
-                    <Label htmlFor="customer_service_completed" className="font-medium">
-                      ✅ تم إنهاء جميع إجراءات راحة العملاء - الحجز مكتمل
-                    </Label>
+                  <div className="space-y-6">
+                    {/* قسم تقييم العميل */}
+                    <Card className="border-2 border-blue-100 shadow-sm">
+                      <CardHeader className="bg-blue-50 border-b border-blue-100">
+                        <CardTitle className="text-blue-800 flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5" />
+                          تقييم العميل
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center space-x-2 bg-white border-2 border-blue-200 p-4 rounded-lg hover:bg-blue-50 transition-colors">
+                          <Checkbox
+                            id="customer_evaluation_done"
+                            checked={formData.customer_evaluation_done || false}
+                            onCheckedChange={(checked) => setFormData({...formData, customer_evaluation_done: !!checked})}
+                            disabled={!canEditStage("customer_service")}
+                            className="w-5 h-5"
+                          />
+                          <Label htmlFor="customer_evaluation_done" className="text-base font-medium text-gray-800 cursor-pointer">
+                            هل تم تقييم عملية الاستلام؟
+                          </Label>
+                        </div>
+
+                        {formData.customer_evaluation_done && (
+                          <div className="space-y-4 bg-gray-50 p-4 rounded-lg border">
+                            <div>
+                              <Label htmlFor="evaluation_percentage" className="text-base font-medium text-gray-700">
+                                تقييم عملية الاستلام للوحدة (%)
+                              </Label>
+                              <div className="mt-2">
+                                <Input
+                                  id="evaluation_percentage"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={formData.evaluation_percentage || ""}
+                                  onChange={(e) => setFormData({...formData, evaluation_percentage: parseFloat(e.target.value)})}
+                                  disabled={!canEditStage("customer_service")}
+                                  placeholder="أدخل النسبة من 0 إلى 100"
+                                  className="text-lg text-center font-medium"
+                                />
+                              </div>
+                            </div>
+
+                            {formData.evaluation_percentage !== undefined && formData.evaluation_percentage > 0 && (
+                              <div className="bg-white p-4 rounded-lg border shadow-sm">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium text-gray-700">مستوى التقييم:</span>
+                                  <span className={`text-lg font-bold ${
+                                    formData.evaluation_percentage >= 90 ? 'text-green-600' :
+                                    formData.evaluation_percentage >= 80 ? 'text-blue-600' :
+                                    formData.evaluation_percentage >= 70 ? 'text-yellow-600' :
+                                    formData.evaluation_percentage >= 60 ? 'text-orange-600' : 'text-red-600'
+                                  }`}>
+                                    {formData.evaluation_percentage}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                                  <div 
+                                    className={`h-3 rounded-full transition-all duration-500 ${
+                                      formData.evaluation_percentage >= 90 ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                                      formData.evaluation_percentage >= 80 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                                      formData.evaluation_percentage >= 70 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                                      formData.evaluation_percentage >= 60 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : 
+                                      'bg-gradient-to-r from-red-400 to-red-600'
+                                    }`}
+                                    style={{ width: `${formData.evaluation_percentage}%` }}
+                                  />
+                                </div>
+                                <div className="mt-2 text-center">
+                                  <span className={`text-sm font-medium ${
+                                    formData.evaluation_percentage >= 90 ? 'text-green-700' :
+                                    formData.evaluation_percentage >= 80 ? 'text-blue-700' :
+                                    formData.evaluation_percentage >= 70 ? 'text-yellow-700' :
+                                    formData.evaluation_percentage >= 60 ? 'text-orange-700' : 'text-red-700'
+                                  }`}>
+                                    {formData.evaluation_percentage >= 90 ? 'ممتاز جداً' :
+                                     formData.evaluation_percentage >= 80 ? 'ممتاز' :
+                                     formData.evaluation_percentage >= 70 ? 'جيد جداً' :
+                                     formData.evaluation_percentage >= 60 ? 'جيد' : 'يحتاج تحسين'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* قسم إتمام المرحلة */}
+                    <Card className="border-2 border-green-100 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 p-4 rounded-lg hover:from-green-100 hover:to-green-200 transition-all">
+                          <Checkbox
+                            id="customer_service_completed"
+                            checked={formData.customer_service_completed || false}
+                            onCheckedChange={(checked) => setFormData({...formData, customer_service_completed: !!checked})}
+                            disabled={!canEditStage("customer_service")}
+                            className="w-6 h-6"
+                          />
+                          <div className="flex-1">
+                            <Label htmlFor="customer_service_completed" className="text-base font-bold text-green-800 cursor-pointer flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                              تم إنهاء جميع إجراءات راحة العملاء
+                            </Label>
+                            <p className="text-sm text-green-700 mt-1">الحجز سيتم تمييزه كمكتمل بالكامل</p>
+                          </div>
+                        </div>
+
+                        {formData.customer_service_completed && (
+                          <div className="mt-4 p-3 bg-green-600 text-white rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <CheckCircle className="h-5 w-5" />
+                              <span className="font-medium">تم إكمال جميع مراحل التسليم بنجاح</span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 </TabsContent>
               </Tabs>
