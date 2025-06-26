@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
+import { formatDateForDisplay } from "@/lib/dateUtils";
 
 interface DeliveryBooking {
   id?: number;
@@ -775,7 +776,7 @@ export default function Delivery() {
                       <TableCell>{`${booking.building || '-'} / ${booking.unit || '-'}`}</TableCell>
                       <TableCell>{getStatusBadge(getBookingStatus(booking))}</TableCell>
                       <TableCell>
-                        {booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('ar-SA') : '-'}
+                        {booking.booking_date ? formatDateForDisplay(booking.booking_date) : '-'}
                       </TableCell>
                       <TableCell>{booking.sales_employee || '-'}</TableCell>
                       <TableCell>
