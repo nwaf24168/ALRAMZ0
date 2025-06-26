@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2, BarChart3, TrendingUp } from "lucide-react";
+import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2, BarChart3, TrendingUp, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -223,6 +223,321 @@ export default function Delivery() {
     }
   };
 
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      
+      // تحضير البيانات للتصدير
+      const exportData = bookings.map((booking, index) => ({
+        'ت': index + 1,
+        'تاريخ الحجز': booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('ar-SA') : '',
+        'اسم العميل': booking.customer_name || '',
+        'رقم العميل': booking.customer_phone || '',
+        'المشروع': booking.project || '',
+        'العمارة': booking.building || '',
+        'الوحدة': booking.unit || '',
+        'طريقة الدفع': booking.payment_method || '',
+        'نوع البيع': booking.sale_type || '',
+        'قيمة الوحدة': booking.unit_value || 0,
+        'تاريخ الإفراغ': booking.handover_date ? new Date(booking.handover_date).toLocaleDateString('ar-SA') : '',
+        'موظف المبيعات': booking.sales_employee || '',
+        'مكتملة - المبيعات': booking.sales_completed ? 'نعم' : 'لا',
+        'تاريخ انتهاء البناء': booking.construction_completion_date ? new Date(booking.construction_completion_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ الاستلام النهائي': booking.final_handover_date ? new Date(booking.final_handover_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ نقل عداد الكهرباء': booking.electricity_meter_transfer_date ? new Date(booking.electricity_meter_transfer_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ نقل عداد الماء': booking.water_meter_transfer_date ? new Date(booking.water_meter_transfer_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ التسليم للعميل': booking.customer_delivery_date ? new Date(booking.customer_delivery_date).toLocaleDateString('ar-SA') : '',
+        'ملاحظات المشروع': booking.project_notes || '',
+        'مكتملة - المشاريع': booking.projects_completed ? 'نعم' : 'لا',
+        'تم التقييم': booking.customer_evaluation_done ? 'نعم' : 'لا',
+        'نسبة التقييم': booking.evaluation_percentage || 0,
+        'مكتملة - راحة العملاء': booking.customer_service_completed ? 'نعم' : 'لا',
+        'الحالة': getBookingStatus(booking),
+        'تاريخ الإنشاء': booking.created_at ? new Date(booking.created_at).toLocaleDateString('ar-SA') : '',
+        'المنشئ': booking.created_by || ''
+      }));
+
+      // إنشاء ورقة العمل
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'حجوزات التسليم');
+
+      // تصدير الملف
+      const fileName = `حجوزات_التسليم_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "تم التصدير",
+        description: `تم تصدير ${bookings.length} حجز إلى ملف Excel بنجاح`
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تصدير البيانات إلى Excel"
+      });
+    }
+  };
+
+  // استيراد البيانات من Excel
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)"
+      });
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const XLSX = await import('xlsx');
+      
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (jsonData.length < 2) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+        });
+        return;
+      }
+
+      // معالجة البيانات
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        
+        // التحقق من وجود البيانات الأساسية
+        if (!row[2]) { // اسم العميل
+          errorCount++;
+          continue;
+        }
+
+        try {
+          const bookingData: DeliveryBooking = {
+            booking_date: row[1] ? new Date(row[1]).toISOString().split('T')[0] : undefined,
+            customer_name: row[2] || '',
+            customer_phone: row[3] || '',
+            project: row[4] || '',
+            building: row[5] || '',
+            unit: row[6] || '',
+            payment_method: row[7] || '',
+            sale_type: row[8] || '',
+            unit_value: parseFloat(row[9]) || 0,
+            handover_date: row[10] ? new Date(row[10]).toISOString().split('T')[0] : undefined,
+            sales_employee: row[11] || user.username,
+            sales_completed: row[12] === 'نعم',
+            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
+            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
+            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
+            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
+            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
+            project_notes: row[18] || '',
+            projects_completed: row[19] === 'نعم',
+            customer_evaluation_done: row[20] === 'نعم',
+            evaluation_percentage: parseFloat(row[21]) || 0,
+            customer_service_completed: row[22] === 'نعم',
+            created_by: user.username
+          };
+
+          // تحديد الحالة
+          bookingData.status = getBookingStatus(bookingData);
+
+          await DataService.createDeliveryBooking(bookingData);
+          successCount++;
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // تحديث قائمة الحجوزات
+      await loadBookings();
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} حجز بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel"
+      });
+    } finally {
+      setLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
+    }
+  };
+
+  // استيراد كامل مع استبدال البيانات
+  const handleFullExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)"
+      });
+      return;
+    }
+
+    // تأكيد العملية
+    const confirmImport = window.confirm(
+      "سيتم حذف جميع الحجوزات الموجودة واستبدالها بالبيانات من ملف Excel. هل أنت متأكد من المتابعة؟"
+    );
+
+    if (!confirmImport) {
+      event.target.value = '';
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const XLSX = await import('xlsx');
+      
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (jsonData.length < 2) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+        });
+        return;
+      }
+
+      // حذف جميع الحجوزات الموجودة أولاً
+      for (const booking of bookings) {
+        if (booking.id) {
+          await DataService.deleteDeliveryBooking(booking.id);
+        }
+      }
+
+      // معالجة البيانات الجديدة
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        
+        // التحقق من وجود البيانات الأساسية
+        if (!row[2]) { // اسم العميل
+          errorCount++;
+          continue;
+        }
+
+        try {
+          const bookingData: DeliveryBooking = {
+            booking_date: row[1] ? new Date(row[1]).toISOString().split('T')[0] : undefined,
+            customer_name: row[2] || '',
+            customer_phone: row[3] || '',
+            project: row[4] || '',
+            building: row[5] || '',
+            unit: row[6] || '',
+            payment_method: row[7] || '',
+            sale_type: row[8] || '',
+            unit_value: parseFloat(row[9]) || 0,
+            handover_date: row[10] ? new Date(row[10]).toISOString().split('T')[0] : undefined,
+            sales_employee: row[11] || user.username,
+            sales_completed: row[12] === 'نعم',
+            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
+            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
+            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
+            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
+            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
+            project_notes: row[18] || '',
+            projects_completed: row[19] === 'نعم',
+            customer_evaluation_done: row[20] === 'نعم',
+            evaluation_percentage: parseFloat(row[21]) || 0,
+            customer_service_completed: row[22] === 'نعم',
+            created_by: user.username
+          };
+
+          // تحديد الحالة
+          bookingData.status = getBookingStatus(bookingData);
+
+          await DataService.createDeliveryBooking(bookingData);
+          successCount++;
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // تحديث قائمة الحجوزات
+      await loadBookings();
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد الكامل",
+        description: `تم استبدال البيانات بـ ${successCount} حجز جديد${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel"
+      });
+    } finally {
+      setLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "في المبيعات":
@@ -284,6 +599,36 @@ export default function Delivery() {
                 تحليلات التسليم
               </Button>
             </Link>
+            
+            {/* أزرار Excel */}
+            <Button 
+              variant="outline" 
+              onClick={exportToExcel}
+              disabled={loading || bookings.length === 0}
+            >
+              <Download className="ml-2 h-4 w-4" />
+              تصدير Excel
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => document.getElementById('excel-import')?.click()}
+              disabled={loading}
+            >
+              <Upload className="ml-2 h-4 w-4" />
+              استيراد Excel
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => document.getElementById('excel-full-import')?.click()}
+              disabled={loading}
+              className="text-orange-600 hover:text-orange-700"
+            >
+              <FileSpreadsheet className="ml-2 h-4 w-4" />
+              استيراد كامل
+            </Button>
+            
             <Button 
               onClick={() => {
                 resetForm();
@@ -294,6 +639,23 @@ export default function Delivery() {
               <Plus className="ml-2 h-4 w-4" />
               إضافة حجز جديد
             </Button>
+
+            {/* حقول الملفات المخفية */}
+            <input
+              id="excel-import"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelImport}
+              style={{ display: 'none' }}
+            />
+            
+            <input
+              id="excel-full-import"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFullExcelImport}
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
 
@@ -359,6 +721,24 @@ export default function Delivery() {
             </CardContent>
           </Card>
         </div>
+
+        {/* معلومات إرشادية لـ Excel */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <FileSpreadsheet className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="text-sm">
+                <h4 className="font-medium text-blue-800 mb-1">إرشادات استخدام Excel:</h4>
+                <ul className="text-blue-700 space-y-1">
+                  <li>• <strong>تصدير:</strong> تحميل جميع الحجوزات الحالية في ملف Excel</li>
+                  <li>• <strong>استيراد:</strong> إضافة حجوزات جديدة من ملف Excel دون حذف البيانات الموجودة</li>
+                  <li>• <strong>استيراد كامل:</strong> استبدال جميع الحجوزات الحالية بالبيانات من ملف Excel</li>
+                  <li>• تأكد من أن اسم العميل مطلوب في كل سطر</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* فلتر الحالة */}
         <div className="flex justify-between items-center">
