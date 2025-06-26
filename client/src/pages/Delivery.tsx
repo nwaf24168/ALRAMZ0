@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -227,7 +226,7 @@ export default function Delivery() {
   const exportToExcel = async () => {
     try {
       const XLSX = await import('xlsx');
-      
+
       // تحضير البيانات للتصدير
       const exportData = bookings.map((booking, index) => ({
         'ت': index + 1,
@@ -309,7 +308,7 @@ export default function Delivery() {
 
     try {
       const XLSX = await import('xlsx');
-      
+
       // قراءة الملف
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
@@ -333,25 +332,26 @@ export default function Delivery() {
 
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
-        
+
         // التحقق من وجود البيانات الأساسية
-        if (!row[2]) { // اسم العميل
+        if (!row[1]) { // اسم العميل
           errorCount++;
           continue;
         }
 
         try {
           const bookingData: DeliveryBooking = {
-            booking_date: row[1] ? new Date(row[1]).toISOString().split('T')[0] : undefined,
-            customer_name: row[2] || '',
-            customer_phone: row[3] || '',
-            project: row[4] || '',
-            building: row[5] || '',
-            unit: row[6] || '',
-            payment_method: row[7] || '',
-            sale_type: row[8] || '',
-            unit_value: parseFloat(row[9]) || 0,
-            handover_date: row[10] ? new Date(row[10]).toISOString().split('T')[0] : undefined,
+            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
+            customer_name: row[1] || '',
+            customer_phone: row[2] || '',
+            project: row[3] || '',
+            building: row[4] || '',
+            unit: row[5] || '',
+            payment_method: row[6] || '',
+            sale_type: row[7] || '',
+            unit_value: parseFloat(row[8]) || 0,
+            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
+            projects_completed: row[10] === 'نعم',
             sales_employee: row[11] || user.username,
             sales_completed: row[12] === 'نعم',
             construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
@@ -360,10 +360,9 @@ export default function Delivery() {
             water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
             customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
             project_notes: row[18] || '',
-            projects_completed: row[19] === 'نعم',
-            customer_evaluation_done: row[20] === 'نعم',
-            evaluation_percentage: parseFloat(row[21]) || 0,
-            customer_service_completed: row[22] === 'نعم',
+            customer_evaluation_done: row[19] === 'نعم',
+            evaluation_percentage: parseFloat(row[20]) || 0,
+            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
             created_by: user.username
           };
 
@@ -439,7 +438,7 @@ export default function Delivery() {
 
     try {
       const XLSX = await import('xlsx');
-      
+
       // قراءة الملف
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
@@ -470,25 +469,26 @@ export default function Delivery() {
 
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
-        
+
         // التحقق من وجود البيانات الأساسية
-        if (!row[2]) { // اسم العميل
+        if (!row[1]) { // اسم العميل
           errorCount++;
           continue;
         }
 
         try {
           const bookingData: DeliveryBooking = {
-            booking_date: row[1] ? new Date(row[1]).toISOString().split('T')[0] : undefined,
-            customer_name: row[2] || '',
-            customer_phone: row[3] || '',
-            project: row[4] || '',
-            building: row[5] || '',
-            unit: row[6] || '',
-            payment_method: row[7] || '',
-            sale_type: row[8] || '',
-            unit_value: parseFloat(row[9]) || 0,
-            handover_date: row[10] ? new Date(row[10]).toISOString().split('T')[0] : undefined,
+            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
+            customer_name: row[1] || '',
+            customer_phone: row[2] || '',
+            project: row[3] || '',
+            building: row[4] || '',
+            unit: row[5] || '',
+            payment_method: row[6] || '',
+            sale_type: row[7] || '',
+            unit_value: parseFloat(row[8]) || 0,
+            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
+            projects_completed: row[10] === 'نعم',
             sales_employee: row[11] || user.username,
             sales_completed: row[12] === 'نعم',
             construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
@@ -497,10 +497,9 @@ export default function Delivery() {
             water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
             customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
             project_notes: row[18] || '',
-            projects_completed: row[19] === 'نعم',
-            customer_evaluation_done: row[20] === 'نعم',
-            evaluation_percentage: parseFloat(row[21]) || 0,
-            customer_service_completed: row[22] === 'نعم',
+            customer_evaluation_done: row[19] === 'نعم',
+            evaluation_percentage: parseFloat(row[20]) || 0,
+            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
             created_by: user.username
           };
 
@@ -599,7 +598,7 @@ export default function Delivery() {
                 تحليلات التسليم
               </Button>
             </Link>
-            
+
             {/* أزرار Excel */}
             <Button 
               variant="outline" 
@@ -609,7 +608,7 @@ export default function Delivery() {
               <Download className="ml-2 h-4 w-4" />
               تصدير Excel
             </Button>
-            
+
             <Button 
               variant="outline"
               onClick={() => document.getElementById('excel-import')?.click()}
@@ -618,7 +617,7 @@ export default function Delivery() {
               <Upload className="ml-2 h-4 w-4" />
               استيراد Excel
             </Button>
-            
+
             <Button 
               variant="outline"
               onClick={() => document.getElementById('excel-full-import')?.click()}
@@ -628,7 +627,7 @@ export default function Delivery() {
               <FileSpreadsheet className="ml-2 h-4 w-4" />
               استيراد كامل
             </Button>
-            
+
             <Button 
               onClick={() => {
                 resetForm();
@@ -648,7 +647,7 @@ export default function Delivery() {
               onChange={handleExcelImport}
               style={{ display: 'none' }}
             />
-            
+
             <input
               id="excel-full-import"
               type="file"
@@ -722,7 +721,7 @@ export default function Delivery() {
           </Card>
         </div>
 
-        
+
 
         {/* فلتر الحالة */}
         <div className="flex justify-between items-center">
@@ -822,7 +821,7 @@ export default function Delivery() {
                     </TableRow>
                   ))}
                   {filteredBookings.length === 0 && (
-                    <TableRow>
+<TableRow>
                       <TableCell colSpan={9} className="text-center py-8">
                         {loading ? "جاري تحميل البيانات..." : "لا توجد حجوزات"}
                       </TableCell>
@@ -882,7 +881,7 @@ export default function Delivery() {
                     <h3 className="font-semibold text-blue-800 mb-2">المرحلة الأولى: المبيعات</h3>
                     <p className="text-sm text-blue-600">يتم تعبئة هذه البيانات من قبل قسم المبيعات</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="booking_date">تاريخ الحجز *</Label>
