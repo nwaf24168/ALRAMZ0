@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -202,6 +201,43 @@ export default function VisitorReception() {
       setLoading(false);
     }
   };
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      const exportData = records.map((record, index) => ({
+        'ت': index + 1,
+        'اسم الزائر': record.name,
+        'رقم الجوال': record.phoneNumber,
+        'سبب الزيارة': record.visitReason,
+        'الموظف المطلوب': record.requestedEmployee,
+        'التاريخ': record.date,
+        'الوقت': record.time,
+        'تاريخ الإنشاء': new Date(record.createdBy).toISOString().split('T')[0],
+        'المنشئ': record.createdBy
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'سجلات الزوار');
+
+      const fileName = `سجلات_الزوار_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "تم التصدير",
+        description: `تم تصدير ${records.length} سجل إلى ملف Excel بنجاح`
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تصدير البيانات"
+      });
+    }
+  };
 
   return (
     <Layout>
@@ -390,6 +426,7 @@ export default function VisitorReception() {
             </div>
           </CardContent>
         </Card>
+        <Button onClick={exportToExcel}>تصدير الي Excel</Button>
       </div>
     </Layout>
   );

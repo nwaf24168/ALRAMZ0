@@ -1,16 +1,47 @@
 import React, { useState, useEffect } from "react";
+import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { DataService } from "@/lib/dataService";
+import { formatDateForDisplay, getCurrentDate, parseExcelDate, formatDateForExcel } from "@/lib/dateUtils";
+import * as XLSX from 'xlsx';
+import { 
+  Phone, 
+  Users, 
+  MessageSquare, 
+  Search, 
+  Plus, 
+  Upload, 
+  Download,
+  Edit, 
+  Trash2, 
+  Eye, 
+  AlertCircle,
+  UserCheck,
+  FileText,
+  Calendar,
+  User
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,13 +59,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Phone, Mail, MessageSquare, Users, Search, Upload, ArrowRight } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
-import { DataService } from "@/lib/dataService";
-import { useAuth } from "@/context/AuthContext";
-import Layout from "@/components/layout/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowRight } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface ReceptionRecord {
   id: string;
@@ -117,6 +144,51 @@ export default function Reception() {
     const fileInput = document.getElementById('excel-file-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
+    }
+  };
+
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      // تحضير البيانات للتصدير
+      const exportData = records.map((record, index) => ({
+        'ت': index + 1,
+        'التاريخ': record.date,
+        'اسم العميل': record.customerName,
+        'رقم الجوال': record.phoneNumber,
+        'المشروع': record.project,
+        'الموظف المختص': record.employee,
+        'طريقة التواصل': record.contactMethod,
+        'نوع الطلب': record.type,
+        'طلب العميل': record.customerRequest,
+        'الإجراء المتخذ': record.action,
+        'الحالة': record.status,
+        'المنشئ': record.createdBy,
+        'تاريخ الإنشاء': record.createdAt ? new Date(record.createdAt).toISOString().split('T')[0] : ''
+      }));
+
+      // إنشاء ورقة العمل
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'سجلات الاستقبال');
+
+      // تصدير الملف
+      const fileName = `سجلات_الاستقبال_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "تم التصدير",
+        description: `تم تصدير ${records.length} سجل إلى ملف Excel بنجاح`
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تصدير البيانات"
+      });
     }
   };
 
@@ -668,6 +740,10 @@ export default function Reception() {
             >
               <Upload className="h-4 w-4 mr-2" />
               {isLoading ? "جاري الاستيراد..." : "استيراد البيانات"}
+            </Button>
+             <Button onClick={exportToExcel} variant="secondary" className="mobile-button">
+              <Download className="h-4 w-4 mr-2" />
+              تصدير Excel
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>

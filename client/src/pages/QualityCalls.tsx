@@ -888,7 +888,7 @@ const QualityCalls = () => {
                                   </Button>
                                   <Button onClick={convertToQualified}>
                                     تأهيل العميل
-                                  </Button>
+                                                                 </Button>
                                 </div>                              </div>
                             </DialogContent>
                           </Dialog>

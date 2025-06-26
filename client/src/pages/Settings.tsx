@@ -383,6 +383,42 @@ export default function Settings() {
 
   const readOnly = isReadOnly("settings");
 
+  // تصدير بيانات المستخدمين
+  const exportUsersToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      const exportData = users.map((user, index) => ({
+        'ت': index + 1,
+        'اسم المستخدم': user.username,
+        'الدور': user.role,
+        'مستوى الصلاحية': user.permissions.level,
+        'نطاق الصلاحية': user.permissions.scope,
+        'الصفحات المسموحة': user.permissions.pages.join(', ') || 'جميع الصفحات'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'المستخدمين');
+
+      const fileName = `المستخدمين_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      addNotification({
+        title: "تم التصدير",
+        message: `تم تصدير ${users.length} مستخدم إلى ملف Excel بنجاح`,
+        type: "success"
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      addNotification({
+        title: "خطأ",
+        message: "فشل في تصدير البيانات",
+        type: "error",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">

@@ -531,6 +531,49 @@ export default function Complaints() {
     );
   }
 
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      const exportData = complaints.map((complaint, index) => ({
+        'ت': index + 1,
+        'رقم الشكوى': complaint.id,
+        'التاريخ': complaint.date,
+        'اسم العميل': complaint.customerName,
+        'المشروع': complaint.project,
+        'رقم الوحدة': complaint.unitNumber || '',
+        'المصدر': complaint.source,
+        'الحالة': complaint.status,
+        'الوصف': complaint.description,
+        'الإجراء': complaint.action || '',
+        'المدة (ساعات)': complaint.duration || 0,
+        'تاريخ الإنشاء': new Date(complaint.createdAt).toISOString().split('T')[0],
+        'المنشئ': complaint.createdBy
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'الشكاوى');
+
+      const fileName = `الشكاوى_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      addNotification({
+        title: "تم التصدير",
+        message: `تم تصدير ${complaints.length} شكوى إلى ملف Excel بنجاح`,
+        type: "success"
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      addNotification({
+        title: "خطأ",
+        message: "فشل في تصدير البيانات",
+        type: "error",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">
@@ -753,6 +796,11 @@ export default function Complaints() {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <Button onClick={exportToExcel}>
+                  تصدير إلى Excel
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select
                   value={selectedStatus}
@@ -888,7 +936,7 @@ export default function Complaints() {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </              Table>
             </div>
           </CardContent>
         </Card>

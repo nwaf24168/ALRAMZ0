@@ -230,7 +230,7 @@ export default function Delivery() {
       // تحضير البيانات للتصدير
       const exportData = bookings.map((booking, index) => ({
         'ت': index + 1,
-        'تاريخ الحجز': booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ الحجز': booking.booking_date || '',
         'اسم العميل': booking.customer_name || '',
         'رقم العميل': booking.customer_phone || '',
         'المشروع': booking.project || '',
@@ -239,21 +239,21 @@ export default function Delivery() {
         'طريقة الدفع': booking.payment_method || '',
         'نوع البيع': booking.sale_type || '',
         'قيمة الوحدة': booking.unit_value || 0,
-        'تاريخ الإفراغ': booking.handover_date ? new Date(booking.handover_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ الإفراغ': booking.handover_date || '',
         'موظف المبيعات': booking.sales_employee || '',
         'مكتملة - المبيعات': booking.sales_completed ? 'نعم' : 'لا',
-        'تاريخ انتهاء البناء': booking.construction_completion_date ? new Date(booking.construction_completion_date).toLocaleDateString('ar-SA') : '',
-        'تاريخ الاستلام النهائي': booking.final_handover_date ? new Date(booking.final_handover_date).toLocaleDateString('ar-SA') : '',
-        'تاريخ نقل عداد الكهرباء': booking.electricity_meter_transfer_date ? new Date(booking.electricity_meter_transfer_date).toLocaleDateString('ar-SA') : '',
-        'تاريخ نقل عداد الماء': booking.water_meter_transfer_date ? new Date(booking.water_meter_transfer_date).toLocaleDateString('ar-SA') : '',
-        'تاريخ التسليم للعميل': booking.customer_delivery_date ? new Date(booking.customer_delivery_date).toLocaleDateString('ar-SA') : '',
+        'تاريخ انتهاء البناء': booking.construction_completion_date || '',
+        'تاريخ الاستلام النهائي': booking.final_handover_date || '',
+        'تاريخ نقل عداد الكهرباء': booking.electricity_meter_transfer_date || '',
+        'تاريخ نقل عداد الماء': booking.water_meter_transfer_date || '',
+        'تاريخ التسليم للعميل': booking.customer_delivery_date || '',
         'ملاحظات المشروع': booking.project_notes || '',
         'مكتملة - المشاريع': booking.projects_completed ? 'نعم' : 'لا',
         'تم التقييم': booking.customer_evaluation_done ? 'نعم' : 'لا',
         'نسبة التقييم': booking.evaluation_percentage || 0,
         'مكتملة - راحة العملاء': booking.customer_service_completed ? 'نعم' : 'لا',
         'الحالة': getBookingStatus(booking),
-        'تاريخ الإنشاء': booking.created_at ? new Date(booking.created_at).toLocaleDateString('ar-SA') : '',
+        'تاريخ الإنشاء': booking.created_at ? new Date(booking.created_at).toISOString().split('T')[0] : '',
         'المنشئ': booking.created_by || ''
       }));
 

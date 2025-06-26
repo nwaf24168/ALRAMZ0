@@ -315,8 +315,8 @@ export class DataService {
 
     return (data || []).map((comment) => ({
       text: comment.text,
-      date: new Date(comment.created_at!).toLocaleDateString("ar-EG"),
-      time: new Date(comment.created_at!).toLocaleTimeString("ar-EG"),
+      date: new Date(comment.created_at!).toLocaleDateString("en-CA"), // YYYY-MM-DD format
+      time: new Date(comment.created_at!).toLocaleTimeString("en-US", { hour12: false }),
       username: comment.username,
     }));
   }
