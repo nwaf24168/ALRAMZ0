@@ -208,7 +208,7 @@ export type Database = {
           description?: string
           duration?: number | null
           expected_closure_time?: string | null
-          id?: number
+          id?: string
           maintenance_delivery_action?: string | null
           priority?: string | null
           project?: string
