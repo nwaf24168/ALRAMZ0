@@ -139,378 +139,7 @@ export interface MetricsContextType {
   ) => void;
 }
 
-// البيانات الافتراضية
-const defaultMetrics = [
-  {
-    title: "نسبة الترشيح للعملاء الجدد",
-    value: "65",
-    target: "65%",
-    icon: null,
-    change: 2.4,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الترشيح بعد السنة",
-    value: "67",
-    target: "65%",
-    icon: null,
-    change: 3.1,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الترشيح للعملاء القدامى",
-    value: "30%",
-    target: "30%",
-    icon: null,
-    change: 1.8,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "جودة التسليم",
-    value: "98%",
-    target: "100%",
-    icon: null,
-    change: 1.5,
-    isPositive: true,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "جودة الصيانة",
-    value: "96%",
-    target: "100%",
-    icon: null,
-    change: 2.8,
-    isPositive: true,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "عدد الثواني للرد",
-    value: "20",
-    target: "3 ثواني",
-    icon: null,
-    change: 566.7,
-    isPositive: false,
-    reachedTarget: false,
-    isLowerBetter: true,
-  },
-  {
-    title: "معدل الرد على المكالمات",
-    value: "18%",
-    target: "80%",
-    icon: null,
-    change: -77.5,
-    isPositive: false,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "راحة العميل (CSAT)",
-    value: "74%",
-    target: "70%",
-    icon: null,
-    change: 5.7,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "سرعة إغلاق طلبات الصيانة",
-    value: "4.45",
-    target: "5 أيام",
-    icon: null,
-    change: -11.0,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: true,
-  },
-  {
-    title: "عدد إعادة فتح طلب",
-    value: "0",
-    target: "0",
-    icon: null,
-    change: 0,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: true,
-  },
-  {
-    title: "جودة إدارة المرافق",
-    value: "80%",
-    target: "80%",
-    icon: null,
-    change: 1.8,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "معدل التحول",
-    value: "2",
-    target: "2%",
-    icon: null,
-    change: 1.5,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الرضا عن التسليم",
-    value: "80%",
-    target: "80%",
-    icon: null,
-    change: 2.3,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "عدد العملاء المرشحين",
-    value: "3607",
-    target: "584",
-    icon: null,
-    change: 517.6,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "المساهمة في المبيعات",
-    value: "5%",
-    target: "5%",
-    icon: null,
-    change: 2.1,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-];
 
-const defaultYearlyMetrics = [
-  {
-    title: "نسبة الترشيح للعملاء الجدد",
-    value: "68%",
-    target: "65%",
-    icon: null,
-    change: 4.6,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الترشيح بعد السنة",
-    value: "70%",
-    target: "65%",
-    icon: null,
-    change: 7.7,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الترشيح للعملاء القدامى",
-    value: "35%",
-    target: "30%",
-    icon: null,
-    change: 16.7,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "جودة التسليم",
-    value: "99%",
-    target: "100%",
-    icon: null,
-    change: 2.5,
-    isPositive: true,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "جودة الصيانة",
-    value: "98%",
-    target: "100%",
-    icon: null,
-    change: 3.8,
-    isPositive: true,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "عدد الثواني للرد",
-    value: "2.5",
-    target: "3 ثواني",
-    icon: null,
-    change: 16.7,
-    isPositive: false,
-    reachedTarget: true,
-    isLowerBetter: true,
-  },
-  {
-    title: "معدل الرد على المكالمات",
-    value: "16%",
-    target: "80%",
-    icon: null,
-    change: -80.0,
-    isPositive: false,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "راحة العميل (CSAT)",
-    value: "78%",
-    target: "70%",
-    icon: null,
-    change: 11.4,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "سرعة إغلاق طلبات الصيانة",
-    value: "2.2",
-    target: "3 أيام",
-    icon: null,
-    change: 26.7,
-    isPositive: false,
-    reachedTarget: true,
-    isLowerBetter: true,
-  },
-  {
-    title: "عدد إعادة فتح طلب",
-    value: "2",
-    target: "0",
-    icon: null,
-    change: 200,
-    isPositive: false,
-    reachedTarget: false,
-    isLowerBetter: true,
-  },
-  {
-    title: "جودة إدارة المرافق",
-    value: "85%",
-    target: "80%",
-    icon: null,
-    change: 6.25,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "معدل التحول",
-    value: "2.5%",
-    target: "2%",
-    icon: null,
-    change: 25.0,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "نسبة الرضا عن التسليم",
-    value: "85%",
-    target: "80%",
-    icon: null,
-    change: 6.25,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-  {
-    title: "عدد العملاء المرشحين",
-    value: "583",
-    target: "7008",
-    icon: null,
-    change: -91.7,
-    isPositive: false,
-    reachedTarget: false,
-    isLowerBetter: false,
-  },
-  {
-    title: "المساهمة في المبيعات",
-    value: "7%",
-    target: "5%",
-    icon: null,
-    change: 40.0,
-    isPositive: true,
-    reachedTarget: true,
-    isLowerBetter: false,
-  },
-];
-
-const defaultQualityData = [
-  { week: "الأسبوع 1", facilityManagement: 89, maintenance: 90, delivery: 95 },
-  { week: "الأسبوع 2", facilityManagement: 92, maintenance: 95, delivery: 97 },
-  { week: "الأسبوع 3", facilityManagement: 93, maintenance: 94, delivery: 96 },
-  { week: "الأسبوع 4", facilityManagement: 96, maintenance: 97, delivery: 98 },
-];
-
-const defaultYearlyQualityData = [
-  {
-    week: "الربع الأول",
-    facilityManagement: 90,
-    maintenance: 92,
-    delivery: 96,
-  },
-  {
-    week: "الربع الثاني",
-    facilityManagement: 93,
-    maintenance: 95,
-    delivery: 97,
-  },
-  {
-    week: "الربع الثالث",
-    facilityManagement: 94,
-    maintenance: 96,
-    delivery: 98,
-  },
-  {
-    week: "الربع الرابع",
-    facilityManagement: 97,
-    maintenance: 98,
-    delivery: 99,
-  },
-];
-
-const defaultNpsData = [
-  { week: "الأسبوع 1", newCustomers: 60, afterFirstYear: 61, longTerm: 30 },
-  { week: "الأسبوع 2", newCustomers: 63, afterFirstYear: 64, longTerm: 32 },
-  { week: "الأسبوع 3", newCustomers: 65, afterFirstYear: 66, longTerm: 36 },
-  { week: "الأسبوع 4", newCustomers: 67, afterFirstYear: 68, longTerm: 37 },
-];
-
-const defaultYearlyNpsData = [
-  { week: "الربع الأول", newCustomers: 61, afterFirstYear: 63, longTerm: 31 },
-  { week: "الربع الثاني", newCustomers: 64, afterFirstYear: 65, longTerm: 34 },
-  { week: "الربع الثالث", newCustomers: 66, afterFirstYear: 67, longTerm: 37 },
-  { week: "الربع الرابع", newCustomers: 68, afterFirstYear: 69, longTerm: 39 },
-];
-
-const defaultCallsData = [
-  { category: "مهتمين", count: 42 },
-  { category: "مهتمين مشاريع", count: 38 },
-  { category: "طلبات صيانة", count: 65 },
-  { category: "استفسارات", count: 58 },
-  { category: "مهتمين مكاتب", count: 34 },
-  { category: "شكاوى", count: 28 },
-];
-
-const defaultYearlyCallsData = [
-  { category: "مهتمين", count: 520 },
-  { category: "مهتمين مشاريع", count: 480 },
-  { category: "طلبات صيانة", count: 790 },
-  { category: "استفسارات", count: 680 },
-  { category: "مهتمين مكاتب", count: 410 },
-  { category: "شكاوى", count: 340 },
-];
 
 const MetricsContext = createContext<MetricsContextType | undefined>(undefined);
 
@@ -518,11 +147,10 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
   const [currentPeriod, setCurrentPeriod] = useState<"weekly" | "yearly">(
     "weekly",
   );
-  const [metrics, setMetrics] = useState<MetricData[]>(defaultMetrics);
-  const [qualityData, setQualityData] =
-    useState<QualityData[]>(defaultQualityData);
-  const [npsData, setNPSData] = useState<NPSData[]>(defaultNpsData);
-  const [callsData, setCallsData] = useState<CallsData[]>(defaultCallsData);
+  const [metrics, setMetrics] = useState<MetricData[]>([]);
+  const [qualityData, setQualityData] = useState<QualityData[]>([]);
+  const [npsData, setNPSData] = useState<NPSData[]>([]);
+  const [callsData, setCallsData] = useState<CallsData[]>([]);
   const [realtimeChannels, setRealtimeChannels] = useState<RealtimeChannel[]>(
     [],
   );
@@ -530,51 +158,51 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
     useState<CustomerServiceData>({
       _period: "weekly",
       calls: {
-        complaints: 28,
-        contactRequests: 42,
-        maintenanceRequests: 65,
-        inquiries: 58,
-        officeInterested: 34,
-        projectsInterested: 38,
-        customersInterested: 42,
-        total: 307,
+        complaints: 0,
+        contactRequests: 0,
+        maintenanceRequests: 0,
+        inquiries: 0,
+        officeInterested: 0,
+        projectsInterested: 0,
+        customersInterested: 0,
+        total: 0,
       },
       inquiries: {
-        general: 20,
-        documentRequests: 10,
-        deedInquiries: 8,
-        apartmentRentals: 12,
-        soldProjects: 8,
+        general: 0,
+        documentRequests: 0,
+        deedInquiries: 0,
+        apartmentRentals: 0,
+        soldProjects: 0,
       },
       maintenance: {
-        cancelled: 5,
-        resolved: 45,
-        inProgress: 15,
+        cancelled: 0,
+        resolved: 0,
+        inProgress: 0,
       },
     });
   const [maintenanceSatisfaction, setMaintenanceSatisfaction] =
     useState<MaintenanceSatisfactionData>({
       comments: [],
       serviceQuality: {
-        veryHappy: 30,
-        happy: 40,
-        neutral: 20,
-        unhappy: 8,
-        veryUnhappy: 2,
+        veryHappy: 0,
+        happy: 0,
+        neutral: 0,
+        unhappy: 0,
+        veryUnhappy: 0,
       },
       closureTime: {
-        veryHappy: 25,
-        happy: 45,
-        neutral: 20,
-        unhappy: 7,
-        veryUnhappy: 3,
+        veryHappy: 0,
+        happy: 0,
+        neutral: 0,
+        unhappy: 0,
+        veryUnhappy: 0,
       },
       firstTimeResolution: {
-        veryHappy: 35,
-        happy: 38,
-        neutral: 18,
-        unhappy: 6,
-        veryUnhappy: 3,
+        veryHappy: 0,
+        happy: 0,
+        neutral: 0,
+        unhappy: 0,
+        veryUnhappy: 0,
       },
     });
 
@@ -588,27 +216,18 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         const metricsFromDB = await DataService.getMetrics(currentPeriod);
         console.log("المؤشرات المحملة من قاعدة البيانات:", metricsFromDB);
 
-        if (metricsFromDB.length > 0) {
-          const formattedMetrics = metricsFromDB.map((record) => ({
-            title: record.title,
-            value: record.value,
-            target: record.target,
-            icon: null,
-            change: record.change,
-            isPositive: record.is_positive,
-            reachedTarget: record.reached_target,
-            isLowerBetter: record.is_lower_better,
-          }));
-          setMetrics(formattedMetrics);
-          console.log("تم تحديث المؤشرات:", formattedMetrics);
-        } else {
-          console.log(
-            "لا توجد مؤشرات في قاعدة البيانات، استخدام البيانات الافتراضية",
-          );
-          setMetrics(
-            currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics,
-          );
-        }
+        const formattedMetrics = metricsFromDB.map((record) => ({
+          title: record.title,
+          value: record.value,
+          target: record.target,
+          icon: null,
+          change: record.change,
+          isPositive: record.is_positive,
+          reachedTarget: record.reached_target,
+          isLowerBetter: record.is_lower_better,
+        }));
+        setMetrics(formattedMetrics);
+        console.log("تم تحديث المؤشرات:", formattedMetrics);
 
         // تحميل بيانات خدمة العملاء
         const customerServiceFromDB =
@@ -629,23 +248,11 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         });
       } catch (error) {
         console.error("خطأ في تحميل البيانات من Supabase:", error);
-        // استخدام البيانات الافتراضية في حالة الخطأ
-        setMetrics(
-          currentPeriod === "weekly" ? defaultMetrics : defaultYearlyMetrics,
-        );
-        setQualityData(
-          currentPeriod === "weekly"
-            ? defaultQualityData
-            : defaultYearlyQualityData,
-        );
-        setNPSData(
-          currentPeriod === "weekly" ? defaultNpsData : defaultYearlyNpsData,
-        );
-        setCallsData(
-          currentPeriod === "weekly"
-            ? defaultCallsData
-            : defaultYearlyCallsData,
-        );
+        // تعيين مصفوفات فارغة في حالة الخطأ
+        setMetrics([]);
+        setQualityData([]);
+        setNPSData([]);
+        setCallsData([]);
       }
     };
 
