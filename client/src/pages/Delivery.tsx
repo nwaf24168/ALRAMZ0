@@ -722,23 +722,7 @@ export default function Delivery() {
           </Card>
         </div>
 
-        {/* معلومات إرشادية لـ Excel */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <FileSpreadsheet className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div className="text-sm">
-                <h4 className="font-medium text-blue-800 mb-1">إرشادات استخدام Excel:</h4>
-                <ul className="text-blue-700 space-y-1">
-                  <li>• <strong>تصدير:</strong> تحميل جميع الحجوزات الحالية في ملف Excel</li>
-                  <li>• <strong>استيراد:</strong> إضافة حجوزات جديدة من ملف Excel دون حذف البيانات الموجودة</li>
-                  <li>• <strong>استيراد كامل:</strong> استبدال جميع الحجوزات الحالية بالبيانات من ملف Excel</li>
-                  <li>• تأكد من أن اسم العميل مطلوب في كل سطر</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* فلتر الحالة */}
         <div className="flex justify-between items-center">
