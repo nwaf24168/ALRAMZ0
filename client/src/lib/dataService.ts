@@ -356,17 +356,23 @@ export class DataService {
 
   // إدارة الشكاوى
   static async saveComplaint(complaint: any): Promise<void> {
-    const record: ComplaintRecord = {
+    const record = {
       complaint_id: complaint.id,
+      priority: complaint.priority || 'متوسطة',
       date: complaint.date,
       customer_name: complaint.customerName,
       project: complaint.project,
-      unit_number: complaint.unitNumber,
+      unit_number: complaint.unitNumber || null,
       source: complaint.source,
       status: complaint.status,
+      request_number: complaint.requestNumber || null,
       description: complaint.description,
-      action: complaint.action,
+      maintenance_delivery_action: complaint.maintenanceDeliveryAction || null,
+      action: complaint.action || null,
       duration: complaint.duration || 0,
+      expected_closure_time: complaint.expectedClosureTime || null,
+      created_at: complaint.createdAt || new Date().toISOString(),
+      updated_at: complaint.updatedAt || new Date().toISOString(),
       created_by: complaint.createdBy,
       updated_by: complaint.updatedBy,
     };
@@ -477,15 +483,19 @@ export class DataService {
 
       return {
         id: record.complaint_id,
+        priority: record.priority,
         date: record.date,
         customerName: record.customer_name,
         project: record.project,
         unitNumber: record.unit_number || "",
         source: record.source,
         status: record.status,
+        requestNumber: record.request_number || null,
         description: record.description,
+        maintenanceDeliveryAction: record.maintenance_delivery_action || null,
         action: record.action || "",
         duration: record.duration || 0,
+        expectedClosureTime: record.expected_closure_time || null,
         createdBy: record.created_by,
         updatedBy: record.updated_by,
         createdAt: record.created_at,

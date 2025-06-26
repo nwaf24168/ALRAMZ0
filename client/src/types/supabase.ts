@@ -165,8 +165,12 @@ export type Database = {
           date: string
           description: string
           duration: number | null
+          expected_closure_time: string | null
           id: string
+          maintenance_delivery_action: string | null
+          priority: string | null
           project: string
+          request_number: string | null
           source: string
           status: string
           unit_number: string | null
@@ -182,8 +186,12 @@ export type Database = {
           date: string
           description: string
           duration?: number | null
+          expected_closure_time?: string | null
           id?: string
+          maintenance_delivery_action?: string | null
+          priority?: string | null
           project: string
+          request_number?: string | null
           source: string
           status: string
           unit_number?: string | null
@@ -199,8 +207,12 @@ export type Database = {
           date?: string
           description?: string
           duration?: number | null
-          id?: string
+          expected_closure_time?: string | null
+          id?: number
+          maintenance_delivery_action?: string | null
+          priority?: string | null
           project?: string
+          request_number?: string | null
           source?: string
           status?: string
           unit_number?: string | null

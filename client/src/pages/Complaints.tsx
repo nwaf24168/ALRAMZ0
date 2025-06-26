@@ -61,7 +61,17 @@ import {
   CheckCircle2,
   History,
   X,
+  Star,
+  Settings,
 } from "lucide-react";
+
+// أولويات الشكاوى
+const complaintPriorities = [
+  { value: "عالية", label: "عالية" },
+  { value: "متوسطة", label: "متوسطة" },
+  { value: "منخفضة", label: "منخفضة" },
+  { value: "عاجلة", label: "عاجلة" },
+];
 
 // حالات الشكاوى
 const complaintStatuses = [
@@ -70,6 +80,8 @@ const complaintStatuses = [
   { value: "لازالت قائمة", label: "لازالت قائمة" },
   { value: "لم يتم حلها", label: "لم يتم حلها" },
   { value: "جديدة", label: "جديدة" },
+  { value: "قيد المعالجة", label: "قيد المعالجة" },
+  { value: "مغلقة", label: "مغلقة" },
 ];
 
 // مصادر الشكاوى
@@ -96,15 +108,19 @@ interface ComplaintUpdate {
 
 interface Complaint {
   id: string;
+  priority: string;
   date: string;
   customerName: string;
   project: string;
   unitNumber: string;
   source: string;
   status: string;
+  requestNumber: string;
   description: string;
+  maintenanceDeliveryAction: string;
   action: string;
   duration: number;
+  expectedClosureTime: string;
   createdBy: string;
   createdAt: string;
   updatedBy: string | null;
@@ -121,6 +137,7 @@ export default function Complaints() {
   const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedPriority, setSelectedPriority] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -137,8 +154,10 @@ export default function Complaints() {
       | "updatedBy"
       | "updatedAt"
       | "updates"
+      | "requestNumber"
     >
   >({
+    priority: "متوسطة",
     date: new Date().toISOString().split("T")[0],
     customerName: "",
     project: "",
@@ -146,7 +165,9 @@ export default function Complaints() {
     source: "",
     status: "جديدة",
     description: "",
+    maintenanceDeliveryAction: "",
     action: "",
+    expectedClosureTime: "",
   });
 
   // تحميل البيانات من قاعدة البيانات عند تحميل المكون
@@ -197,12 +218,16 @@ export default function Complaints() {
       complaint.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       complaint.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
       complaint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      complaint.requestNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       complaint.id.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       selectedStatus === "all" || complaint.status === selectedStatus;
 
-    return matchesSearch && matchesStatus;
+    const matchesPriority =
+      selectedPriority === "all" || complaint.priority === selectedPriority;
+
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const handleNewComplaintChange = (field: string, value: string) => {
@@ -220,6 +245,7 @@ export default function Complaints() {
   const handleEditSetup = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setNewComplaint({
+      priority: complaint.priority,
       date: complaint.date,
       customerName: complaint.customerName,
       project: complaint.project,
@@ -227,7 +253,9 @@ export default function Complaints() {
       source: complaint.source,
       status: complaint.status,
       description: complaint.description,
+      maintenanceDeliveryAction: complaint.maintenanceDeliveryAction,
       action: complaint.action,
+      expectedClosureTime: complaint.expectedClosureTime,
     });
     setIsEditDialogOpen(true);
   };
@@ -241,6 +269,11 @@ export default function Complaints() {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
+  const generateRequestNumber = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    return `REQ-${timestamp}`;
+  };
+
   const handleAddComplaint = async () => {
     if (!user) {
       addNotification({
@@ -252,11 +285,13 @@ export default function Complaints() {
     }
 
     const newId = generateComplaintId();
+    const requestNumber = generateRequestNumber();
     const now = new Date().toISOString();
 
     const complaint: Complaint = {
       ...newComplaint,
       id: newId,
+      requestNumber: requestNumber,
       createdBy: user.username,
       duration: 0,
       createdAt: now,
@@ -271,7 +306,7 @@ export default function Complaints() {
 
       addNotification({
         title: "تمت الإضافة",
-        message: `تم إضافة الشكوى رقم ${newId} بنجاح في قاعدة البيانات`,
+        message: `تم إضافة الشكوى رقم ${requestNumber} بنجاح في قاعدة البيانات`,
         type: "success",
       });
 
@@ -281,6 +316,7 @@ export default function Complaints() {
 
       // إعادة تعيين النموذج
       setNewComplaint({
+        priority: "متوسطة",
         date: new Date().toISOString().split("T")[0],
         customerName: "",
         project: "",
@@ -288,7 +324,9 @@ export default function Complaints() {
         source: "",
         status: "جديدة",
         description: "",
+        maintenanceDeliveryAction: "",
         action: "",
+        expectedClosureTime: "",
       });
     } catch (error) {
       console.error("خطأ في إضافة الشكوى:", error);
@@ -308,13 +346,16 @@ export default function Complaints() {
 
     // تتبع التغييرات في كل الحقول
     const fieldsToCheck = {
+      priority: "الأولوية",
       customerName: "اسم العميل",
       project: "المشروع",
       unitNumber: "رقم الوحدة",
       source: "مصدر الشكوى",
       status: "الحالة",
       description: "تفاصيل الشكوى",
+      maintenanceDeliveryAction: "إجراء الصيانة والتسليم",
       action: "الإجراء المتخذ",
+      expectedClosureTime: "الوقت المتوقع لإغلاق الشكوى",
     };
 
     Object.entries(fieldsToCheck).forEach(([field, label]) => {
@@ -393,7 +434,7 @@ export default function Complaints() {
 
       addNotification({
         title: "تم الحذف",
-        message: `تم حذف الشكوى رقم ${selectedComplaint.id} بنجاح من قاعدة البيانات`,
+        message: `تم حذف الشكوى رقم ${selectedComplaint.requestNumber} بنجاح من قاعدة البيانات`,
         type: "success",
       });
 
@@ -411,14 +452,14 @@ export default function Complaints() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "غير محدد";
-    
+
     const date = new Date(dateString);
-    
+
     // التحقق من صحة التاريخ
     if (isNaN(date.getTime())) {
       return "تاريخ غير صحيح";
     }
-    
+
     return new Intl.DateTimeFormat("ar-SA", {
       year: "numeric",
       month: "long",
@@ -431,6 +472,7 @@ export default function Complaints() {
   // دالة مساعدة للحصول على اسم الحقل بالعربية
   const getFieldName = (field: string): string => {
     const fieldNames: { [key: string]: string } = {
+      priority: "الأولوية",
       status: "الحالة",
       action: "الإجراء المتخذ",
       description: "تفاصيل الشكوى",
@@ -438,8 +480,26 @@ export default function Complaints() {
       project: "المشروع",
       unitNumber: "رقم الوحدة",
       source: "مصدر الشكوى",
+      maintenanceDeliveryAction: "إجراء الصيانة والتسليم",
+      expectedClosureTime: "الوقت المتوقع لإغلاق الشكوى",
     };
     return fieldNames[field] || field;
+  };
+
+  // دالة للحصول على لون الأولوية
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "عاجلة":
+        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+      case "عالية":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
+      case "متوسطة":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+      case "منخفضة":
+        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+    }
   };
 
   // فحص صلاحيات الوصول للصفحة
@@ -486,14 +546,35 @@ export default function Complaints() {
                   إضافة شكوى جديدة
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>إضافة شكوى جديدة</DialogTitle>
                 <DialogDescription>
-                  أدخل بيانات الشكوى لإضافتها إلى السجل وتعيين رقم تذكرة جديد
+                  أدخل بيانات الشكوى لإضافتها إلى السجل وتعيين رقم طلب جديد
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="priority">الأولوية</Label>
+                  <Select
+                    value={newComplaint.priority}
+                    onValueChange={(value) =>
+                      handleNewComplaintChange("priority", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الأولوية" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {complaintPriorities.map((priority) => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          {priority.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="date">التاريخ</Label>
                   <Input
@@ -508,7 +589,7 @@ export default function Complaints() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="customerName">اسم العميل</Label>
+                  <Label htmlFor="customerName">العميل</Label>
                   <Input
                     id="customerName"
                     value={newComplaint.customerName}
@@ -587,33 +668,47 @@ export default function Complaints() {
                   </Select>
                 </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label
-                    htmlFor="description"
-                    className="text-sm font-medium text-gray-300 flex items-center gap-2"
-                  >
-                    <AlertCircle className="w-4 h-4 text-yellow-400" />
-                    تفاصيل الشكوى
-                  </Label>
-                  <div className="relative">
-                    <Textarea
-                      id="description"
-                      value={newComplaint.description}
-                      onChange={(e) =>
-                        handleNewComplaintChange("description", e.target.value)
-                      }
-                      placeholder="أدخل تفاصيل الشكوى هنا..."
-                      className="min-h-[150px] bg-[#1a1c23] border border-gray-800/50 rounded-xl p-4 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y"
-                      required
-                    />
-                    <div className="absolute bottom-3 left-3 text-xs text-gray-500">
-                      يرجى كتابة تفاصيل الشكوى بشكل واضح ودقيق
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expectedClosureTime">الوقت المتوقع لإغلاق الشكوى</Label>
+                  <Input
+                    id="expectedClosureTime"
+                    value={newComplaint.expectedClosureTime}
+                    onChange={(e) =>
+                      handleNewComplaintChange("expectedClosureTime", e.target.value)
+                    }
+                    placeholder="مثال: 3 أيام"
+                  />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="action">الإجراء المتخذ</Label>
+                <div className="col-span-1 md:col-span-3 space-y-2">
+                  <Label htmlFor="description">الشكوى</Label>
+                  <Textarea
+                    id="description"
+                    value={newComplaint.description}
+                    onChange={(e) =>
+                      handleNewComplaintChange("description", e.target.value)
+                    }
+                    placeholder="أدخل تفاصيل الشكوى هنا..."
+                    className="min-h-[100px]"
+                    required
+                  />
+                </div>
+
+                <div className="col-span-1 md:col-span-3 space-y-2">
+                  <Label htmlFor="maintenanceDeliveryAction">إجراء الصيانة والتسليم</Label>
+                  <Textarea
+                    id="maintenanceDeliveryAction"
+                    value={newComplaint.maintenanceDeliveryAction}
+                    onChange={(e) =>
+                      handleNewComplaintChange("maintenanceDeliveryAction", e.target.value)
+                    }
+                    placeholder="أدخل إجراءات الصيانة والتسليم"
+                    className="min-h-[80px]"
+                  />
+                </div>
+
+                <div className="col-span-1 md:col-span-3 space-y-2">
+                  <Label htmlFor="action">الإجراء</Label>
                   <Textarea
                     id="action"
                     value={newComplaint.action}
@@ -651,7 +746,7 @@ export default function Complaints() {
               <div className="relative flex-1">
                 <Filter className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="بحث عن عميل، مشروع، أو شكوى..."
+                  placeholder="بحث عن عميل، مشروع، رقم طلب، أو شكوى..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pr-9"
@@ -675,24 +770,47 @@ export default function Complaints() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-muted-foreground" />
+                <Select
+                  value={selectedPriority}
+                  onValueChange={setSelectedPriority}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="جميع الأولويات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأولويات</SelectItem>
+                    {complaintPriorities.map((priority) => (
+                      <SelectItem key={priority.value} value={priority.value}>
+                        {priority.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">رقم التذكرة</TableHead>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">اسم العميل</TableHead>
-                    <TableHead className="text-right">المشروع</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">الإجراءات</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">الأولوية</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">التاريخ</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">العميل</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">المشروع</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">رقم الوحدة</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">مصدر الشكوى</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">الحالة</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">رقم الطلب</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">مدة الشكوى</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
+                      <TableCell colSpan={10} className="text-center py-6">
                         {complaints.length === 0 
                           ? "لا توجد شكاوى في قاعدة البيانات"
                           : "لا توجد شكاوى متطابقة مع معايير البحث"
@@ -702,19 +820,26 @@ export default function Complaints() {
                   ) : (
                     filteredComplaints.map((complaint) => (
                       <TableRow key={complaint.id}>
-                        <TableCell className="font-medium">
-                          {complaint.id}
+                        <TableCell>
+                          <div
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(complaint.priority)}`}
+                          >
+                            {complaint.priority}
+                          </div>
                         </TableCell>
-                        <TableCell>{complaint.date}</TableCell>
+                        <TableCell className="whitespace-nowrap">{complaint.date}</TableCell>
                         <TableCell>{complaint.customerName}</TableCell>
                         <TableCell>{complaint.project}</TableCell>
+                        <TableCell>{complaint.unitNumber || "غير محدد"}</TableCell>
+                        <TableCell className="whitespace-nowrap">{complaint.source}</TableCell>
                         <TableCell>
                           <div
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               complaint.status === "تم حلها" ||
                               complaint.status === "تم الحل"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                : complaint.status === "لازالت قائمة"
+                                : complaint.status === "لازالت قائمة" ||
+                                  complaint.status === "قيد المعالجة"
                                   ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
                                   : complaint.status === "لم يتم حلها"
                                     ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
@@ -724,6 +849,10 @@ export default function Complaints() {
                             {complaint.status}
                           </div>
                         </TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {complaint.requestNumber || complaint.id}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{complaint.duration} يوم</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
@@ -765,601 +894,267 @@ export default function Complaints() {
         </Card>
       </div>
 
-      {/* باقي مربعات الحوار تبقى كما هي */}
+      {/* مربع حوار عرض التفاصيل - سيتم تحديثه لاحقاً ليشمل الحقول الجديدة */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#1a1c23] to-[#1f2128] border border-gray-800/50 shadow-2xl">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           {selectedComplaint && (
             <>
-              <DialogHeader className="border-b border-gray-800/50 pb-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <DialogTitle className="text-xl font-bold text-white flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-lg bg-gray-800/50">
-                        <FileText className="w-5 h-5 text-blue-400" />
-                      </div>
-                      <span>تفاصيل الشكوى #{selectedComplaint.id}</span>
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-400">
-                      تاريخ التسجيل: {formatDate(selectedComplaint.createdAt)}
-                    </DialogDescription>
-                  </div>
-                  <div
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-                      selectedComplaint.status === "تم حلها" ||
-                      selectedComplaint.status === "مغلقة"
-                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                        : selectedComplaint.status === "قيد المعالجة"
-                          ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                          : selectedComplaint.status === "معلقة"
-                            ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                            : "bg-red-500/10 text-red-400 border border-red-500/20"
-                    }`}
-                  >
-                    {selectedComplaint.status}
-                  </div>
-                </div>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <FileText className="w-5 h-5" />
+                  تفاصيل الشكوى {selectedComplaint.requestNumber || selectedComplaint.id}
+                </DialogTitle>
               </DialogHeader>
-
-              <div className="space-y-8">
-                {/* معلومات العميل والمشروع */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                    <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-400" />
-                      معلومات العميل والمشروع
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-blue-500/10">
-                          <User className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">
-                            اسم العميل
-                          </div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.customerName}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-purple-500/10">
-                          <Home className="w-5 h-5 text-purple-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">المشروع</div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.project}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-emerald-500/10">
-                          <MapPin className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">
-                            رقم الوحدة
-                          </div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.unitNumber || "غير محدد"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-yellow-500/10">
-                          <Phone className="w-5 h-5 text-yellow-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">
-                            مصدر الشكوى
-                          </div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.source}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                    <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-red-400" />
-                      معلومات الوقت والإنشاء
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-red-500/10">
-                          <Clock className="w-5 h-5 text-red-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">المدة</div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.duration} يوم
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-orange-500/10">
-                          <Calendar className="w-5 h-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">
-                            تاريخ الإنشاء
-                          </div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.createdAt ? 
-                                  new Date(selectedComplaint.createdAt).toLocaleDateString("ar-EG") : 
-                                  "غير محدد"
-                                }
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                        <div className="p-2 rounded-lg bg-teal-500/10">
-                          <User className="w-5 h-5 text-teal-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-400">
-                            تم الإنشاء بواسطة
-                          </div>
-                          <div className="font-medium text-white">
-                            {selectedComplaint.createdBy}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* معلومات آخر تحديث */}
-                      {selectedComplaint.updatedBy && selectedComplaint.updatedAt && (
-                        <>
-                          <div className="border-t border-gray-800/50 pt-4"></div>
-                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                              <Edit className="w-5 h-5 text-blue-400" />
-                            </div>
-                            <div>
-                              <div className="text-xs text-gray-400">
-                                آخر تحديث بواسطة
-                              </div>
-                              <div className="font-medium text-white">
-                                {selectedComplaint.updatedBy}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/30 transition-colors">
-                            <div className="p-2 rounded-lg bg-purple-500/10">
-                              <Calendar className="w-5 h-5 text-purple-400" />
-                            </div>
-                            <div>
-                              <div className="text-xs text-gray-400">
-                                تاريخ آخر تحديث
-                              </div>
-                              <div className="font-medium text-white">
-                                {selectedComplaint.updatedAt ? 
-                                  `${new Date(selectedComplaint.updatedAt).toLocaleDateString("ar-EG")} - ${new Date(selectedComplaint.updatedAt).toLocaleTimeString("ar-EG")}` :
-                                  "غير محدد"
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">الأولوية</Label>
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(selectedComplaint.priority)}`}>
+                    {selectedComplaint.priority}
                   </div>
                 </div>
-
-                {/* تفاصيل الشكوى والإجراء */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                    <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-yellow-400" />
-                      تفاصيل الشكوى
-                    </h3>
-                    <div className="p-4 bg-gray-800/30 rounded-lg min-h-[120px]">
-                      <p className="text-white leading-relaxed">
-                        {selectedComplaint.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                    <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-green-400" />
-                      الإجراء المتخذ
-                    </h3>
-                    <div className="p-4 bg-gray-800/30 rounded-lg min-h-[120px]">
-                      <p className="text-white leading-relaxed">
-                        {selectedComplaint.action || "لم يتم اتخاذ إجراء بعد"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">التاريخ</Label>
+                  <p className="text-sm">{selectedComplaint.date}</p>
                 </div>
-
-                {/* سجل التحديثات - يظهر دائماً */}
-                <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                  <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                    <History className="w-4 h-4 text-blue-400" />
-                    سجل التحديثات والتعديلات
-                    {selectedComplaint.updates && selectedComplaint.updates.length > 0 && (
-                      <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs">
-                        {selectedComplaint.updates.length} تحديث
-                      </span>
-                    )}
-                  </h3>
-
-                  {selectedComplaint.updates && selectedComplaint.updates.length > 0 ? (
-                    <div className="space-y-4 max-h-80 overflow-y-auto">
-                      {selectedComplaint.updates
-                        .slice()
-                        .reverse()
-                        .map((update, index) => (
-                        <div
-                          key={index}
-                          className="relative p-4 rounded-lg bg-gradient-to-r from-gray-800/20 to-gray-800/40 border border-gray-700/30 hover:border-gray-600/50 transition-all duration-200"
-                        >
-                          {/* خط التوصيل للتحديثات */}
-                          {index < selectedComplaint.updates.length - 1 && (
-                            <div className="absolute left-6 bottom-0 w-0.5 h-4 bg-gradient-to-b from-blue-500/50 to-transparent"></div>
-                          )}
-
-                          <div className="flex items-start gap-4">
-                            <div className="p-2.5 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30">
-                              <Edit className="w-4 h-4 text-blue-400" />
-                            </div>
-
-                            <div className="flex-1 space-y-3">
-                              {/* رأس التحديث */}
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-blue-400">
-                                    {update.updatedBy}
-                                  </span>
-                                  <span className="text-xs text-gray-500">•</span>
-                                  <span className="text-xs text-gray-400">
-                                    قام بالتحديث
-                                  </span>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-xs text-gray-300">
-                                    {new Date(update.updatedAt).toLocaleDateString("ar-EG")}
-                                  </div>
-                                  <div className="text-xs text-gray-400">
-                                    {new Date(update.updatedAt).toLocaleTimeString("ar-EG", {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* تفاصيل التحديث */}
-                              <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/20">
-                                <p className="text-sm text-white mb-3 flex items-center gap-2">
-                                  <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                  تم تحديث حقل: <span className="font-semibold text-yellow-400">{getFieldName(update.field)}</span>
-                                </p>
-
-                                <div className="grid grid-cols-1 gap-3">
-                                  {/* القيمة القديمة */}
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="text-xs text-gray-400 whitespace-nowrap">القيمة السابقة:</span>
-                                      <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-3 py-1.5 rounded-md text-xs max-w-full overflow-hidden">
-                                        <span className="block truncate" title={update.oldValue || "فارغ"}>
-                                          {update.oldValue || "فارغ"}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* القيمة الجديدة */}
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="text-xs text-gray-400 whitespace-nowrap">القيمة الجديدة:</span>
-                                      <div className="bg-green-500/10 border border-green-500/20 text-green-300 px-3 py-1.5 rounded-md text-xs max-w-full overflow-hidden">
-                                        <span className="block truncate" title={update.newValue || "فارغ"}>
-                                          {update.newValue || "فارغ"}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800/50 flex items-center justify-center">
-                        <History className="w-8 h-8 text-gray-500" />
-                      </div>
-                      <p className="text-gray-400 text-sm">لا توجد تحديثات على هذه الشكوى</p>
-                      <p className="text-gray-500 text-xs mt-1">
-                        ستظهر هنا جميع التعديلات التي تتم على الشكوى
-                      </p>
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">العميل</Label>
+                  <p className="text-sm">{selectedComplaint.customerName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">المشروع</Label>
+                  <p className="text-sm">{selectedComplaint.project}</p>
+                </div>
+                <div className="space-y-2">                  <Label className="text-sm font-medium">رقم الوحدة / العمارة</Label>
+                  <p className="text-sm">{selectedComplaint.unitNumber || "غير محدد"}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">مصدر الشكوى</Label>
+                  <p className="text-sm">{selectedComplaint.source}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">الحالة</Label>
+                  <p className="text-sm">{selectedComplaint.status}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">رقم الطلب</Label>
+                  <p className="text-sm font-mono">{selectedComplaint.requestNumber || selectedComplaint.id}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">مدة الشكوى</Label>
+                  <p className="text-sm">{selectedComplaint.duration} يوم</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">الوقت المتوقع لإغلاق الشكوى</Label>
+                  <p className="text-sm">{selectedComplaint.expectedClosureTime || "غير محدد"}</p>
+                </div>
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
+                  <Label className="text-sm font-medium">الشكوى</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[100px]">
+                    {selectedComplaint.description}
+                  </p>
+                </div>
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
+                  <Label className="text-sm font-medium">إجراء الصيانة والتسليم</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                    {selectedComplaint.maintenanceDeliveryAction || "لم يتم اتخاذ إجراء بعد"}
+                  </p>
+                </div>
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
+                  <Label className="text-sm font-medium">الإجراء</Label>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                    {selectedComplaint.action || "لم يتم اتخاذ إجراء بعد"}
+                  </p>
                 </div>
               </div>
-
-              <DialogFooter className="mt-8">
-                <Button
-                  onClick={() => setIsViewDialogOpen(false)}
-                  className="bg-gray-800 hover:bg-gray-700 text-white"
-                >
-                  إغلاق
-                </Button>
+              <DialogFooter>
+                <Button onClick={() => setIsViewDialogOpen(false)}>إغلاق</Button>
               </DialogFooter>
             </>
           )}
         </DialogContent>
       </Dialog>
 
+      {/* مربع حوار التعديل */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#1a1c23] to-[#1f2128] border border-gray-800/50 shadow-2xl">
-          <DialogHeader className="border-b border-gray-800/50 pb-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-xl font-bold text-white flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-gray-800/50">
-                    <Edit className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <span>تعديل الشكوى #{selectedComplaint?.id}</span>
-                </DialogTitle>
-                <DialogDescription className="text-gray-400">
-                  قم بتعديل بيانات الشكوى في النموذج أدناه
-                </DialogDescription>
-              </div>
-              <button
-                onClick={() => setIsEditDialogOpen(false)}
-                className="p-1 hover:bg-gray-800/50 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400 hover:text-white" />
-              </button>
-            </div>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>تعديل الشكوى {selectedComplaint?.requestNumber || selectedComplaint?.id}</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-8">
-            {/* معلومات العميل والمشروع */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-400" />
-                  معلومات العميل والمشروع
-                </h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-date"
-                      className="text-xs text-gray-400"
-                    >
-                      التاريخ
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-date"
-                        type="date"
-                        value={newComplaint.date}
-                        onChange={(e) =>
-                          handleNewComplaintChange("date", e.target.value)
-                        }
-                        className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white"
-                        required
-                      />
-                      <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-customerName"
-                      className="text-xs text-gray-400"
-                    >
-                      اسم العميل
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-customerName"
-                        value={newComplaint.customerName}
-                        onChange={(e) =>
-                          handleNewComplaintChange(
-                            "customerName",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="أدخل اسم العميل"
-                        className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white pr-9"
-                        required
-                      />
-                      <User className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-project"
-                      className="text-xs text-gray-400"
-                    >
-                      المشروع
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-project"
-                        value={newComplaint.project}
-                        onChange={(e) =>
-                          handleNewComplaintChange("project", e.target.value)
-                        }
-                        placeholder="أدخل اسم المشروع"
-                        className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white pr-9"
-                        required
-                      />
-                      <Home className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-unitNumber"
-                      className="text-xs text-gray-400"
-                    >
-                      رقم الوحدة / العمارة
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-unitNumber"
-                        value={newComplaint.unitNumber}
-                        onChange={(e) =>
-                          handleNewComplaintChange("unitNumber", e.target.value)
-                        }
-                        placeholder="أدخل رقم الوحدة"
-                        className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white pr-9"
-                      />
-                      <MapPin className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-400" />
-                  معلومات الشكوى
-                </h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-source"
-                      className="text-xs text-gray-400"
-                    >
-                      مصدر الشكوى
-                    </Label>
-                    <Select
-                      value={newComplaint.source}
-                      onValueChange={(value) =>
-                        handleNewComplaintChange("source", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white">
-                        <SelectValue placeholder="اختر مصدر الشكوى" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {complaintSources.map((source) => (
-                          <SelectItem key={source.value} value={source.value}>
-                            {source.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="edit-status"
-                      className="text-xs text-gray-400"
-                    >
-                      الحالة
-                    </Label>
-                    <Select
-                      value={newComplaint.status}
-                      onValueChange={(value) =>
-                        handleNewComplaintChange("status", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white">
-                        <SelectValue placeholder="اختر حالة الشكوى" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {complaintStatuses.slice(1).map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-priority">الأولوية</Label>
+              <Select
+                value={newComplaint.priority}
+                onValueChange={(value) =>
+                  handleNewComplaintChange("priority", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الأولوية" />
+                </SelectTrigger>
+                <SelectContent>
+                  {complaintPriorities.map((priority) => (
+                    <SelectItem key={priority.value} value={priority.value}>
+                      {priority.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* تفاصيل الشكوى والإجراء */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-400" />
-                  تفاصيل الشكوى
-                </h3>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edit-description"
-                    className="text-xs text-gray-400"
-                  >
-                    تفاصيل الشكوى
-                  </Label>
-                  <div className="relative">
-                    <Textarea
-                      id="edit-description"
-                      value={newComplaint.description}
-                      onChange={(e) =>
-                        handleNewComplaintChange("description", e.target.value)
-                      }
-                      placeholder="أدخل تفاصيل الشكوى هنا..."
-                      className="min-h-[150px] bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white placeholder:text-gray-500 resize-y"
-                      required
-                    />
-                    <AlertCircle className="absolute right-3 top-3 h-4 w-4 text-yellow-400" />
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">التاريخ</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={newComplaint.date}
+                onChange={(e) =>
+                  handleNewComplaintChange("date", e.target.value)
+                }
+                required
+              />
+            </div>
 
-              <div className="bg-[#20232b] rounded-xl p-6 space-y-6 border border-gray-800/30">
-                <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  الإجراء المتخذ
-                </h3>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edit-action"
-                    className="text-xs text-gray-400"
-                  >
-                    الإجراء المتخذ
-                  </Label>
-                  <div className="relative">
-                    <Textarea
-                      id="edit-action"
-                      value={newComplaint.action}
-                      onChange={(e) =>
-                        handleNewComplaintChange("action", e.target.value)
-                      }
-                      placeholder="أدخل الإجراء المتخذ (إن وجد)"
-                      className="min-h-[120px] bg-gray-800/30 border-gray-800/50 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-white placeholder:text-gray-500 resize-y"
-                    />
-                    <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-green-400" />
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-customerName">العميل</Label>
+              <Input
+                id="edit-customerName"
+                value={newComplaint.customerName}
+                onChange={(e) =>
+                  handleNewComplaintChange("customerName", e.target.value)
+                }
+                placeholder="أدخل اسم العميل"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-project">المشروع</Label>
+              <Input
+                id="edit-project"
+                value={newComplaint.project}
+                onChange={(e) =>
+                  handleNewComplaintChange("project", e.target.value)
+                }
+                placeholder="أدخل اسم المشروع"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-unitNumber">رقم الوحدة / العمارة</Label>
+              <Input
+                id="edit-unitNumber"
+                value={newComplaint.unitNumber}
+                onChange={(e) =>
+                  handleNewComplaintChange("unitNumber", e.target.value)
+                }
+                placeholder="أدخل رقم الوحدة"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-source">مصدر الشكوى</Label>
+              <Select
+                value={newComplaint.source}
+                onValueChange={(value) =>
+                  handleNewComplaintChange("source", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر مصدر الشكوى" />
+                </SelectTrigger>
+                <SelectContent>
+                  {complaintSources.map((source) => (
+                    <SelectItem key={source.value} value={source.value}>
+                      {source.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">الحالة</Label>
+              <Select
+                value={newComplaint.status}
+                onValueChange={(value) =>
+                  handleNewComplaintChange("status", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر حالة الشكوى" />
+                </SelectTrigger>
+                <SelectContent>
+                  {complaintStatuses.slice(1).map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-expectedClosureTime">الوقت المتوقع لإغلاق الشكوى</Label>
+              <Input
+                id="edit-expectedClosureTime"
+                value={newComplaint.expectedClosureTime}
+                onChange={(e) =>
+                  handleNewComplaintChange("expectedClosureTime", e.target.value)
+                }
+                placeholder="مثال: 3 أيام"
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-3 space-y-2">
+              <Label htmlFor="edit-description">الشكوى</Label>
+              <Textarea
+                id="edit-description"
+                value={newComplaint.description}
+                onChange={(e) =>
+                  handleNewComplaintChange("description", e.target.value)
+                }
+                placeholder="أدخل تفاصيل الشكوى هنا..."
+                className="min-h-[100px]"
+                required
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-3 space-y-2">
+              <Label htmlFor="edit-maintenanceDeliveryAction">إجراء الصيانة والتسليم</Label>
+              <Textarea
+                id="edit-maintenanceDeliveryAction"
+                value={newComplaint.maintenanceDeliveryAction}
+                onChange={(e) =>
+                  handleNewComplaintChange("maintenanceDeliveryAction", e.target.value)
+                }
+                placeholder="أدخل إجراءات الصيانة والتسليم"
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-3 space-y-2">
+              <Label htmlFor="edit-action">الإجراء</Label>
+              <Textarea
+                id="edit-action"
+                value={newComplaint.action}
+                onChange={(e) =>
+                  handleNewComplaintChange("action", e.target.value)
+                }
+                placeholder="أدخل الإجراء المتخذ (إن وجد)"
+                className="min-h-[80px]"
+              />
             </div>
           </div>
-
-          <DialogFooter className="mt-8 border-t border-gray-800/50 pt-6">
+          <DialogFooter>
             <Button
               onClick={() => setIsEditDialogOpen(false)}
               variant="outline"
-              className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
             >
               إلغاء
             </Button>
-            <Button
-              onClick={handleUpdateComplaint}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
+            <Button onClick={handleUpdateComplaint}>
               حفظ التغييرات
             </Button>
           </DialogFooter>
@@ -1368,27 +1163,25 @@ export default function Complaints() {
 
       {/* مربع حوار تأكيد الحذف */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-[#1a1c23] border border-gray-800/50">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-400" />
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-500" />
               تأكيد حذف الشكوى
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
+            <AlertDialogDescription>
               هل أنت متأكد من رغبتك في حذف الشكوى رقم{" "}
-              <span className="font-bold text-white">
-                {selectedComplaint?.id}
+              <span className="font-bold">
+                {selectedComplaint?.requestNumber || selectedComplaint?.id}
               </span>
               ؟ لا يمكن التراجع عن هذا الإجراء.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700">
-              إلغاء
-            </AlertDialogCancel>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteComplaint}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700"
             >
               حذف الشكوى
             </AlertDialogAction>
