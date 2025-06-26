@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription,
+  DialogFooter,
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
@@ -40,7 +42,8 @@ import {
   UserCheck,
   FileText,
   Calendar,
-  User
+  User,
+  Mail
 } from "lucide-react";
 import {
   Table,
@@ -50,15 +53,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
