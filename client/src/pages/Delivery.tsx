@@ -827,7 +827,7 @@ export default function Delivery() {
                       <TableCell>{booking.sales_employee || '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Badgevariant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
+                          <Badge variant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
                             مبيعات
                           </Badge>
                           <Badge variant={booking.projects_completed ? "default" : "secondary"} className="text-xs">
