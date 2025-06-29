@@ -1,20 +1,17 @@
+import nodemailer from 'nodemailer';
 
-// نظام إيميل محاكي مؤقت حتى يتم الحصول على مفتاح Resend صحيح
-const SIMULATE_EMAIL = true; // تغيير إلى false عند الحصول على مفتاح Resend صحيح
-
-// تحديد ما إذا كان يجب استخدام نظام الإيميل الحقيقي أم المحاكي
-let resend: any = null;
-
-if (!SIMULATE_EMAIL) {
-  try {
-    const { Resend } = await import('resend');
-    // ضع مفتاح Resend الصحيح هنا عندما يكون متاحاً
-    const RESEND_API_KEY = 'your-resend-api-key-here';
-    resend = new Resend(RESEND_API_KEY);
-  } catch (error) {
-    console.warn('فشل في تحميل مكتبة Resend، سيتم استخدام النظام المحاكي');
+// إعداد Mailtrap
+const MAILTRAP_CONFIG = {
+  host: 'smtp.mailtrap.io',
+  port: 2525,
+  auth: {
+    user: 'a088c5b0a53d3f19ec3db0fa4b457af9',
+    pass: 'a088c5b0a53d3f19ec3db0fa4b457af9'
   }
-}
+};
+
+// إنشاء transporter لـ Mailtrap
+const transporter = nodemailer.createTransport(MAILTRAP_CONFIG);
 
 // قائمة الإيميلات للموظفين
 const EMPLOYEE_EMAILS = [
@@ -41,10 +38,10 @@ export async function sendComplaintEmail(data: {
 }) {
   try {
     const { type, complaint } = data;
-    
+
     let subject = '';
     let htmlContent = '';
-    
+
     switch (type) {
       case 'new':
         subject = `شكوى جديدة - ${complaint.customerName} - ${complaint.id}`;
@@ -66,7 +63,7 @@ export async function sendComplaintEmail(data: {
           </div>
         `;
         break;
-        
+
       case 'update':
         subject = `تحديث شكوى - ${complaint.customerName} - ${complaint.id}`;
         htmlContent = `
@@ -83,7 +80,7 @@ export async function sendComplaintEmail(data: {
           </div>
         `;
         break;
-        
+
       case 'status_change':
         subject = `تغيير حالة شكوى - ${complaint.customerName} - ${complaint.id}`;
         htmlContent = `
@@ -103,73 +100,22 @@ export async function sendComplaintEmail(data: {
         break;
     }
 
-    // استخدام نظام الإيميل المحاكي أو الحقيقي
-    if (SIMULATE_EMAIL || !resend) {
-      // نظام إيميل محاكي
-      const simulatedResponse = {
-        id: `simulated-${Date.now()}`,
-        to: EMPLOYEE_EMAILS,
-        subject,
-        timestamp: new Date().toLocaleString('ar-SA')
-      };
-      
-      console.log('📧 تم إرسال إيميل وهمي:', simulatedResponse);
-      
-      // محاكاة تأخير إرسال الإيميل
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { 
-        data: { id: simulatedResponse.id }, 
-        error: null 
-      };
-    }
+    const mailOptions = {
+      from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
+      to: EMPLOYEE_EMAILS,
+      subject,
+      html: htmlContent,
+    };
 
-    try {
-      // محاولة إرسال الإيميل الحقيقي مع timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ تم إرسال إيميل الشكوى بنجاح عبر Mailtrap:', result);
 
-      const response = await Promise.race([
-        resend.emails.send({
-          from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
-          to: EMPLOYEE_EMAILS,
-          subject,
-          html: htmlContent,
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
-        )
-      ]);
-
-      clearTimeout(timeoutId);
-      
-      if (response && response.error) {
-        console.warn('تحذير: خطأ في إرسال الإيميل:', response.error);
-        return { data: null, error: response.error };
-      }
-      
-      console.log('✅ تم إرسال إيميل الشكوى بنجاح:', response);
-      return response;
-    } catch (networkError) {
-      console.warn('تحذير: فشل في إرسال الإيميل عبر الشبكة:', networkError);
-      // العودة إلى النظام المحاكي في حالة فشل الإرسال الحقيقي
-      const fallbackResponse = {
-        id: `fallback-${Date.now()}`,
-        to: EMPLOYEE_EMAILS,
-        subject,
-        timestamp: new Date().toLocaleString('ar-SA')
-      };
-      
-      console.log('📧 تم إرسال إيميل احتياطي وهمي:', fallbackResponse);
-      
-      return { 
-        data: { id: fallbackResponse.id }, 
-        error: null 
-      };
-    }
+    return { 
+      data: { id: result.messageId }, 
+      error: null 
+    };
   } catch (error) {
-    console.error('❌ خطأ في إرسال إيميل الشكوى:', error);
-    // لا نرمي الخطأ لتجنب توقف التطبيق
+    console.error('❌ خطأ في إرسال إيميل الشكوى عبر Mailtrap:', error);
     return { data: null, error: error };
   }
 }
@@ -191,10 +137,10 @@ export async function sendBookingEmail(data: {
 }) {
   try {
     const { type, booking } = data;
-    
+
     let subject = '';
     let htmlContent = '';
-    
+
     switch (type) {
       case 'new':
         subject = `حجز جديد - ${booking.customerName} - ${booking.id}`;
@@ -214,7 +160,7 @@ export async function sendBookingEmail(data: {
           </div>
         `;
         break;
-        
+
       case 'update':
         subject = `تحديث حجز - ${booking.customerName} - ${booking.id}`;
         htmlContent = `
@@ -232,7 +178,7 @@ export async function sendBookingEmail(data: {
           </div>
         `;
         break;
-        
+
       case 'status_change':
         subject = `تغيير حالة حجز - ${booking.customerName} - ${booking.id}`;
         htmlContent = `
@@ -253,73 +199,22 @@ export async function sendBookingEmail(data: {
         break;
     }
 
-    // استخدام نظام الإيميل المحاكي أو الحقيقي
-    if (SIMULATE_EMAIL || !resend) {
-      // نظام إيميل محاكي
-      const simulatedResponse = {
-        id: `simulated-booking-${Date.now()}`,
-        to: EMPLOYEE_EMAILS,
-        subject,
-        timestamp: new Date().toLocaleString('ar-SA')
-      };
-      
-      console.log('📧 تم إرسال إيميل حجز وهمي:', simulatedResponse);
-      
-      // محاكاة تأخير إرسال الإيميل
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { 
-        data: { id: simulatedResponse.id }, 
-        error: null 
-      };
-    }
+    const mailOptions = {
+      from: 'نظام إدارة التسليم <noreply@alramz.com>',
+      to: EMPLOYEE_EMAILS,
+      subject,
+      html: htmlContent,
+    };
 
-    try {
-      // محاولة إرسال الإيميل الحقيقي مع timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ تم إرسال إيميل الحجز بنجاح عبر Mailtrap:', result);
 
-      const response = await Promise.race([
-        resend.emails.send({
-          from: 'نظام إدارة التسليم <noreply@alramz.com>',
-          to: EMPLOYEE_EMAILS,
-          subject,
-          html: htmlContent,
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
-        )
-      ]);
-
-      clearTimeout(timeoutId);
-      
-      if (response && response.error) {
-        console.warn('تحذير: خطأ في إرسال الإيميل:', response.error);
-        return { data: null, error: response.error };
-      }
-      
-      console.log('✅ تم إرسال إيميل الحجز بنجاح:', response);
-      return response;
-    } catch (networkError) {
-      console.warn('تحذير: فشل في إرسال الإيميل عبر الشبكة:', networkError);
-      // العودة إلى النظام المحاكي في حالة فشل الإرسال الحقيقي
-      const fallbackResponse = {
-        id: `fallback-booking-${Date.now()}`,
-        to: EMPLOYEE_EMAILS,
-        subject,
-        timestamp: new Date().toLocaleString('ar-SA')
-      };
-      
-      console.log('📧 تم إرسال إيميل حجز احتياطي وهمي:', fallbackResponse);
-      
-      return { 
-        data: { id: fallbackResponse.id }, 
-        error: null 
-      };
-    }
+    return { 
+      data: { id: result.messageId }, 
+      error: null 
+    };
   } catch (error) {
-    console.error('❌ خطأ في إرسال إيميل الحجز:', error);
-    // لا نرمي الخطأ لتجنب توقف التطبيق
+    console.error('❌ خطأ في إرسال إيميل الحجز عبر Mailtrap:', error);
     return { data: null, error: error };
   }
 }
@@ -331,50 +226,24 @@ export async function sendCustomEmail(data: {
   html: string;
   from?: string;
 }) {
-  if (SIMULATE_EMAIL || !resend) {
-    // نظام إيميل محاكي
-    const simulatedResponse = {
-      id: `simulated-custom-${Date.now()}`,
-      to: data.to,
-      subject: data.subject,
-      from: data.from || 'نظام الرمز العقارية <noreply@alramz.com>',
-      timestamp: new Date().toLocaleString('ar-SA')
-    };
-    
-    console.log('📧 تم إرسال إيميل مخصص وهمي:', simulatedResponse);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return { 
-      data: { id: simulatedResponse.id }, 
-      error: null 
-    };
-  }
-
   try {
-    const response = await resend.emails.send({
+    const mailOptions = {
       from: data.from || 'نظام الرمز العقارية <noreply@alramz.com>',
       to: data.to,
       subject: data.subject,
       html: data.html,
-    });
-
-    console.log('✅ تم إرسال الإيميل المخصص بنجاح:', response);
-    return response;
-  } catch (error) {
-    console.error('❌ خطأ في إرسال الإيميل المخصص:', error);
-    // العودة إلى النظام المحاكي
-    const fallbackResponse = {
-      id: `fallback-custom-${Date.now()}`,
-      to: data.to,
-      subject: data.subject,
-      timestamp: new Date().toLocaleString('ar-SA')
     };
-    
-    console.log('📧 تم إرسال إيميل مخصص احتياطي وهمي:', fallbackResponse);
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ تم إرسال الإيميل المخصص بنجاح عبر Mailtrap:', result);
+
     return { 
-      data: { id: fallbackResponse.id }, 
+      data: { id: result.messageId }, 
       error: null 
     };
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإيميل المخصص عبر Mailtrap:', error);
+    return { data: null, error: error };
   }
 }
 
@@ -411,47 +280,22 @@ export async function sendDailyReport(data: {
       </div>
     `;
 
-    if (SIMULATE_EMAIL || !resend) {
-      // نظام إيميل محاكي
-      const simulatedResponse = {
-        id: `simulated-report-${Date.now()}`,
-        to: EMPLOYEE_EMAILS,
-        subject,
-        timestamp: new Date().toLocaleString('ar-SA')
-      };
-      
-      console.log('📧 تم إرسال تقرير يومي وهمي:', simulatedResponse);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { 
-        data: { id: simulatedResponse.id }, 
-        error: null 
-      };
-    }
-
-    const response = await resend.emails.send({
+    const mailOptions = {
       from: 'نظام التقارير <reports@alramz.com>',
       to: EMPLOYEE_EMAILS,
       subject,
       html: htmlContent,
-    });
-
-    console.log('✅ تم إرسال التقرير اليومي بنجاح:', response);
-    return response;
-  } catch (error) {
-    console.error('❌ خطأ في إرسال التقرير اليومي:', error);
-    // العودة إلى النظام المحاكي
-    const fallbackResponse = {
-      id: `fallback-report-${Date.now()}`,
-      to: EMPLOYEE_EMAILS,
-      subject,
-      timestamp: new Date().toLocaleString('ar-SA')
     };
-    
-    console.log('📧 تم إرسال تقرير يومي احتياطي وهمي:', fallbackResponse);
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ تم إرسال التقرير اليومي بنجاح عبر Mailtrap:', result);
+
     return { 
-      data: { id: fallbackResponse.id }, 
+      data: { id: result.messageId }, 
       error: null 
     };
+  } catch (error) {
+    console.error('❌ خطأ في إرسال التقرير اليومي عبر Mailtrap:', error);
+    return { data: null, error: error };
   }
 }
