@@ -5,10 +5,10 @@ const resend = new Resend('re_h7GBDBRs_DHpqNNC9cuARpejas9z1QZxQ');
 
 // قائمة الإيميلات للموظفين
 const EMPLOYEE_EMAILS = [
-  'support@alramz.com', // إيميل الدعم الفني
-  'manager@alramz.com', // إيميل المدير
-  'complaints@alramz.com', // إيميل قسم الشكاوى
-  'delivery@alramz.com', // إيميل قسم التسليم
+  'nn121240@gmail.com', // إيميل الدعم الفني
+  'nn121240@gmail.com', // إيميل المدير
+  'nn121240@gmail.com', // إيميل قسم الشكاوى
+  'nn121240@gmail.com', // إيميل قسم التسليم
 ];
 
 // إرسال إيميل للشكاوى
