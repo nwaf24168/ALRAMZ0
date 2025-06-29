@@ -1,17 +1,6 @@
-import nodemailer from 'nodemailer';
 
-// إعداد Mailtrap
-const MAILTRAP_CONFIG = {
-  host: 'smtp.mailtrap.io',
-  port: 2525,
-  auth: {
-    user: 'a088c5b0a53d3f19ec3db0fa4b457af9',
-    pass: 'a088c5b0a53d3f19ec3db0fa4b457af9'
-  }
-};
-
-// إنشاء transporter لـ Mailtrap
-const transporter = nodemailer.createTransport(MAILTRAP_CONFIG);
+// نظام محاكاة إرسال الإيميلات للمتصفح
+// هذا النظام يحاكي إرسال الإيميلات ويسجل العمليات في console
 
 // قائمة الإيميلات للموظفين
 const EMPLOYEE_EMAILS = [
@@ -21,6 +10,29 @@ const EMPLOYEE_EMAILS = [
   'complaints@alramz.com',
   'delivery@alramz.com',
 ];
+
+// محاكاة إرسال إيميل
+async function simulateEmailSend(mailOptions: {
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+}) {
+  // محاكاة تأخير الشبكة
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  const messageId = `simulated-${Date.now()}`;
+  
+  // تسجيل الإيميل المرسل في console
+  console.log('📧 تم إرسال إيميل وهمي:', {
+    id: messageId,
+    to: mailOptions.to,
+    subject: mailOptions.subject,
+    timestamp: new Date().toLocaleString('ar-SA')
+  });
+  
+  return { messageId };
+}
 
 // إرسال إيميل للشكاوى
 export async function sendComplaintEmail(data: {
@@ -107,15 +119,15 @@ export async function sendComplaintEmail(data: {
       html: htmlContent,
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ تم إرسال إيميل الشكوى بنجاح عبر Mailtrap:', result);
+    const result = await simulateEmailSend(mailOptions);
+    console.log('✅ تم إرسال إيميل الشكوى بنجاح (محاكاة):', result);
 
     return { 
       data: { id: result.messageId }, 
       error: null 
     };
   } catch (error) {
-    console.error('❌ خطأ في إرسال إيميل الشكوى عبر Mailtrap:', error);
+    console.error('❌ خطأ في إرسال إيميل الشكوى:', error);
     return { data: null, error: error };
   }
 }
@@ -206,15 +218,15 @@ export async function sendBookingEmail(data: {
       html: htmlContent,
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ تم إرسال إيميل الحجز بنجاح عبر Mailtrap:', result);
+    const result = await simulateEmailSend(mailOptions);
+    console.log('✅ تم إرسال إيميل الحجز بنجاح (محاكاة):', result);
 
     return { 
       data: { id: result.messageId }, 
       error: null 
     };
   } catch (error) {
-    console.error('❌ خطأ في إرسال إيميل الحجز عبر Mailtrap:', error);
+    console.error('❌ خطأ في إرسال إيميل الحجز:', error);
     return { data: null, error: error };
   }
 }
@@ -234,15 +246,15 @@ export async function sendCustomEmail(data: {
       html: data.html,
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ تم إرسال الإيميل المخصص بنجاح عبر Mailtrap:', result);
+    const result = await simulateEmailSend(mailOptions);
+    console.log('✅ تم إرسال الإيميل المخصص بنجاح (محاكاة):', result);
 
     return { 
       data: { id: result.messageId }, 
       error: null 
     };
   } catch (error) {
-    console.error('❌ خطأ في إرسال الإيميل المخصص عبر Mailtrap:', error);
+    console.error('❌ خطأ في إرسال الإيميل المخصص:', error);
     return { data: null, error: error };
   }
 }
@@ -287,15 +299,15 @@ export async function sendDailyReport(data: {
       html: htmlContent,
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ تم إرسال التقرير اليومي بنجاح عبر Mailtrap:', result);
+    const result = await simulateEmailSend(mailOptions);
+    console.log('✅ تم إرسال التقرير اليومي بنجاح (محاكاة):', result);
 
     return { 
       data: { id: result.messageId }, 
       error: null 
     };
   } catch (error) {
-    console.error('❌ خطأ في إرسال التقرير اليومي عبر Mailtrap:', error);
+    console.error('❌ خطأ في إرسال التقرير اليومي:', error);
     return { data: null, error: error };
   }
 }
