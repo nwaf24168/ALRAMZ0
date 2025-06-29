@@ -64,7 +64,6 @@ import {
   Star,
   Settings,
 } from "lucide-react";
-import { sendComplaintEmail, sendComplaintStatusEmail } from "@/lib/emailService";
 
 // أولويات الشكاوى
 const complaintPriorities = [
@@ -575,8 +574,6 @@ export default function Complaints() {
     }
   };
 
-  const [isUpdating, setIsUpdating] = useState(false);
-
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6 p-3 md:p-0">
@@ -939,7 +936,7 @@ export default function Complaints() {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </              Table>
             </div>
           </CardContent>
         </Card>
