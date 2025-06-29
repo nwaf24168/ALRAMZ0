@@ -978,7 +978,7 @@ export default function Complaints() {
                     ))
                   )}
                 </TableBody>
-              </              Table>
+              </Table>
             </div>
           </CardContent>
         </Card>
