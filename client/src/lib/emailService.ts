@@ -1,36 +1,9 @@
 
-// نظام إيميل وهمي للتطوير والاختبار
-interface EmailData {
-  from: string;
-  to: string[];
-  subject: string;
-  html: string;
-}
+import { Resend } from 'resend';
 
-// محاكاة قاعدة بيانات الإيميلات المرسلة
-const sentEmails: (EmailData & { timestamp: Date; id: string })[] = [];
-
-// دالة لمحاكاة إرسال الإيميل
-async function mockSendEmail(emailData: EmailData) {
-  // محاكاة تأخير الشبكة
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const emailRecord = {
-    ...emailData,
-    id: Date.now().toString(),
-    timestamp: new Date()
-  };
-  
-  sentEmails.push(emailRecord);
-  console.log('📧 تم إرسال إيميل وهمي:', {
-    id: emailRecord.id,
-    to: emailRecord.to,
-    subject: emailRecord.subject,
-    timestamp: emailRecord.timestamp.toLocaleString('ar-SA')
-  });
-  
-  return { data: { id: emailRecord.id }, error: null };
-}
+// إعداد Mailtrap
+const MAILTRAP_TOKEN = 'a088c5b0a53d3f19ec3db0fa4b457af9';
+const resend = new Resend(MAILTRAP_TOKEN);
 
 // قائمة الإيميلات للموظفين
 const EMPLOYEE_EMAILS = [
@@ -119,17 +92,28 @@ export async function sendComplaintEmail(data: {
         break;
     }
 
-    const result = await mockSendEmail({
-      from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
-      to: EMPLOYEE_EMAILS,
-      subject,
-      html: htmlContent,
-    });
+    // محاولة إرسال الإيميل مع timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 ثانية timeout
 
-    console.log('✅ تم إرسال إيميل الشكوى بنجاح');
-    return result;
+    const response = await Promise.race([
+      resend.emails.send({
+        from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
+        to: EMPLOYEE_EMAILS,
+        subject,
+        html: htmlContent,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 15000)
+      )
+    ]);
+
+    clearTimeout(timeoutId);
+    console.log('✅ تم إرسال إيميل الشكوى بنجاح:', response);
+    return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال إيميل الشكوى:', error);
+    // لا نرمي الخطأ لتجنب توقف التطبيق
     return { data: null, error: error };
   }
 }
@@ -213,17 +197,28 @@ export async function sendBookingEmail(data: {
         break;
     }
 
-    const result = await mockSendEmail({
-      from: 'نظام إدارة التسليم <noreply@alramz.com>',
-      to: EMPLOYEE_EMAILS,
-      subject,
-      html: htmlContent,
-    });
+    // محاولة إرسال الإيميل مع timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 ثانية timeout
 
-    console.log('✅ تم إرسال إيميل الحجز بنجاح');
-    return result;
+    const response = await Promise.race([
+      resend.emails.send({
+        from: 'نظام إدارة التسليم <noreply@alramz.com>',
+        to: EMPLOYEE_EMAILS,
+        subject,
+        html: htmlContent,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 15000)
+      )
+    ]);
+
+    clearTimeout(timeoutId);
+    console.log('✅ تم إرسال إيميل الحجز بنجاح:', response);
+    return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال إيميل الحجز:', error);
+    // لا نرمي الخطأ لتجنب توقف التطبيق
     return { data: null, error: error };
   }
 }
@@ -236,18 +231,18 @@ export async function sendCustomEmail(data: {
   from?: string;
 }) {
   try {
-    const result = await mockSendEmail({
+    const response = await resend.emails.send({
       from: data.from || 'نظام الرمز العقارية <noreply@alramz.com>',
       to: data.to,
       subject: data.subject,
       html: data.html,
     });
 
-    console.log('✅ تم إرسال الإيميل المخصص بنجاح');
-    return result;
+    console.log('✅ تم إرسال الإيميل المخصص بنجاح:', response);
+    return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال الإيميل المخصص:', error);
-    throw error;
+    return { data: null, error: error };
   }
 }
 
@@ -284,28 +279,17 @@ export async function sendDailyReport(data: {
       </div>
     `;
 
-    const result = await mockSendEmail({
+    const response = await resend.emails.send({
       from: 'نظام التقارير <reports@alramz.com>',
       to: EMPLOYEE_EMAILS,
       subject,
       html: htmlContent,
     });
 
-    console.log('✅ تم إرسال التقرير اليومي بنجاح');
-    return result;
+    console.log('✅ تم إرسال التقرير اليومي بنجاح:', response);
+    return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال التقرير اليومي:', error);
-    throw error;
+    return { data: null, error: error };
   }
-}
-
-// دالة لعرض الإيميلات المرسلة (للتطوير والاختبار)
-export function getSentEmails() {
-  return sentEmails;
-}
-
-// دالة لمسح سجل الإيميلات
-export function clearEmailHistory() {
-  sentEmails.length = 0;
-  console.log('🗑️ تم مسح سجل الإيميلات');
 }
