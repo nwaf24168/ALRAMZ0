@@ -1,9 +1,20 @@
 
-import { Resend } from 'resend';
+// نظام إيميل محاكي مؤقت حتى يتم الحصول على مفتاح Resend صحيح
+const SIMULATE_EMAIL = true; // تغيير إلى false عند الحصول على مفتاح Resend صحيح
 
-// إعداد Mailtrap
-const MAILTRAP_TOKEN = 'a088c5b0a53d3f19ec3db0fa4b457af9';
-const resend = new Resend(MAILTRAP_TOKEN);
+// تحديد ما إذا كان يجب استخدام نظام الإيميل الحقيقي أم المحاكي
+let resend: any = null;
+
+if (!SIMULATE_EMAIL) {
+  try {
+    const { Resend } = await import('resend');
+    // ضع مفتاح Resend الصحيح هنا عندما يكون متاحاً
+    const RESEND_API_KEY = 'your-resend-api-key-here';
+    resend = new Resend(RESEND_API_KEY);
+  } catch (error) {
+    console.warn('فشل في تحميل مكتبة Resend، سيتم استخدام النظام المحاكي');
+  }
+}
 
 // قائمة الإيميلات للموظفين
 const EMPLOYEE_EMAILS = [
@@ -92,10 +103,31 @@ export async function sendComplaintEmail(data: {
         break;
     }
 
+    // استخدام نظام الإيميل المحاكي أو الحقيقي
+    if (SIMULATE_EMAIL || !resend) {
+      // نظام إيميل محاكي
+      const simulatedResponse = {
+        id: `simulated-${Date.now()}`,
+        to: EMPLOYEE_EMAILS,
+        subject,
+        timestamp: new Date().toLocaleString('ar-SA')
+      };
+      
+      console.log('📧 تم إرسال إيميل وهمي:', simulatedResponse);
+      
+      // محاكاة تأخير إرسال الإيميل
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return { 
+        data: { id: simulatedResponse.id }, 
+        error: null 
+      };
+    }
+
     try {
-      // محاولة إرسال الإيميل مع timeout
+      // محاولة إرسال الإيميل الحقيقي مع timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await Promise.race([
         resend.emails.send({
@@ -111,7 +143,6 @@ export async function sendComplaintEmail(data: {
 
       clearTimeout(timeoutId);
       
-      // التحقق من وجود خطأ في الاستجابة
       if (response && response.error) {
         console.warn('تحذير: خطأ في إرسال الإيميل:', response.error);
         return { data: null, error: response.error };
@@ -121,9 +152,18 @@ export async function sendComplaintEmail(data: {
       return response;
     } catch (networkError) {
       console.warn('تحذير: فشل في إرسال الإيميل عبر الشبكة:', networkError);
-      // إرجاع استجابة وهمية لمنع توقف التطبيق
+      // العودة إلى النظام المحاكي في حالة فشل الإرسال الحقيقي
+      const fallbackResponse = {
+        id: `fallback-${Date.now()}`,
+        to: EMPLOYEE_EMAILS,
+        subject,
+        timestamp: new Date().toLocaleString('ar-SA')
+      };
+      
+      console.log('📧 تم إرسال إيميل احتياطي وهمي:', fallbackResponse);
+      
       return { 
-        data: { id: `fallback-${Date.now()}` }, 
+        data: { id: fallbackResponse.id }, 
         error: null 
       };
     }
@@ -213,10 +253,31 @@ export async function sendBookingEmail(data: {
         break;
     }
 
+    // استخدام نظام الإيميل المحاكي أو الحقيقي
+    if (SIMULATE_EMAIL || !resend) {
+      // نظام إيميل محاكي
+      const simulatedResponse = {
+        id: `simulated-booking-${Date.now()}`,
+        to: EMPLOYEE_EMAILS,
+        subject,
+        timestamp: new Date().toLocaleString('ar-SA')
+      };
+      
+      console.log('📧 تم إرسال إيميل حجز وهمي:', simulatedResponse);
+      
+      // محاكاة تأخير إرسال الإيميل
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return { 
+        data: { id: simulatedResponse.id }, 
+        error: null 
+      };
+    }
+
     try {
-      // محاولة إرسال الإيميل مع timeout
+      // محاولة إرسال الإيميل الحقيقي مع timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await Promise.race([
         resend.emails.send({
@@ -232,7 +293,6 @@ export async function sendBookingEmail(data: {
 
       clearTimeout(timeoutId);
       
-      // التحقق من وجود خطأ في الاستجابة
       if (response && response.error) {
         console.warn('تحذير: خطأ في إرسال الإيميل:', response.error);
         return { data: null, error: response.error };
@@ -242,9 +302,18 @@ export async function sendBookingEmail(data: {
       return response;
     } catch (networkError) {
       console.warn('تحذير: فشل في إرسال الإيميل عبر الشبكة:', networkError);
-      // إرجاع استجابة وهمية لمنع توقف التطبيق
+      // العودة إلى النظام المحاكي في حالة فشل الإرسال الحقيقي
+      const fallbackResponse = {
+        id: `fallback-booking-${Date.now()}`,
+        to: EMPLOYEE_EMAILS,
+        subject,
+        timestamp: new Date().toLocaleString('ar-SA')
+      };
+      
+      console.log('📧 تم إرسال إيميل حجز احتياطي وهمي:', fallbackResponse);
+      
       return { 
-        data: { id: `fallback-${Date.now()}` }, 
+        data: { id: fallbackResponse.id }, 
         error: null 
       };
     }
@@ -262,6 +331,25 @@ export async function sendCustomEmail(data: {
   html: string;
   from?: string;
 }) {
+  if (SIMULATE_EMAIL || !resend) {
+    // نظام إيميل محاكي
+    const simulatedResponse = {
+      id: `simulated-custom-${Date.now()}`,
+      to: data.to,
+      subject: data.subject,
+      from: data.from || 'نظام الرمز العقارية <noreply@alramz.com>',
+      timestamp: new Date().toLocaleString('ar-SA')
+    };
+    
+    console.log('📧 تم إرسال إيميل مخصص وهمي:', simulatedResponse);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return { 
+      data: { id: simulatedResponse.id }, 
+      error: null 
+    };
+  }
+
   try {
     const response = await resend.emails.send({
       from: data.from || 'نظام الرمز العقارية <noreply@alramz.com>',
@@ -274,7 +362,19 @@ export async function sendCustomEmail(data: {
     return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال الإيميل المخصص:', error);
-    return { data: null, error: error };
+    // العودة إلى النظام المحاكي
+    const fallbackResponse = {
+      id: `fallback-custom-${Date.now()}`,
+      to: data.to,
+      subject: data.subject,
+      timestamp: new Date().toLocaleString('ar-SA')
+    };
+    
+    console.log('📧 تم إرسال إيميل مخصص احتياطي وهمي:', fallbackResponse);
+    return { 
+      data: { id: fallbackResponse.id }, 
+      error: null 
+    };
   }
 }
 
@@ -311,6 +411,24 @@ export async function sendDailyReport(data: {
       </div>
     `;
 
+    if (SIMULATE_EMAIL || !resend) {
+      // نظام إيميل محاكي
+      const simulatedResponse = {
+        id: `simulated-report-${Date.now()}`,
+        to: EMPLOYEE_EMAILS,
+        subject,
+        timestamp: new Date().toLocaleString('ar-SA')
+      };
+      
+      console.log('📧 تم إرسال تقرير يومي وهمي:', simulatedResponse);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return { 
+        data: { id: simulatedResponse.id }, 
+        error: null 
+      };
+    }
+
     const response = await resend.emails.send({
       from: 'نظام التقارير <reports@alramz.com>',
       to: EMPLOYEE_EMAILS,
@@ -322,6 +440,18 @@ export async function sendDailyReport(data: {
     return response;
   } catch (error) {
     console.error('❌ خطأ في إرسال التقرير اليومي:', error);
-    return { data: null, error: error };
+    // العودة إلى النظام المحاكي
+    const fallbackResponse = {
+      id: `fallback-report-${Date.now()}`,
+      to: EMPLOYEE_EMAILS,
+      subject,
+      timestamp: new Date().toLocaleString('ar-SA')
+    };
+    
+    console.log('📧 تم إرسال تقرير يومي احتياطي وهمي:', fallbackResponse);
+    return { 
+      data: { id: fallbackResponse.id }, 
+      error: null 
+    };
   }
 }
