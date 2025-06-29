@@ -17,6 +17,7 @@ import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
 import { formatDateForDisplay } from "@/lib/dateUtils";
+import { sendBookingEmail } from "@/lib/emailService";
 
 interface DeliveryBooking {
   id?: number;
@@ -141,12 +142,57 @@ export default function Delivery() {
           title: "تم التحديث",
           description: "تم تحديث بيانات الحجز بنجاح"
         });
+
+        // إرسال إيميل للموظفين عند التحديث
+        try {
+          const emailType = selectedBooking.status !== getBookingStatus(dataToSave) ? 'status_change' : 'update';
+          await sendBookingEmail({
+            type: emailType,
+            booking: {
+              id: selectedBooking.id,
+              customerName: dataToSave.customer_name,
+              project: dataToSave.project,
+              unit: dataToSave.unit,
+              status: getBookingStatus(dataToSave),
+              booking_date: dataToSave.booking_date,
+              handover_date: dataToSave.handover_date,
+              updatedBy: user.username,
+              previousStatus: emailType === 'status_change' ? selectedBooking.status : undefined
+            }
+          });
+          console.log('تم إرسال إيميل تحديث الحجز بنجاح');
+        } catch (emailError) {
+          console.error('خطأ في إرسال إيميل تحديث الحجز:', emailError);
+          // لا نوقف العملية في حالة فشل الإيميل
+        }
+
+
       } else {
-        await DataService.createDeliveryBooking(dataToSave);
+        const newBooking = await DataService.createDeliveryBooking(dataToSave);
         toast({
           title: "تم الحفظ",
           description: "تم إضافة الحجز الجديد بنجاح"
         });
+
+        // إرسال إيميل للموظفين
+        try {
+          await sendBookingEmail({
+            type: 'new',
+            booking: {
+              id: newBooking.id,
+              customerName: newBooking.customer_name,
+              project: newBooking.project,
+              unit: newBooking.unit,
+              status: newBooking.status,
+              booking_date: newBooking.booking_date,
+              handover_date: newBooking.handover_date
+            }
+          });
+          console.log('تم إرسال إيميل الحجز الجديد بنجاح');
+        } catch (emailError) {
+          console.error('خطأ في إرسال إيميل الحجز:', emailError);
+          // لا نوقف العملية في حالة فشل الإيميل
+        }
       }
 
       await loadBookings();
@@ -781,7 +827,7 @@ export default function Delivery() {
                       <TableCell>{booking.sales_employee || '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Badge variant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
+                          <Badgevariant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
                             مبيعات
                           </Badge>
                           <Badge variant={booking.projects_completed ? "default" : "secondary"} className="text-xs">
