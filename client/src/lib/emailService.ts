@@ -25,6 +25,16 @@ export async function sendComplaintEmail(data: {
     previousStatus?: string;
   };
 }) {
+  // في البيئة المحلية، نسجل فقط دون إرسال فعلي
+  if (import.meta.env.DEV) {
+    console.log('تم محاكاة إرسال إيميل الشكوى:', {
+      type: data.type,
+      complaint: data.complaint.customerName,
+      id: data.complaint.id
+    });
+    return { data: null, error: null };
+  }
+
   try {
     const { type, complaint } = data;
     
@@ -89,18 +99,29 @@ export async function sendComplaintEmail(data: {
         break;
     }
 
-    const response = await resend.emails.send({
-      from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
-      to: EMPLOYEE_EMAILS,
-      subject,
-      html: htmlContent,
-    });
+    // محاولة إرسال الإيميل مع timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني timeout
 
+    const response = await Promise.race([
+      resend.emails.send({
+        from: 'نظام إدارة الشكاوى <noreply@alramz.com>',
+        to: EMPLOYEE_EMAILS,
+        subject,
+        html: htmlContent,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
+      )
+    ]);
+
+    clearTimeout(timeoutId);
     console.log('تم إرسال إيميل الشكوى بنجاح:', response);
     return response;
   } catch (error) {
     console.error('خطأ في إرسال إيميل الشكوى:', error);
-    throw error;
+    // لا نرمي الخطأ لتجنب توقف التطبيق
+    return { data: null, error: error };
   }
 }
 
@@ -119,6 +140,16 @@ export async function sendBookingEmail(data: {
     previousStatus?: string;
   };
 }) {
+  // في البيئة المحلية، نسجل فقط دون إرسال فعلي
+  if (import.meta.env.DEV) {
+    console.log('تم محاكاة إرسال إيميل الحجز:', {
+      type: data.type,
+      booking: data.booking.customerName,
+      id: data.booking.id
+    });
+    return { data: null, error: null };
+  }
+
   try {
     const { type, booking } = data;
     
@@ -183,18 +214,29 @@ export async function sendBookingEmail(data: {
         break;
     }
 
-    const response = await resend.emails.send({
-      from: 'نظام إدارة التسليم <noreply@alramz.com>',
-      to: EMPLOYEE_EMAILS,
-      subject,
-      html: htmlContent,
-    });
+    // محاولة إرسال الإيميل مع timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني timeout
 
+    const response = await Promise.race([
+      resend.emails.send({
+        from: 'نظام إدارة التسليم <noreply@alramz.com>',
+        to: EMPLOYEE_EMAILS,
+        subject,
+        html: htmlContent,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
+      )
+    ]);
+
+    clearTimeout(timeoutId);
     console.log('تم إرسال إيميل الحجز بنجاح:', response);
     return response;
   } catch (error) {
     console.error('خطأ في إرسال إيميل الحجز:', error);
-    throw error;
+    // لا نرمي الخطأ لتجنب توقف التطبيق
+    return { data: null, error: error };
   }
 }
 
