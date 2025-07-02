@@ -37,6 +37,7 @@ import {
   Trash2,
   Plus
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from 'xlsx';
 
 interface Customer {
@@ -66,6 +67,8 @@ const QualityCalls = () => {
   const [statusFilter, setStatusFilter] = useState<string>("الكل");
   const [qualificationReason, setQualificationReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // إحصائيات سريعة
   const totalCustomers = customers.length;
@@ -388,6 +391,73 @@ const QualityCalls = () => {
     event.target.value = '';
   };
 
+  // وظائف التحديد الجماعي
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = filteredCustomers.map(customer => customer.id);
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === filteredCustomers.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      addNotification({
+        title: "خطأ",
+        message: "لم يتم تحديد أي عناصر للحذف",
+        type: "error"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} عميل؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setIsLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteQualityCall(id);
+      }
+
+      addNotification({
+        title: "تم الحذف بنجاح",
+        message: `تم حذف ${selectedItems.size} عميل`,
+        type: "success"
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      await loadQualityCallsFromDB();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      addNotification({
+        title: "خطأ",
+        message: "حدث خطأ أثناء الحذف الجماعي",
+        type: "error"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // إضافة عميل جديد يدوياً
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
@@ -680,6 +750,31 @@ const QualityCalls = () => {
               <Download className="h-4 w-4 mr-2" />
               تصدير
             </Button>
+
+            {/* أزرار التحديد الجماعي */}
+            {filteredCustomers.length > 0 && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={handleSelectAll}
+                  disabled={isLoading}
+                >
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                  {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </Button>
+                
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    حذف المحدد ({selectedItems.size})
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -793,6 +888,12 @@ const QualityCalls = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="text-right p-3 w-12">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </th>
                     <th className="text-right p-3">اسم العميل</th>
                     <th className="text-right p-3">رقم الجوال</th>
                     <th className="text-right p-3">موظف المبيعات</th>
@@ -806,6 +907,12 @@ const QualityCalls = () => {
                 <tbody>
                   {filteredCustomers.map((customer) => (
                     <tr key={customer.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3">
+                        <Checkbox
+                          checked={selectedItems.has(customer.id)}
+                          onCheckedChange={() => handleItemSelect(customer.id)}
+                        />
+                      </td>
                       <td className="p-3 font-medium">{customer.customerName}</td>
                       <td className="p-3 font-mono">{customer.phoneNumber}</td>
                       <td className="p-3">{customer.salesEmployee}</td>

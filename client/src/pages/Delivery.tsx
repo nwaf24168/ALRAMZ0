@@ -593,7 +593,7 @@ export default function Delivery() {
       setSelectedItems(new Set());
       setSelectAll(false);
     } else {
-      const allIds = bookings.map(booking => booking.id?.toString() || '');
+      const allIds = filteredBookings.map(booking => booking.id?.toString() || '');
       setSelectedItems(new Set(allIds));
       setSelectAll(true);
     }
@@ -607,7 +607,7 @@ export default function Delivery() {
       newSelected.add(id);
     }
     setSelectedItems(newSelected);
-    setSelectAll(newSelected.size === bookings.length);
+    setSelectAll(newSelected.size === filteredBookings.length);
   };
 
   const handleBulkDelete = async () => {
@@ -621,7 +621,7 @@ export default function Delivery() {
     }
 
     const confirmDelete = window.confirm(
-      `هل أنت متأكد من حذف ${selectedItems.size} عنصر؟ لا يمكن التراجع عن هذا الإجراء.`
+      `هل أنت متأكد من حذف ${selectedItems.size} حجز؟ لا يمكن التراجع عن هذا الإجراء.`
     );
 
     if (!confirmDelete) return;
@@ -630,12 +630,12 @@ export default function Delivery() {
     try {
       const idsToDelete = Array.from(selectedItems);
       for (const id of idsToDelete) {
-        await DataService.deleteBooking(id);
+        await DataService.deleteDeliveryBooking(parseInt(id));
       }
 
       toast({
         title: "تم الحذف بنجاح",
-        description: `تم حذف ${selectedItems.size} عنصر`
+        description: `تم حذف ${selectedItems.size} حجز`
       });
 
       setSelectedItems(new Set());
@@ -712,7 +712,7 @@ export default function Delivery() {
             </Button>
 
             {/* أزرار التحديد الجماعي */}
-            {bookings.length > 0 && (
+            {filteredBookings.length > 0 && (
               <>
                 <Button 
                   variant="outline"

@@ -54,7 +54,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 interface ReceptionRecord {
@@ -132,6 +132,8 @@ export default function Reception() {
   };
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // تفعيل زر رفع الملف
   const triggerFileUpload = () => {
@@ -600,6 +602,72 @@ export default function Reception() {
     }
   };
 
+  // وظائف التحديد الجماعي
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = filteredRecords.map(record => record.id);
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === filteredRecords.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "لم يتم تحديد أي عناصر للحذف"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} سجل؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteReceptionRecord(id);
+      }
+
+      toast({
+        title: "تم الحذف بنجاح",
+        description: `تم حذف ${selectedItems.size} سجل`
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      await loadReceptionRecords();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ أثناء الحذف الجماعي"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleConvertToComplaint = async (record: ReceptionRecord) => {
     if (!user?.username) {
       toast({
@@ -739,6 +807,33 @@ export default function Reception() {
               <Download className="h-4 w-4 mr-2" />
               تصدير Excel
             </Button>
+
+            {/* أزرار التحديد الجماعي */}
+            {filteredRecords.length > 0 && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={handleSelectAll}
+                  disabled={loading}
+                  className="mobile-button"
+                >
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                  {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </Button>
+                
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={loading}
+                    className="mobile-button"
+                  >
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    حذف المحدد ({selectedItems.size})
+                  </Button>
+                )}
+              </>
+            )}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="mobile-button">
@@ -947,6 +1042,12 @@ export default function Reception() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>اسم العميل</TableHead>
                     <TableHead>رقم الجوال</TableHead>
@@ -963,6 +1064,12 @@ export default function Reception() {
                 <TableBody>
                   {filteredRecords.map((record) => (
                     <TableRow key={record.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.has(record.id)}
+                          onCheckedChange={() => handleItemSelect(record.id)}
+                        />
+                      </TableCell>
                       <TableCell>{record.date}</TableCell>
                       <TableCell className="font-medium">{record.customerName}</TableCell>
                       <TableCell>{record.phoneNumber}</TableCell>

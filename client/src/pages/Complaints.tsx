@@ -18,7 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -199,7 +198,7 @@ export default function Complaints() {
       setSelectedItems(new Set());
       setSelectAll(false);
     } else {
-      const allIds = filteredComplaints.map(complaint => complaint.id || '');
+      const allIds = filteredComplaints.map(complaint => complaint.id);
       setSelectedItems(new Set(allIds));
       setSelectAll(true);
     }
@@ -955,6 +954,7 @@ export default function Complaints() {
                           <div
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               complaint.status === "تم حلها" ||
+```text
                               complaint.status === "تم الحل"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                 : complaint.status === "لازالت قائمة" ||
@@ -1006,7 +1006,7 @@ export default function Complaints() {
                       </TableRow>
                     ))
                   )}
-                                  </TableBody>
+                </TableBody>
               </Table>
             </div>
           </CardContent>
