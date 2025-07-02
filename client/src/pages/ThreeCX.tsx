@@ -393,7 +393,7 @@ export default function ThreeCX() {
     setIsLoading(true);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         let jsonData: any[] = [];
 
