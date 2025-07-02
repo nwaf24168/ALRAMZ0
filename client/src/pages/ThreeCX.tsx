@@ -93,6 +93,16 @@ export default function ThreeCX() {
   const [employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
   const [activeTab, setActiveTab] = useState<"weekly" | "yearly">("weekly");
 
+  // تحميل البيانات عند تحميل المكون
+  useEffect(() => {
+    loadDataFromDatabase();
+  }, []);
+
+  // تحديث البيانات المعروضة عند تغيير التبويب النشط
+  useEffect(() => {
+    updateDisplayedData();
+  }, [activeTab, weeklyData, yearlyData]);
+
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
     const date = new Date(dateTime);
@@ -118,7 +128,7 @@ export default function ThreeCX() {
   };
 
   // معالجة ملف Excel
-  const processExcelData = (data: any[], isYearly: boolean = false) => {
+  const processExcelData = async (data: any[], isYearly: boolean = false) => {
     console.log("معالجة بيانات Excel:", data.length, "سجل");
 
     const processedRecords: CallRecord[] = data.map((row, index) => {
@@ -193,20 +203,89 @@ export default function ThreeCX() {
     // تصفية السجلات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = processedRecords.filter(record => record.isBusinessHours);
 
-    // تحديث البيانات حسب النوع
-    if (isYearly) {
-      setYearlyData(businessHoursRecords);
-    } else {
-      setWeeklyData(businessHoursRecords);
+    try {
+      // حفظ البيانات في قاعدة البيانات
+      await saveDataToDatabase(businessHoursRecords, isYearly);
+
+      // تحديث البيانات حسب النوع
+      if (isYearly) {
+        setYearlyData(businessHoursRecords);
+      } else {
+        setWeeklyData(businessHoursRecords);
+      }
+
+      // تحديث البيانات المعروضة حسب التبويب النشط
+      updateDisplayedData();
+
+      toast({
+        title: "تم رفع البيانات بنجاح",
+        description: `تم معالجة وحفظ ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة في قاعدة البيانات`,
+      });
+    } catch (error) {
+      console.error('خطأ في حفظ البيانات:', error);
+      toast({
+        title: "خطأ في حفظ البيانات",
+        description: "فشل في حفظ البيانات في قاعدة البيانات",
+        variant: "destructive",
+      });
     }
+  };
 
-    // تحديث البيانات المعروضة حسب التبويب النشط
-    updateDisplayedData();
+  // حفظ البيانات في قاعدة البيانات
+  const saveDataToDatabase = async (records: CallRecord[], isYearly: boolean) => {
+    const period = isYearly ? 'yearly' : 'weekly';
+    
+    // حذف البيانات القديمة أولاً
+    await DataService.clearThreeCXData(period);
+    
+    // حفظ البيانات الجديدة
+    for (const record of records) {
+      await DataService.saveThreeCXRecord({
+        callTime: new Date(record.callTime).toISOString(),
+        callId: record.callId,
+        fromNumber: record.from,
+        toNumber: record.to,
+        direction: record.direction,
+        status: record.status,
+        ringingDuration: record.ringingDuration,
+        talkingDuration: record.talkingDuration,
+        agentName: record.agentName,
+        isBusinessHours: record.isBusinessHours,
+        responseTime: record.responseTime,
+        period: period,
+        createdBy: user?.username || 'unknown'
+      });
+    }
+  };
 
-    toast({
-      title: "تم رفع البيانات بنجاح",
-      description: `تم معالجة ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة`,
-    });
+  // تحميل البيانات من قاعدة البيانات
+  const loadDataFromDatabase = async () => {
+    try {
+      const weeklyRecords = await DataService.getThreeCXData('weekly');
+      const yearlyRecords = await DataService.getThreeCXData('yearly');
+      
+      const convertToCallRecord = (dbRecord: any): CallRecord => ({
+        id: dbRecord.id.toString(),
+        callTime: dbRecord.callTime,
+        callId: dbRecord.callId,
+        from: dbRecord.fromNumber || '',
+        to: dbRecord.toNumber || '',
+        direction: dbRecord.direction as 'Inbound' | 'Outbound',
+        status: dbRecord.status as 'Answered' | 'Unanswered',
+        ringingDuration: dbRecord.ringingDuration,
+        talkingDuration: dbRecord.talkingDuration,
+        agentName: dbRecord.agentName || '',
+        isBusinessHours: dbRecord.isBusinessHours,
+        responseTime: dbRecord.responseTime
+      });
+
+      setWeeklyData(weeklyRecords.map(convertToCallRecord));
+      setYearlyData(yearlyRecords.map(convertToCallRecord));
+      
+      console.log(`تم تحميل ${weeklyRecords.length} سجل أسبوعي و ${yearlyRecords.length} سجل سنوي من قاعدة البيانات`);
+    } catch (error) {
+      console.error('خطأ في تحميل البيانات من قاعدة البيانات:', error);
+    }
   };
 
   // تحديث البيانات المعروضة بناءً على التبويب النشط
@@ -426,7 +505,7 @@ export default function ThreeCX() {
         }
 
         console.log("عينة من البيانات المقروءة:", jsonData[0]);
-        processExcelData(jsonData, isYearly);
+        await processExcelData(jsonData, isYearly);
       } catch (error) {
         console.error('خطأ في قراءة الملف:', error);
         toast({
@@ -515,19 +594,20 @@ export default function ThreeCX() {
     <Layout>
       <div className="space-y-6 p-6">
 
-        {/* Buttons for switching between weekly and yearly data */}
-        <div className="flex justify-start items-center space-x-4">
+        {/* أزرار التبديل بين البيانات الأسبوعية والسنوية */}
+        <div className="flex justify-start items-center space-x-4 mb-4">
           <Button
             variant={activeTab === "weekly" ? "default" : "outline"}
-            onClick={() => {setActiveTab("weekly"); updateDisplayedData();}}
+            onClick={() => setActiveTab("weekly")}
+            className="ml-2"
           >
-            Weekly Data
+            البيانات الأسبوعية
           </Button>
           <Button
             variant={activeTab === "yearly" ? "default" : "outline"}
-            onClick={() => {setActiveTab("yearly"); updateDisplayedData();}}
+            onClick={() => setActiveTab("yearly")}
           >
-            Yearly Data
+            البيانات السنوية
           </Button>
         </div>
 
@@ -556,7 +636,6 @@ export default function ThreeCX() {
 
         {/* رفع الملفات */}
         <div className="grid md:grid-cols-2 gap-4">
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -579,6 +658,33 @@ export default function ThreeCX() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {weeklyData.length > 0 && `تم تحميل ${weeklyData.length} مكالمة أسبوعية`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                رفع البيانات السنوية
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                رفع ملف Excel سنوي جديد
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="yearly-file">اختر ملف Excel السنوي</Label>
+                <Input
+                  id="yearly-file"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => handleFileUpload(e, true)}
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {yearlyData.length > 0 && `تم تحميل ${yearlyData.length} مكالمة سنوية`}
                 </p>
               </div>
             </CardContent>

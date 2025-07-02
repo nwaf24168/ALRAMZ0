@@ -924,6 +924,65 @@ export class DataService {
     }
   }
 
+  // إدارة بيانات 3CX
+  static async saveThreeCXRecord(recordData: any): Promise<void> {
+    const { error } = await supabase
+      .from("threecx_data")
+      .insert({
+        call_time: recordData.callTime,
+        call_id: recordData.callId,
+        from_number: recordData.fromNumber,
+        to_number: recordData.toNumber,
+        direction: recordData.direction,
+        status: recordData.status,
+        ringing_duration: recordData.ringingDuration,
+        talking_duration: recordData.talkingDuration,
+        agent_name: recordData.agentName,
+        is_business_hours: recordData.isBusinessHours,
+        response_time: recordData.responseTime,
+        period: recordData.period,
+        created_by: recordData.createdBy,
+      });
+
+    if (error) {
+      console.error("خطأ Supabase في حفظ سجل 3CX:", error);
+      throw new Error(
+        `خطأ في حفظ سجل 3CX: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
+  static async getThreeCXData(period: 'weekly' | 'yearly'): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("threecx_data")
+      .select("*")
+      .eq("period", period)
+      .order("call_time", { ascending: false });
+
+    if (error) {
+      console.error("خطأ Supabase في جلب بيانات 3CX:", error);
+      throw new Error(
+        `خطأ في جلب بيانات 3CX: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+
+    return data || [];
+  }
+
+  static async clearThreeCXData(period: 'weekly' | 'yearly'): Promise<void> {
+    const { error } = await supabase
+      .from("threecx_data")
+      .delete()
+      .eq("period", period);
+
+    if (error) {
+      console.error("خطأ Supabase في حذف بيانات 3CX:", error);
+      throw new Error(
+        `خطأ في حذف بيانات 3CX: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+  }
+
   // إدارة مكالمات الجودة
   static async saveQualityCall(call: any): Promise<void> {
     const { error } = await supabase
