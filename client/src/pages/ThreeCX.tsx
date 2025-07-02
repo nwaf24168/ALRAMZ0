@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,27 +135,40 @@ export default function ThreeCX() {
       // استخراج اسم الموظف من عمود To أو From
       let agentName = '';
       const callDetails = row['Call Activity Details'] || row['تفاصيل النشاط'] || '';
-      
+
       if (direction === 'Inbound' && to) {
         // للمكالمات الواردة، استخراج اسم الموظف من to
-        agentName = to.includes('(') ? to.split('(')[0].trim() : to;
+        agentName = to.includes('-') ? to.split('-')[0].trim() : to;
+        agentName = agentName.replace(/\(\d+\)/, '').trim(); // إزالة أرقام الداخلي
       } else if (direction === 'Outbound' && from) {
         // للمكالمات الصادرة، استخراج اسم الموظف من from
-        agentName = from.includes('(') ? from.split('(')[0].trim() : from;
+        agentName = from.includes('-') ? from.split('-')[0].trim() : from;
+        agentName = agentName.replace(/\(\d+\)/, '').trim(); // إزالة أرقام الداخلي
       }
 
       // إذا لم نجد اسم الموظف، نحاول من تفاصيل المكالمة
       if (!agentName && callDetails) {
-        const matches = callDetails.match(/replaced by ([^(]+)/);
-        if (matches) {
-          agentName = matches[1].trim();
+        const replacedByMatch = callDetails.match(/replaced by ([^-]+)/);
+        const endedByMatch = callDetails.match(/Ended by ([^-]+)/);
+
+        if (replacedByMatch) {
+          agentName = replacedByMatch[1].trim();
+        } else if (endedByMatch) {
+          agentName = endedByMatch[1].trim();
         }
       }
 
       // إذا لم نجد اسم الموظف، نستخدم قيمة افتراضية
-      if (!agentName || agentName === 'Call Center (800)' || agentName === 'Welcom (802)') {
+      if (!agentName || 
+          agentName === 'Call Center' || 
+          agentName === 'Welcom' || 
+          agentName.includes('800') || 
+          agentName.includes('802') ||
+          agentName.length < 2) {
         agentName = 'غير محدد';
       }
+
+      console.log(`اسم الموظف المستخرج: ${agentName}`);
 
       const ringingSeconds = timeToSeconds(ringing);
       const talkingSeconds = timeToSeconds(talking);
@@ -205,12 +217,12 @@ export default function ThreeCX() {
     const answeredCalls = records.filter(r => r.status === 'Answered').length;
     const unansweredCalls = totalCalls - answeredCalls;
     const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
-    
+
     const answeredRecords = records.filter(r => r.status === 'Answered' && r.responseTime > 0);
     const averageResponseTime = answeredRecords.length > 0 
       ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
       : 0;
-    
+
     const totalTalkTime = records.reduce((sum, r) => sum + r.talkingDuration, 0);
     const businessHoursCalls = records.filter(r => r.isBusinessHours).length;
     const outsideHoursCalls = totalCalls - businessHoursCalls;
@@ -247,7 +259,7 @@ export default function ThreeCX() {
 
       const employee = employeeMap.get(record.agentName)!;
       employee.totalCalls++;
-      
+
       if (record.status === 'Answered') {
         employee.answeredCalls++;
         employee.totalTalkTime += record.talkingDuration;
@@ -261,7 +273,7 @@ export default function ThreeCX() {
         r.status === 'Answered' && 
         r.responseTime > 0
       );
-      
+
       const averageResponseTime = answeredRecords.length > 0
         ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
         : 0;
@@ -303,7 +315,7 @@ export default function ThreeCX() {
           // معالجة ملف CSV
           const text = new TextDecoder().decode(e.target?.result as ArrayBuffer);
           const lines = text.split('\n').filter(line => line.trim());
-          
+
           if (lines.length === 0) {
             toast({
               title: "ملف فارغ",
@@ -316,10 +328,10 @@ export default function ThreeCX() {
           // تحديد نوع الفاصل (فاصلة أو فاصلة منقوطة)
           const header = lines[0];
           const separator = header.includes(';') ? ';' : ',';
-          
+
           // تحويل CSV إلى JSON
           const headers = header.split(separator).map(h => h.trim().replace(/['"]/g, ''));
-          
+
           jsonData = lines.slice(1).map(line => {
             const values = line.split(separator).map(v => v.trim().replace(/['"]/g, ''));
             const row: any = {};
@@ -391,7 +403,7 @@ export default function ThreeCX() {
   const clearWeeklyData = () => {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       setWeeklyData([]);
-      
+
       // إعادة حساب البيانات مع السنوية فقط
       const allRecords = yearlyData;
       setCallRecords(allRecords);
@@ -410,7 +422,7 @@ export default function ThreeCX() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}س ${minutes}د ${secs}ث`;
     } else if (minutes > 0) {
