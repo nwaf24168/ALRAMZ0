@@ -61,10 +61,12 @@ export default function Delivery() {
   const [bookings, setBookings] = useState<DeliveryBooking[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<DeliveryBooking | null>(null);
-  const [isViewMode, setIsViewMode] = useState(isViewMode);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   const [formData, setFormData] = useState<DeliveryBooking>({
     customer_name: "",
@@ -585,6 +587,72 @@ export default function Delivery() {
     total: bookings.length
   };
 
+  // وظائف تحديد الكل
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = bookings.map(booking => booking.id?.toString() || '');
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === bookings.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "لم يتم تحديد أي عناصر للحذف"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} عنصر؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteBooking(id);
+      }
+
+      toast({
+        title: "تم الحذف بنجاح",
+        description: `تم حذف ${selectedItems.size} عنصر`
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      loadBookings();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ أثناء الحذف الجماعي"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -642,6 +710,31 @@ export default function Delivery() {
               <Plus className="ml-2 h-4 w-4" />
               إضافة حجز جديد
             </Button>
+
+            {/* أزرار التحديد الجماعي */}
+            {bookings.length > 0 && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={handleSelectAll}
+                  disabled={loading}
+                >
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                  {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </Button>
+                
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={loading}
+                  >
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    حذف المحدد ({selectedItems.size})
+                  </Button>
+                )}
+              </>
+            )}
 
             {/* حقول الملفات المخفية */}
             <input
@@ -759,6 +852,12 @@ export default function Delivery() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>اسم العميل</TableHead>
                     <TableHead>رقم العميل</TableHead>
                     <TableHead>المشروع</TableHead>
@@ -773,6 +872,12 @@ export default function Delivery() {
                 <TableBody>
                   {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.has(booking.id?.toString() || '')}
+                          onCheckedChange={() => handleItemSelect(booking.id?.toString() || '')}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{booking.customer_name}</TableCell>
                       <TableCell>{booking.customer_phone || '-'}</TableCell>
                       <TableCell>{booking.project || '-'}</TableCell>

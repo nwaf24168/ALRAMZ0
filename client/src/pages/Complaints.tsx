@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ import {
   Filter,
   Plus,
   Trash2,
+  CheckCircle,
   Edit,
   Eye,
   AlertCircle,
@@ -143,6 +145,8 @@ export default function Complaints() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   const [newComplaint, setNewComplaint] = useState<
     Omit<
@@ -183,6 +187,73 @@ export default function Complaints() {
         title: "خطأ",
         message: "حدث خطأ أثناء تحميل الشكاوى من قاعدة البيانات",
         type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // وظائف تحديد الكل
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = filteredComplaints.map(complaint => complaint.id || '');
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === filteredComplaints.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      addNotification({
+        title: "خطأ",
+        message: "لم يتم تحديد أي عناصر للحذف",
+        type: "error"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} شكوى؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteComplaint(id);
+      }
+
+      addNotification({
+        title: "تم الحذف بنجاح",
+        message: `تم حذف ${selectedItems.size} شكوى`,
+        type: "success"
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      await loadComplaints();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      addNotification({
+        title: "خطأ",
+        message: "حدث خطأ أثناء الحذف الجماعي",
+        type: "error"
       });
     } finally {
       setLoading(false);
