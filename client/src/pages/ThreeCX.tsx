@@ -193,23 +193,30 @@ export default function ThreeCX() {
     // تصفية السجلات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = processedRecords.filter(record => record.isBusinessHours);
 
+    // تحديث البيانات حسب النوع
     if (isYearly) {
       setYearlyData(businessHoursRecords);
     } else {
       setWeeklyData(businessHoursRecords);
     }
 
-    // دمج البيانات وحساب التحليلات
-    const allRecords = isYearly ? businessHoursRecords : [...yearlyData, ...businessHoursRecords];
-    setCallRecords(allRecords);
-    calculateAnalytics(allRecords);
-    calculateEmployeePerformance(allRecords);
+    // تحديث البيانات المعروضة حسب التبويب النشط
+    updateDisplayedData();
 
     toast({
       title: "تم رفع البيانات بنجاح",
       description: `تم معالجة ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة`,
     });
   };
+
+  // تحديث البيانات المعروضة بناءً على التبويب النشط
+  const updateDisplayedData = () => {
+    const allRecords = activeTab === "yearly" ? yearlyData : weeklyData;
+    setCallRecords(allRecords);
+    calculateAnalytics(allRecords);
+    calculateEmployeePerformance(allRecords);
+  };
+
 
   // حساب التحليلات العامة
   const calculateAnalytics = (records: CallRecord[]) => {
@@ -330,16 +337,75 @@ export default function ThreeCX() {
           const separator = header.includes(';') ? ';' : ',';
 
           // تحويل CSV إلى JSON
-          const headers = header.split(separator).map(h => h.trim().replace(/['"]/g, ''));
+          let headers = header.split(separator).map(h => h.trim().replace(/['"]/g, ''));
+
+          // للملفات التي تستخدم الفاصلة المنقوطة، قد نحتاج لدمج بعض الأعمدة
+          if (separator === ';') {
+            // دمج الأعمدة المنفصلة
+            const processedHeaders = [];
+            let i = 0;
+            while (i < headers.length) {
+              if (headers[i] === 'Call' && headers[i + 1] === 'Time') {
+                processedHeaders.push('Call Time');
+                i += 2;
+              } else if (headers[i] === 'Call' && headers[i + 1] === 'ID') {
+                processedHeaders.push('Call ID');
+                i += 2;
+              } else if (headers[i] === 'Call' && headers[i + 1] === 'Activity' && headers[i + 2] === 'Details') {
+                processedHeaders.push('Call Activity Details');
+                i += 3;
+              } else {
+                processedHeaders.push(headers[i] || '');
+                i++;
+              }
+            }
+            headers = processedHeaders;
+          }
 
           jsonData = lines.slice(1).map(line => {
+            if (!line.trim()) return null;
+
             const values = line.split(separator).map(v => v.trim().replace(/['"]/g, ''));
             const row: any = {};
-            headers.forEach((header, index) => {
-              row[header] = values[index] || '';
-            });
+
+            if (separator === ';') {
+              // معالجة خاصة للملفات المعقدة
+              let valueIndex = 0;
+              let headerIndex = 0;
+
+              while (headerIndex < headers.length && valueIndex < values.length) {
+                const headerName = headers[headerIndex];
+
+                if (headerName === 'Call Time') {
+                  // دمج التاريخ والوقت
+                  row[headerName] = values[valueIndex] || '';
+                  valueIndex += 2; // تخطي العمود التالي
+                } else if (headerName === 'Call ID') {
+                  row[headerName] = values[valueIndex] || '';
+                  valueIndex += 2;
+                } else if (headerName === 'Call Activity Details') {
+                  // دمج تفاصيل النشاط
+                  const details = [];
+                  for (let j = 0; j < 3 && valueIndex < values.length; j++) {
+                    if (values[valueIndex]) details.push(values[valueIndex]);
+                    valueIndex++;
+                  }
+                  row[headerName] = details.join(' ');
+                } else {
+                  row[headerName] = values[valueIndex] || '';
+                  valueIndex++;
+                }
+                headerIndex++;
+              }
+            } else {
+              // معالجة عادية للملفات البسيطة
+              headers.forEach((header, index) => {
+                row[header] = values[index] || '';
+              });
+            }
+
             return row;
-          }).filter(row => Object.values(row).some(val => val !== ''));
+          }).filter(row => row && Object.values(row).some(val => val !== ''));
 
         } else {
           // معالجة ملف Excel
@@ -403,12 +469,7 @@ export default function ThreeCX() {
   const clearWeeklyData = () => {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       setWeeklyData([]);
-
-      // إعادة حساب البيانات مع السنوية فقط
-      const allRecords = yearlyData;
-      setCallRecords(allRecords);
-      calculateAnalytics(allRecords);
-      calculateEmployeePerformance(allRecords);
+      updateDisplayedData();
 
       toast({
         title: "تم حذف البيانات الأسبوعية",
@@ -453,6 +514,23 @@ export default function ThreeCX() {
   return (
     <Layout>
       <div className="space-y-6 p-6">
+
+        {/* Buttons for switching between weekly and yearly data */}
+        <div className="flex justify-start items-center space-x-4">
+          <Button
+            variant={activeTab === "weekly" ? "default" : "outline"}
+            onClick={() => {setActiveTab("weekly"); updateDisplayedData();}}
+          >
+            Weekly Data
+          </Button>
+          <Button
+            variant={activeTab === "yearly" ? "default" : "outline"}
+            onClick={() => {setActiveTab("yearly"); updateDisplayedData();}}
+          >
+            Yearly Data
+          </Button>
+        </div>
+
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">تحليل بيانات مكالمات 3CX</h1>
@@ -478,32 +556,6 @@ export default function ThreeCX() {
 
         {/* رفع الملفات */}
         <div className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                رفع البيانات السنوية
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                رفع ملف Excel واحد يحتوي على البيانات السنوية (يتم رفعه مرة واحدة)
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="yearly-file">اختر ملف Excel السنوي</Label>
-                <Input
-                  id="yearly-file"
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => handleFileUpload(e, true)}
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {yearlyData.length > 0 && `تم تحميل ${yearlyData.length} مكالمة سنوية`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
@@ -512,7 +564,7 @@ export default function ThreeCX() {
                 رفع البيانات الأسبوعية
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                رفع ملف Excel أسبوعي جديد (يدمج تلقائياً مع البيانات السنوية)
+                رفع ملف Excel أسبوعي جديد
               </p>
             </CardHeader>
             <CardContent>
