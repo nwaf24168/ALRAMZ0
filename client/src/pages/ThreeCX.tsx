@@ -199,19 +199,24 @@ export default function ThreeCX() {
 
   // حساب التحليلات العامة
   const calculateAnalytics = (records: CallRecord[]) => {
-    const totalCalls = records.length;
-    const answeredCalls = records.filter(r => r.status === 'Answered').length;
+    // تصفية المكالمات لتشمل فقط المكالمات في أوقات الدوام
+    const businessHoursRecords = records.filter(r => r.isBusinessHours);
+    
+    const totalCalls = businessHoursRecords.length;
+    const answeredCalls = businessHoursRecords.filter(r => r.status === 'Answered').length;
     const unansweredCalls = totalCalls - answeredCalls;
+    
+    // حساب معدل الرد بناءً على المكالمات في أوقات الدوام فقط
     const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
     
-    const answeredRecords = records.filter(r => r.status === 'Answered' && r.responseTime > 0);
+    const answeredRecords = businessHoursRecords.filter(r => r.status === 'Answered' && r.responseTime > 0);
     const averageResponseTime = answeredRecords.length > 0 
       ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
       : 0;
     
-    const totalTalkTime = records.reduce((sum, r) => sum + r.talkingDuration, 0);
-    const businessHoursCalls = records.filter(r => r.isBusinessHours).length;
-    const outsideHoursCalls = totalCalls - businessHoursCalls;
+    const totalTalkTime = businessHoursRecords.reduce((sum, r) => sum + r.talkingDuration, 0);
+    const businessHoursCalls = businessHoursRecords.length;
+    const outsideHoursCalls = records.length - businessHoursCalls;
 
     setAnalytics({
       totalCalls,
@@ -229,7 +234,10 @@ export default function ThreeCX() {
   const calculateEmployeePerformance = (records: CallRecord[]) => {
     const employeeMap = new Map<string, EmployeePerformance>();
 
-    records.forEach(record => {
+    // تصفية المكالمات لتشمل فقط المكالمات في أوقات الدوام
+    const businessHoursRecords = records.filter(r => r.isBusinessHours);
+
+    businessHoursRecords.forEach(record => {
       if (record.agentName === 'غير محدد') return;
 
       if (!employeeMap.has(record.agentName)) {
@@ -254,7 +262,7 @@ export default function ThreeCX() {
 
     // حساب المعدلات النهائية
     const performance = Array.from(employeeMap.values()).map(emp => {
-      const answeredRecords = records.filter(r => 
+      const answeredRecords = businessHoursRecords.filter(r => 
         r.agentName === emp.agentName && 
         r.status === 'Answered' && 
         r.responseTime > 0
@@ -490,7 +498,7 @@ export default function ThreeCX() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">إجمالي المكالمات</p>
+                    <p className="text-sm font-medium text-muted-foreground">إجمالي المكالمات (أوقات الدوام)</p>
                     <p className="text-2xl font-bold">{analytics.totalCalls}</p>
                   </div>
                   <Phone className="w-8 h-8 text-blue-600" />
@@ -502,7 +510,7 @@ export default function ThreeCX() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">معدل الرد</p>
+                    <p className="text-sm font-medium text-muted-foreground">معدل الرد (أوقات الدوام)</p>
                     <p className="text-2xl font-bold">{analytics.answerRate.toFixed(1)}%</p>
                   </div>
                   <TrendingUp className="w-8 h-8 text-green-600" />
