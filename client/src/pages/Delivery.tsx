@@ -61,7 +61,6 @@ export default function Delivery() {
   const [bookings, setBookings] = useState<DeliveryBooking[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<DeliveryBooking | null>(null);
-  const [isViewMode, setIsViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -653,6 +652,11 @@ export default function Delivery() {
     }
   };
 
+  const isViewMode = user?.permissions?.level === "view";
+  const [viewMode, setViewMode] = useState<"table" | "cards">(
+    isMobile || isViewMode ? "cards" : "table"
+  );
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -722,7 +726,7 @@ export default function Delivery() {
                   <CheckCircle className="ml-2 h-4 w-4" />
                   {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
                 </Button>
-                
+
                 {selectedItems.size > 0 && (
                   <Button 
                     variant="destructive"
