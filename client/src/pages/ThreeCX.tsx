@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,16 +94,6 @@ export default function ThreeCX() {
   const [employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
   const [activeTab, setActiveTab] = useState<"weekly" | "yearly">("weekly");
 
-  // تحميل البيانات عند تحميل المكون
-  useEffect(() => {
-    loadDataFromDatabase();
-  }, []);
-
-  // تحديث البيانات المعروضة عند تغيير التبويب النشط
-  useEffect(() => {
-    updateDisplayedData();
-  }, [activeTab, weeklyData, yearlyData]);
-
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
     const date = new Date(dateTime);
@@ -128,13 +119,11 @@ export default function ThreeCX() {
   };
 
   // معالجة ملف Excel
-  const processExcelData = async (data: any[], isYearly: boolean = false) => {
+  const processExcelData = (data: any[], isYearly: boolean = false) => {
     console.log("معالجة بيانات Excel:", data.length, "سجل");
 
     const processedRecords: CallRecord[] = data.map((row, index) => {
-      // التعامل مع تنسيقات مختلفة من CSV (فواصل أو فواصل منقوطة)
-      const callTime = row['Call Time'] || row['Call'] || row['وقت المكالمة'] || '';
-      const callId = row['Call ID'] || row['ID'] || row['معرف المكالمة'] || '';
+      const callTime = row['Call Time'] || row['وقت المكالمة'] || '';
       const from = row['From'] || row['من'] || '';
       const to = row['To'] || row['إلى'] || '';
       const direction = row['Direction'] || row['الاتجاه'] || '';
@@ -145,189 +134,68 @@ export default function ThreeCX() {
       // استخراج اسم الموظف من عمود To أو From
       let agentName = '';
       const callDetails = row['Call Activity Details'] || row['تفاصيل النشاط'] || '';
-
+      
       if (direction === 'Inbound' && to) {
         // للمكالمات الواردة، استخراج اسم الموظف من to
-        agentName = to.includes('-') ? to.split('-')[0].trim() : to;
-        agentName = agentName.replace(/\(\d+\)/, '').trim(); // إزالة أرقام الداخلي
+        agentName = to.includes('(') ? to.split('(')[0].trim() : to;
       } else if (direction === 'Outbound' && from) {
         // للمكالمات الصادرة، استخراج اسم الموظف من from
-        agentName = from.includes('-') ? from.split('-')[0].trim() : from;
-        agentName = agentName.replace(/\(\d+\)/, '').trim(); // إزالة أرقام الداخلي
+        agentName = from.includes('(') ? from.split('(')[0].trim() : from;
       }
 
       // إذا لم نجد اسم الموظف، نحاول من تفاصيل المكالمة
       if (!agentName && callDetails) {
-        const replacedByMatch = callDetails.match(/replaced by ([^-]+)/);
-        const endedByMatch = callDetails.match(/Ended by ([^-]+)/);
-
-        if (replacedByMatch) {
-          agentName = replacedByMatch[1].trim();
-        } else if (endedByMatch) {
-          agentName = endedByMatch[1].trim();
+        const matches = callDetails.match(/replaced by ([^(]+)/);
+        if (matches) {
+          agentName = matches[1].trim();
         }
       }
 
       // إذا لم نجد اسم الموظف، نستخدم قيمة افتراضية
-      if (!agentName || 
-          agentName === 'Call Center' || 
-          agentName === 'Welcom' || 
-          agentName.includes('800') || 
-          agentName.includes('802') ||
-          agentName.length < 2) {
+      if (!agentName || agentName === 'Call Center (800)' || agentName === 'Welcom (802)') {
         agentName = 'غير محدد';
       }
-
-      console.log(`اسم الموظف المستخرج: ${agentName}`);
 
       const ringingSeconds = timeToSeconds(ringing);
       const talkingSeconds = timeToSeconds(talking);
       const isInBusinessHours = isBusinessHours(callTime);
 
-      // تنظيف قيمة direction للتأكد من توافقها مع قاعدة البيانات
-      let cleanDirection: 'Inbound' | 'Outbound' = 'Inbound';
-      if (direction && typeof direction === 'string') {
-        const directionLower = direction.toLowerCase().trim();
-        if (directionLower === 'outbound' || directionLower === 'صادرة') {
-          cleanDirection = 'Outbound';
-        } else if (directionLower === 'inbound' || directionLower === 'واردة') {
-          cleanDirection = 'Inbound';
-        }
-      }
-
-      // تنظيف قيمة status للتأكد من توافقها مع قاعدة البيانات
-      let cleanStatus: 'Answered' | 'Unanswered' = 'Unanswered';
-      if (status && typeof status === 'string') {
-        const statusLower = status.toLowerCase().trim();
-        if (statusLower === 'answered' || statusLower === 'تم الرد') {
-          cleanStatus = 'Answered';
-        } else {
-          cleanStatus = 'Unanswered';
-        }
-      }
-
       return {
         id: `${index}-${Date.now()}`,
         callTime,
-        callId,
+        callId: row['Call ID'] || row['معرف المكالمة'] || '',
         from,
         to,
-        direction: cleanDirection,
-        status: cleanStatus,
+        direction: direction as 'Inbound' | 'Outbound',
+        status: status as 'Answered' | 'Unanswered',
         ringingDuration: ringingSeconds,
         talkingDuration: talkingSeconds,
         agentName,
         isBusinessHours: isInBusinessHours,
-        responseTime: cleanStatus === 'Answered' ? ringingSeconds : 0
+        responseTime: status === 'Answered' ? ringingSeconds : 0
       };
     });
 
     // تصفية السجلات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = processedRecords.filter(record => record.isBusinessHours);
 
-    try {
-      // حفظ البيانات في قاعدة البيانات
-      await saveDataToDatabase(businessHoursRecords, isYearly);
-
-      // تحديث البيانات حسب النوع
-      if (isYearly) {
-        setYearlyData(businessHoursRecords);
-      } else {
-        setWeeklyData(businessHoursRecords);
-      }
-
-      // تحديث البيانات المعروضة حسب التبويب النشط
-      updateDisplayedData();
-
-      toast({
-        title: "تم رفع البيانات بنجاح",
-        description: `تم معالجة وحفظ ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة في قاعدة البيانات`,
-      });
-    } catch (error) {
-      console.error('خطأ في حفظ البيانات:', error);
-      toast({
-        title: "خطأ في حفظ البيانات",
-        description: "فشل في حفظ البيانات في قاعدة البيانات",
-        variant: "destructive",
-      });
+    if (isYearly) {
+      setYearlyData(businessHoursRecords);
+    } else {
+      setWeeklyData(businessHoursRecords);
     }
-  };
 
-  // حفظ البيانات في قاعدة البيانات
-  const saveDataToDatabase = async (records: CallRecord[], isYearly: boolean) => {
-    const period = isYearly ? 'yearly' : 'weekly';
-    
-    // حذف البيانات القديمة أولاً
-    await DataService.clearThreeCXData(period);
-    
-    // حفظ البيانات الجديدة
-    for (const record of records) {
-      const recordData = {
-        callTime: new Date(record.callTime).toISOString(),
-        callId: record.callId,
-        fromNumber: record.from,
-        toNumber: record.to,
-        direction: record.direction,
-        status: record.status,
-        ringingDuration: record.ringingDuration,
-        talkingDuration: record.talkingDuration,
-        agentName: record.agentName,
-        isBusinessHours: record.isBusinessHours,
-        responseTime: record.responseTime,
-        period: period,
-        createdBy: user?.username || 'unknown'
-      };
-
-      // تسجيل البيانات للتشخيص
-      console.log('حفظ سجل ThreeCX:', {
-        direction: recordData.direction,
-        status: recordData.status,
-        agentName: recordData.agentName,
-        callId: recordData.callId
-      });
-
-      await DataService.saveThreeCXRecord(recordData);
-    }
-  };
-
-  // تحميل البيانات من قاعدة البيانات
-  const loadDataFromDatabase = async () => {
-    try {
-      const weeklyRecords = await DataService.getThreeCXData('weekly');
-      const yearlyRecords = await DataService.getThreeCXData('yearly');
-      
-      const convertToCallRecord = (dbRecord: any): CallRecord => ({
-        id: dbRecord.id.toString(),
-        callTime: dbRecord.callTime,
-        callId: dbRecord.callId,
-        from: dbRecord.fromNumber || '',
-        to: dbRecord.toNumber || '',
-        direction: dbRecord.direction as 'Inbound' | 'Outbound',
-        status: dbRecord.status as 'Answered' | 'Unanswered',
-        ringingDuration: dbRecord.ringingDuration,
-        talkingDuration: dbRecord.talkingDuration,
-        agentName: dbRecord.agentName || '',
-        isBusinessHours: dbRecord.isBusinessHours,
-        responseTime: dbRecord.responseTime
-      });
-
-      setWeeklyData(weeklyRecords.map(convertToCallRecord));
-      setYearlyData(yearlyRecords.map(convertToCallRecord));
-      
-      console.log(`تم تحميل ${weeklyRecords.length} سجل أسبوعي و ${yearlyRecords.length} سجل سنوي من قاعدة البيانات`);
-    } catch (error) {
-      console.error('خطأ في تحميل البيانات من قاعدة البيانات:', error);
-    }
-  };
-
-  // تحديث البيانات المعروضة بناءً على التبويب النشط
-  const updateDisplayedData = () => {
-    const allRecords = activeTab === "yearly" ? yearlyData : weeklyData;
+    // دمج البيانات وحساب التحليلات
+    const allRecords = isYearly ? businessHoursRecords : [...yearlyData, ...businessHoursRecords];
     setCallRecords(allRecords);
     calculateAnalytics(allRecords);
     calculateEmployeePerformance(allRecords);
-  };
 
+    toast({
+      title: "تم رفع البيانات بنجاح",
+      description: `تم معالجة ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة`,
+    });
+  };
 
   // حساب التحليلات العامة
   const calculateAnalytics = (records: CallRecord[]) => {
@@ -335,12 +203,12 @@ export default function ThreeCX() {
     const answeredCalls = records.filter(r => r.status === 'Answered').length;
     const unansweredCalls = totalCalls - answeredCalls;
     const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
-
+    
     const answeredRecords = records.filter(r => r.status === 'Answered' && r.responseTime > 0);
     const averageResponseTime = answeredRecords.length > 0 
       ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
       : 0;
-
+    
     const totalTalkTime = records.reduce((sum, r) => sum + r.talkingDuration, 0);
     const businessHoursCalls = records.filter(r => r.isBusinessHours).length;
     const outsideHoursCalls = totalCalls - businessHoursCalls;
@@ -377,7 +245,7 @@ export default function ThreeCX() {
 
       const employee = employeeMap.get(record.agentName)!;
       employee.totalCalls++;
-
+      
       if (record.status === 'Answered') {
         employee.answeredCalls++;
         employee.totalTalkTime += record.talkingDuration;
@@ -391,7 +259,7 @@ export default function ThreeCX() {
         r.status === 'Answered' && 
         r.responseTime > 0
       );
-
+      
       const averageResponseTime = answeredRecords.length > 0
         ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
         : 0;
@@ -425,107 +293,13 @@ export default function ThreeCX() {
     setIsLoading(true);
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       try {
-        let jsonData: any[] = [];
-
-        if (fileName.endsWith('.csv')) {
-          // معالجة ملف CSV
-          const text = new TextDecoder().decode(e.target?.result as ArrayBuffer);
-          const lines = text.split('\n').filter(line => line.trim());
-
-          if (lines.length === 0) {
-            toast({
-              title: "ملف فارغ",
-              description: "الملف لا يحتوي على بيانات",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          // تحديد نوع الفاصل (فاصلة أو فاصلة منقوطة)
-          const header = lines[0];
-          const separator = header.includes(';') ? ';' : ',';
-
-          // تحويل CSV إلى JSON
-          let headers = header.split(separator).map(h => h.trim().replace(/['"]/g, ''));
-
-          // للملفات التي تستخدم الفاصلة المنقوطة، قد نحتاج لدمج بعض الأعمدة
-          if (separator === ';') {
-            // دمج الأعمدة المنفصلة
-            const processedHeaders = [];
-            let i = 0;
-            while (i < headers.length) {
-              if (headers[i] === 'Call' && headers[i + 1] === 'Time') {
-                processedHeaders.push('Call Time');
-                i += 2;
-              } else if (headers[i] === 'Call' && headers[i + 1] === 'ID') {
-                processedHeaders.push('Call ID');
-                i += 2;
-              } else if (headers[i] === 'Call' && headers[i + 1] === 'Activity' && headers[i + 2] === 'Details') {
-                processedHeaders.push('Call Activity Details');
-                i += 3;
-              } else {
-                processedHeaders.push(headers[i] || '');
-                i++;
-              }
-            }
-            headers = processedHeaders;
-          }
-
-          jsonData = lines.slice(1).map(line => {
-            if (!line.trim()) return null;
-
-            const values = line.split(separator).map(v => v.trim().replace(/['"]/g, ''));
-            const row: any = {};
-
-            if (separator === ';') {
-              // معالجة خاصة للملفات المعقدة
-              let valueIndex = 0;
-              let headerIndex = 0;
-
-              while (headerIndex < headers.length && valueIndex < values.length) {
-                const headerName = headers[headerIndex];
-
-                if (headerName === 'Call Time') {
-                  // دمج التاريخ والوقت
-                  row[headerName] = values[valueIndex] || '';
-                  valueIndex += 2; // تخطي العمود التالي
-                } else if (headerName === 'Call ID') {
-                  row[headerName] = values[valueIndex] || '';
-                  valueIndex += 2;
-                } else if (headerName === 'Call Activity Details') {
-                  // دمج تفاصيل النشاط
-                  const details = [];
-                  for (let j = 0; j < 3 && valueIndex < values.length; j++) {
-                    if (values[valueIndex]) details.push(values[valueIndex]);
-                    valueIndex++;
-                  }
-                  row[headerName] = details.join(' ');
-                } else {
-                  row[headerName] = values[valueIndex] || '';
-                  valueIndex++;
-                }
-                headerIndex++;
-              }
-            } else {
-              // معالجة عادية للملفات البسيطة
-              headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-              });
-            }
-
-            return row;
-          }).filter(row => row && Object.values(row).some(val => val !== ''));
-
-        } else {
-          // معالجة ملف Excel
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          jsonData = XLSX.utils.sheet_to_json(worksheet);
-        }
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         if (jsonData.length === 0) {
           toast({
@@ -536,8 +310,7 @@ export default function ThreeCX() {
           return;
         }
 
-        console.log("عينة من البيانات المقروءة:", jsonData[0]);
-        await processExcelData(jsonData, isYearly);
+        processExcelData(jsonData, isYearly);
       } catch (error) {
         console.error('خطأ في قراءة الملف:', error);
         toast({
@@ -580,7 +353,12 @@ export default function ThreeCX() {
   const clearWeeklyData = () => {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       setWeeklyData([]);
-      updateDisplayedData();
+      
+      // إعادة حساب البيانات مع السنوية فقط
+      const allRecords = yearlyData;
+      setCallRecords(allRecords);
+      calculateAnalytics(allRecords);
+      calculateEmployeePerformance(allRecords);
 
       toast({
         title: "تم حذف البيانات الأسبوعية",
@@ -594,7 +372,7 @@ export default function ThreeCX() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-
+    
     if (hours > 0) {
       return `${hours}س ${minutes}د ${secs}ث`;
     } else if (minutes > 0) {
@@ -625,24 +403,6 @@ export default function ThreeCX() {
   return (
     <Layout>
       <div className="space-y-6 p-6">
-
-        {/* أزرار التبديل بين البيانات الأسبوعية والسنوية */}
-        <div className="flex justify-start items-center space-x-4 mb-4">
-          <Button
-            variant={activeTab === "weekly" ? "default" : "outline"}
-            onClick={() => setActiveTab("weekly")}
-            className="ml-2"
-          >
-            البيانات الأسبوعية
-          </Button>
-          <Button
-            variant={activeTab === "yearly" ? "default" : "outline"}
-            onClick={() => setActiveTab("yearly")}
-          >
-            البيانات السنوية
-          </Button>
-        </div>
-
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">تحليل بيانات مكالمات 3CX</h1>
@@ -672,37 +432,10 @@ export default function ThreeCX() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="w-5 h-5" />
-                رفع البيانات الأسبوعية
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                رفع ملف Excel أسبوعي جديد
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="weekly-file">اختر ملف Excel الأسبوعي</Label>
-                <Input
-                  id="weekly-file"
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => handleFileUpload(e, false)}
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {weeklyData.length > 0 && `تم تحميل ${weeklyData.length} مكالمة أسبوعية`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="w-5 h-5" />
                 رفع البيانات السنوية
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                رفع ملف Excel سنوي جديد
+                رفع ملف Excel واحد يحتوي على البيانات السنوية (يتم رفعه مرة واحدة)
               </p>
             </CardHeader>
             <CardContent>
@@ -717,6 +450,33 @@ export default function ThreeCX() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {yearlyData.length > 0 && `تم تحميل ${yearlyData.length} مكالمة سنوية`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                رفع البيانات الأسبوعية
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                رفع ملف Excel أسبوعي جديد (يدمج تلقائياً مع البيانات السنوية)
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="weekly-file">اختر ملف Excel الأسبوعي</Label>
+                <Input
+                  id="weekly-file"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => handleFileUpload(e, false)}
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {weeklyData.length > 0 && `تم تحميل ${weeklyData.length} مكالمة أسبوعية`}
                 </p>
               </div>
             </CardContent>

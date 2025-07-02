@@ -898,6 +898,7 @@ export class DataService {
         customer_request: recordData.customerRequest,
         action: recordData.action,
         status: recordData.status,
+        updated_by: recordData.updatedBy,
       })
       .eq("id", id);
 
@@ -905,79 +906,6 @@ export class DataService {
       console.error("خطأ Supabase في تحديث سجل الاستقبال:", error);
       throw new Error(
         `خطأ في تحديث سجل الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-  }
-
-  // دوال ThreeCX
-  static async saveThreeCXRecord(record: {
-    callTime: string;
-    callId: string;
-    fromNumber: string;
-    toNumber: string;
-    direction: string;
-    status: string;
-    ringingDuration: number;
-    talkingDuration: number;
-    agentName: string;
-    isBusinessHours: boolean;
-    responseTime: number;
-    period: string;
-    createdBy: string;
-  }): Promise<void> {
-    const { error } = await supabase
-      .from("threecx_data")
-      .insert({
-        call_time: record.callTime,
-        call_id: record.callId,
-        from_number: record.fromNumber,
-        to_number: record.toNumber,
-        direction: record.direction,
-        status: record.status,
-        ringing_duration: record.ringingDuration,
-        talking_duration: record.talkingDuration,
-        agent_name: record.agentName,
-        is_business_hours: record.isBusinessHours,
-        response_time: record.responseTime,
-        period: record.period,
-        created_by: record.createdBy,
-      });
-
-    if (error) {
-      console.error("خطأ Supabase في حفظ سجل ThreeCX:", error);
-      throw new Error(
-        `خطأ في حفظ سجل ThreeCX: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-  }
-
-  static async getThreeCXData(period: string): Promise<any[]> {
-    const { data, error } = await supabase
-      .from("threecx_data")
-      .select("*")
-      .eq("period", period)
-      .order("call_time", { ascending: false });
-
-    if (error) {
-      console.error("خطأ Supabase في جلب بيانات ThreeCX:", error);
-      throw new Error(
-        `خطأ في جلب بيانات ThreeCX: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-
-    return data || [];
-  }
-
-  static async clearThreeCXData(period: string): Promise<void> {
-    const { error } = await supabase
-      .from("threecx_data")
-      .delete()
-      .eq("period", period);
-
-    if (error) {
-      console.error("خطأ Supabase في حذف بيانات ThreeCX:", error);
-      throw new Error(
-        `خطأ في حذف بيانات ThreeCX: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
   }
@@ -995,8 +923,6 @@ export class DataService {
       );
     }
   }
-
-  
 
   // إدارة مكالمات الجودة
   static async saveQualityCall(call: any): Promise<void> {
