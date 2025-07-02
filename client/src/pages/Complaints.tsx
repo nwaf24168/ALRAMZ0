@@ -143,6 +143,8 @@ export default function Complaints() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+    const [selectedComplaints, setSelectedComplaints] = useState<Set<string>>(new Set());
+
 
   const [newComplaint, setNewComplaint] = useState<
     Omit<
@@ -422,6 +424,42 @@ export default function Complaints() {
       });
     }
   };
+
+    const handleDeleteSelected = async () => {
+        if (!user || selectedComplaints.size === 0) return;
+
+        try {
+            setLoading(true);
+            const complaintIdsToDelete = Array.from(selectedComplaints);
+
+            // حذف الشكاوى المحددة
+            await Promise.all(
+                complaintIdsToDelete.map(async (complaintId) => {
+                    console.log("حذف الشكوى:", complaintId);
+                    await DataService.deleteComplaint(complaintId);
+                })
+            );
+
+            addNotification({
+                title: "تم الحذف",
+                message: `تم حذف ${selectedComplaints.size} شكوى بنجاح من قاعدة البيانات`,
+                type: "success",
+            });
+
+            // إعادة تحميل البيانات وتحديث حالة الاختيار
+            await loadComplaints();
+            setSelectedComplaints(new Set());
+        } catch (error) {
+            console.error("خطأ في حذف الشكاوى:", error);
+            addNotification({
+                title: "خطأ",
+                message: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الشكاوى",
+                type: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
   const handleDeleteComplaint = async () => {
     if (!selectedComplaint) return;
@@ -796,10 +834,20 @@ export default function Complaints() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Button onClick={exportToExcel}>
-                  تصدير إلى Excel
-                </Button>
-              </div>
+            <Button onClick={exportToExcel}>
+              تصدير إلى Excel
+            </Button>
+            {selectedComplaints.size > 0 && hasEditAccess("complaints") && (
+              <Button 
+                onClick={handleDeleteSelected} 
+                variant="destructive"
+                disabled={loading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                حذف المحدد ({selectedComplaints.size})
+              </Button>
+            )}
+          </div>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select

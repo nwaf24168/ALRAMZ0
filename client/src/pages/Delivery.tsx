@@ -65,6 +65,8 @@ export default function Delivery() {
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   const [formData, setFormData] = useState<DeliveryBooking>({
     customer_name: "",
@@ -220,6 +222,94 @@ export default function Delivery() {
         variant: "destructive",
         title: "خطأ",
         description: "فشل في حذف الحجز"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // تحديد/إلغاء تحديد حجز
+  const toggleBookingSelection = (bookingId: number) => {
+    const newSelection = new Set(selectedBookings);
+    if (newSelection.has(bookingId)) {
+      newSelection.delete(bookingId);
+    } else {
+      newSelection.add(bookingId);
+    }
+    setSelectedBookings(newSelection);
+    setSelectAll(newSelection.size === filteredBookings.length);
+  };
+
+  // تحديد/إلغاء تحديد الكل
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedBookings(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = new Set(filteredBookings.map(b => b.id!).filter(id => id !== undefined));
+      setSelectedBookings(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  // حذف الحجوزات المحددة
+  const handleDeleteSelected = async () => {
+    if (selectedBookings.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "لا توجد عناصر محددة",
+        description: "يرجى تحديد حجز واحد على الأقل للحذف"
+      });
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من حذف ${selectedBookings.size} حجز؟`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      let deletedCount = 0;
+      let errorCount = 0;
+
+      // حذف الحجوزات بشكل متسلسل
+      for (const bookingId of selectedBookings) {
+        try {
+          await DataService.deleteDeliveryBooking(bookingId);
+          deletedCount++;
+        } catch (error) {
+          console.error('خطأ في حذف الحجز:', bookingId, error);
+          errorCount++;
+        }
+      }
+
+      // إعادة تحميل البيانات
+      await loadBookings();
+
+      // إعادة تعيين التحديد
+      setSelectedBookings(new Set());
+      setSelectAll(false);
+
+      if (deletedCount > 0) {
+        toast({
+          title: "تم الحذف",
+          description: `تم حذف ${deletedCount} حجز بنجاح`
+        });
+      }
+
+      if (errorCount > 0) {
+        toast({
+          variant: "destructive",
+          title: "تحذير",
+          description: `فشل في حذف ${errorCount} حجز`
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في حذف الحجوزات:', error);
+      toast({
+        variant: "destructive",
+        title: "خطأ في الحذف",
+        description: "حدث خطأ أثناء حذف الحجوزات"
       });
     } finally {
       setLoading(false);
@@ -643,6 +733,17 @@ export default function Delivery() {
               إضافة حجز جديد
             </Button>
 
+            {selectedBookings.size > 0 && (
+              <Button 
+                onClick={handleDeleteSelected} 
+                variant="destructive"
+                disabled={loading}
+              >
+                <Trash2 className="ml-2 h-4 w-4" />
+                حذف المحدد ({selectedBookings.size})
+              </Button>
+            )}
+
             {/* حقول الملفات المخفية */}
             <input
               id="excel-import"
@@ -759,6 +860,14 @@ export default function Delivery() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="text-center w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300"
+                      />
+                    </TableHead>
                     <TableHead>اسم العميل</TableHead>
                     <TableHead>رقم العميل</TableHead>
                     <TableHead>المشروع</TableHead>
@@ -773,6 +882,15 @@ export default function Delivery() {
                 <TableBody>
                   {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
+                      <TableCell className="text-center w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedBookings.has(booking.id!)}
+                          onChange={() => toggleBookingSelection(booking.id!)}
+                          className="rounded border-gray-300"
+                          disabled={!booking.id}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{booking.customer_name}</TableCell>
                       <TableCell>{booking.customer_phone || '-'}</TableCell>
                       <TableCell>{booking.project || '-'}</TableCell>
@@ -826,7 +944,7 @@ export default function Delivery() {
                   ))}
                   {filteredBookings.length === 0 && (
 <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
+                      <TableCell colSpan={10} className="text-center py-8">
                         {loading ? "جاري تحميل البيانات..." : "لا توجد حجوزات"}
                       </TableCell>
                     </TableRow>
