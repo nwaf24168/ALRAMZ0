@@ -66,6 +66,8 @@ const QualityCalls = () => {
   const [statusFilter, setStatusFilter] = useState<string>("الكل");
   const [qualificationReason, setQualificationReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // إحصائيات سريعة
   const totalCustomers = customers.length;
@@ -590,6 +592,95 @@ const QualityCalls = () => {
     }
   };
 
+  // تحديد/إلغاء تحديد عميل
+  const toggleCustomerSelection = (customerId: string) => {
+    const newSelection = new Set(selectedCustomers);
+    if (newSelection.has(customerId)) {
+      newSelection.delete(customerId);
+    } else {
+      newSelection.add(customerId);
+    }
+    setSelectedCustomers(newSelection);
+    setSelectAll(newSelection.size === filteredCustomers.length);
+  };
+
+  // تحديد/إلغاء تحديد الكل
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedCustomers(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = new Set(filteredCustomers.map(c => c.id));
+      setSelectedCustomers(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  // حذف العملاء المحددين
+  const deleteSelectedCustomers = async () => {
+    if (selectedCustomers.size === 0) {
+      addNotification({
+        title: "لا توجد عناصر محددة",
+        message: "يرجى تحديد عميل واحد على الأقل للحذف",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (!window.confirm(`هل أنت متأكد من حذف ${selectedCustomers.size} عميل؟`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      let deletedCount = 0;
+      let errorCount = 0;
+
+      // حذف العملاء بشكل متسلسل
+      for (const customerId of selectedCustomers) {
+        try {
+          await DataService.deleteQualityCall(customerId);
+          deletedCount++;
+        } catch (error) {
+          console.error('خطأ في حذف العميل:', customerId, error);
+          errorCount++;
+        }
+      }
+
+      // إعادة تحميل البيانات
+      await loadQualityCallsFromDB();
+
+      // إعادة تعيين التحديد
+      setSelectedCustomers(new Set());
+      setSelectAll(false);
+
+      if (deletedCount > 0) {
+        addNotification({
+          title: "تم الحذف",
+          message: `تم حذف ${deletedCount} عميل بنجاح`,
+          type: "success",
+        });
+      }
+
+      if (errorCount > 0) {
+        addNotification({
+          title: "تحذير",
+          message: `فشل في حذف ${errorCount} عميل`,
+          type: "warning",
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في حذف العملاء:', error);
+      addNotification({
+        title: "خطأ في الحذف",
+        message: "حدث خطأ أثناء حذف العملاء",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-4 sm:space-y-6">
@@ -680,6 +771,16 @@ const QualityCalls = () => {
               <Download className="h-4 w-4 mr-2" />
               تصدير
             </Button>
+            {selectedCustomers.size > 0 && (
+              <Button 
+                onClick={deleteSelectedCustomers} 
+                variant="destructive"
+                disabled={isLoading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                حذف المحدد ({selectedCustomers.size})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -793,6 +894,14 @@ const QualityCalls = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="text-center p-3 w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
                     <th className="text-right p-3">اسم العميل</th>
                     <th className="text-right p-3">رقم الجوال</th>
                     <th className="text-right p-3">موظف المبيعات</th>
@@ -806,6 +915,14 @@ const QualityCalls = () => {
                 <tbody>
                   {filteredCustomers.map((customer) => (
                     <tr key={customer.id} className="border-b hover:bg-muted/50">
+                      <td className="text-center p-3 w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedCustomers.has(customer.id)}
+                          onChange={() => toggleCustomerSelection(customer.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
                       <td className="p-3 font-medium">{customer.customerName}</td>
                       <td className="p-3 font-mono">{customer.phoneNumber}</td>
                       <td className="p-3">{customer.salesEmployee}</td>
@@ -908,7 +1025,12 @@ const QualityCalls = () => {
               </table>
               {filteredCustomers.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  لا توجد بيانات للعرض
+                  <div className="mb-2">لا توجد بيانات للعرض</div>
+                  {customers.length === 0 && (
+                    <div className="text-xs text-gray-500">
+                      يمكنك رفع ملف Excel أو إضافة عميل جديد للبدء
+                    </div>
+                  )}
                 </div>
               )}
             </div>

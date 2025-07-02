@@ -120,10 +120,10 @@ export default function Reception() {
       }));
       setRecords(formattedRecords);
     } catch (error) {
-      console.error("خطأ في تحميل سجلات الاستقبال:", error);
+      console.error("خطأ في تحميل سجلات المكالمات:", error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل سجلات الاستقبال",
+        description: "فشل في تحميل سجلات المكالمات",
         variant: "destructive",
       });
     } finally {
@@ -169,7 +169,7 @@ export default function Reception() {
       XLSX.utils.book_append_sheet(workbook, worksheet, 'سجلات الاستقبال');
 
       // تصدير الملف
-      const fileName = `سجلات_الاستقبال_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `سجلات_المكالمات_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast({
@@ -698,7 +698,7 @@ export default function Reception() {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">اتصالات خدمة العملاء</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">سجلات المكالمات</h1>
           <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"
@@ -748,7 +748,7 @@ export default function Reception() {
               </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingRecord ? "تعديل سجل الاستقبال" : "إضافة سجل استقبال جديد"}</DialogTitle>
+                <DialogTitle>{editingRecord ? "تعديل سجل المكالمة" : "إضافة سجل مكالمة جديد"}</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -930,7 +930,7 @@ export default function Reception() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>سجلات الاستقبال</CardTitle>
+              <CardTitle>سجلات المكالمات</CardTitle>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
