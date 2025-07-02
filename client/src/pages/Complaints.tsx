@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { DataService } from "@/lib/dataService";
-import { sendComplaintEmail } from "@/lib/emailService";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -311,26 +310,6 @@ export default function Complaints() {
         type: "success",
       });
 
-      // إرسال إيميل للموظفين
-      try {
-        await sendComplaintEmail({
-          type: 'new',
-          complaint: {
-            id: complaint.id,
-            customerName: complaint.customerName,
-            status: complaint.status,
-            description: complaint.description,
-            project: complaint.project,
-            unitNumber: complaint.unitNumber || 'غير محدد',
-            requestNumber: complaint.requestNumber
-          }
-        });
-        console.log('تم إرسال إيميل الشكوى الجديدة بنجاح');
-      } catch (emailError) {
-        console.error('خطأ في إرسال إيميل الشكوى:', emailError);
-        // لا نوقف العملية في حالة فشل الإيميل
-      }
-
       // إعادة تحميل البيانات
       await loadComplaints();
       setIsAddDialogOpen(false);
@@ -431,27 +410,6 @@ export default function Complaints() {
         message: "تم حفظ التحديثات بنجاح في قاعدة البيانات",
         type: "success",
       });
-
-      // إرسال إيميل للموظفين عند التحديث
-      try {
-        await sendComplaintEmail({
-          type: 'update',
-          complaint: {
-            id: selectedComplaint.id,
-            customerName: updatedComplaint.customerName,
-            status: updatedComplaint.status,
-            description: updatedComplaint.description,
-            project: updatedComplaint.project,
-            unitNumber: updatedComplaint.unitNumber || 'غير محدد',
-            requestNumber: selectedComplaint.requestNumber,
-            updatedBy: user.username
-          }
-        });
-        console.log('تم إرسال إيميل تحديث الشكوى بنجاح');
-      } catch (emailError) {
-        console.error('خطأ في إرسال إيميل تحديث الشكوى:', emailError);
-        // لا نوقف العملية في حالة فشل الإيميل
-      }
 
       // إعادة تحميل البيانات
       await loadComplaints();
@@ -977,7 +935,7 @@ export default function Complaints() {
                       </TableRow>
                     ))
                   )}
-                </TableBody>
+                                  </TableBody>
               </Table>
             </div>
           </CardContent>
