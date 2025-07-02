@@ -181,15 +181,21 @@ export default function ThreeCX() {
 
     if (isYearly) {
       setYearlyData(businessHoursRecords);
+      // إذا كانت الفترة النشطة سنوية، اعرض البيانات السنوية
+      if (activeTab === "yearly") {
+        setCallRecords(businessHoursRecords);
+        calculateAnalytics(businessHoursRecords);
+        calculateEmployeePerformance(businessHoursRecords);
+      }
     } else {
       setWeeklyData(businessHoursRecords);
+      // إذا كانت الفترة النشطة أسبوعية، اعرض البيانات الأسبوعية
+      if (activeTab === "weekly") {
+        setCallRecords(businessHoursRecords);
+        calculateAnalytics(businessHoursRecords);
+        calculateEmployeePerformance(businessHoursRecords);
+      }
     }
-
-    // دمج البيانات وحساب التحليلات
-    const allRecords = isYearly ? businessHoursRecords : [...yearlyData, ...businessHoursRecords];
-    setCallRecords(allRecords);
-    calculateAnalytics(allRecords);
-    calculateEmployeePerformance(allRecords);
 
     toast({
       title: "تم رفع البيانات بنجاح",
@@ -362,11 +368,12 @@ export default function ThreeCX() {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       setWeeklyData([]);
       
-      // إعادة حساب البيانات مع السنوية فقط
-      const allRecords = yearlyData;
-      setCallRecords(allRecords);
-      calculateAnalytics(allRecords);
-      calculateEmployeePerformance(allRecords);
+      // إذا كانت الفترة النشطة أسبوعية، امحِ العرض
+      if (activeTab === "weekly") {
+        setCallRecords([]);
+        setAnalytics(null);
+        setEmployeePerformance([]);
+      }
 
       toast({
         title: "تم حذف البيانات الأسبوعية",
@@ -411,26 +418,67 @@ export default function ThreeCX() {
   return (
     <Layout>
       <div className="space-y-6 p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">تحليل بيانات مكالمات 3CX</h1>
-            <p className="text-muted-foreground">
-              تحليل شامل لأداء المكالمات ومعدلات الرد
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">تحليل بيانات مكالمات 3CX</h1>
+              <p className="text-muted-foreground">
+                تحليل شامل لأداء المكالمات ومعدلات الرد
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={exportData} disabled={callRecords.length === 0}>
+                <Download className="w-4 h-4 ml-2" />
+                تصدير البيانات
+              </Button>
+              <Button 
+                onClick={clearWeeklyData} 
+                disabled={weeklyData.length === 0}
+                variant="destructive"
+              >
+                <Trash2 className="w-4 h-4 ml-2" />
+                حذف البيانات الأسبوعية
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={exportData} disabled={callRecords.length === 0}>
-              <Download className="w-4 h-4 ml-2" />
-              تصدير البيانات
-            </Button>
-            <Button 
-              onClick={clearWeeklyData} 
-              disabled={weeklyData.length === 0}
-              variant="destructive"
-            >
-              <Trash2 className="w-4 h-4 ml-2" />
-              حذف البيانات الأسبوعية
-            </Button>
+
+          {/* أزرار التبديل بين الفترات */}
+          <div className="flex justify-center">
+            <div className="flex gap-2 bg-muted p-1 rounded-lg">
+              <Button
+                variant={activeTab === "weekly" ? "default" : "ghost"}
+                onClick={() => {
+                  setActiveTab("weekly");
+                  const weeklyRecords = weeklyData.filter(r => r.isBusinessHours);
+                  setCallRecords(weeklyRecords);
+                  calculateAnalytics(weeklyRecords);
+                  calculateEmployeePerformance(weeklyRecords);
+                }}
+                className="px-6"
+              >
+                أسبوعي ({weeklyData.length} مكالمة)
+              </Button>
+              <Button
+                variant={activeTab === "yearly" ? "default" : "ghost"}
+                onClick={() => {
+                  setActiveTab("yearly");
+                  const yearlyRecords = yearlyData.filter(r => r.isBusinessHours);
+                  setCallRecords(yearlyRecords);
+                  calculateAnalytics(yearlyRecords);
+                  calculateEmployeePerformance(yearlyRecords);
+                }}
+                className="px-6"
+              >
+                سنوي ({yearlyData.length} مكالمة)
+              </Button>
+            </div>
+          </div>
+
+          {/* مؤشر الفترة الحالية */}
+          <div className="text-center">
+            <Badge variant="outline" className="text-lg px-4 py-2">
+              {activeTab === "weekly" ? "عرض البيانات الأسبوعية" : "عرض البيانات السنوية"}
+            </Badge>
           </div>
         </div>
 
