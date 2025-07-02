@@ -160,6 +160,25 @@ export const qualityCalls = pgTable("quality_calls", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const threecxData = pgTable("threecx_data", {
+  id: serial("id").primaryKey(),
+  callTime: timestamp("call_time").notNull(),
+  callId: text("call_id").notNull(),
+  fromNumber: text("from_number"),
+  toNumber: text("to_number"),
+  direction: text("direction").notNull(),
+  status: text("status").notNull(),
+  ringingDuration: integer("ringing_duration").notNull().default(0),
+  talkingDuration: integer("talking_duration").notNull().default(0),
+  agentName: text("agent_name"),
+  isBusinessHours: boolean("is_business_hours").notNull().default(true),
+  responseTime: integer("response_time").notNull().default(0),
+  period: text("period").notNull().default("weekly"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -176,6 +195,7 @@ export const insertComplaintSchema = createInsertSchema(complaints);
 export const insertBookingSchema = createInsertSchema(bookings);
 export const insertReceptionRecordSchema = createInsertSchema(receptionRecords);
 export const insertQualityCallSchema = createInsertSchema(qualityCalls);
+export const insertThreeCXSchema = createInsertSchema(threecxData);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -196,3 +216,5 @@ export type InsertReceptionRecord = z.infer<typeof insertReceptionRecordSchema>;
 export type ReceptionRecord = typeof receptionRecords.$inferSelect;
 export type InsertQualityCall = z.infer<typeof insertQualityCallSchema>;
 export type QualityCall = typeof qualityCalls.$inferSelect;
+export type InsertThreeCX = z.infer<typeof insertThreeCXSchema>;
+export type ThreeCXData = typeof threecxData.$inferSelect;

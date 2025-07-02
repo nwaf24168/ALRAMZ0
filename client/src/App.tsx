@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,11 +18,12 @@ import Delivery from "@/pages/Delivery";
 import DeliveryAnalytics from './pages/DeliveryAnalytics';
 import DataEntry from "./pages/DataEntry";
 import Complaints from "@/pages/Complaints";
+import Reception from "@/pages/Reception";
+import QualityCalls from "./pages/QualityCalls";
+import ThreeCX from "@/pages/ThreeCX";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import Reception from "./pages/Reception";
 import VisitorReception from "@/pages/VisitorReception";
-import QualityCalls from "./pages/QualityCalls";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +135,14 @@ const AppRoutesInner = () => {
             <VisitorReception />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/3cx"
+        element={
+          <ProtectedRoute>
+            <ThreeCX />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/settings"

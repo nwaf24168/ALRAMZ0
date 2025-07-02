@@ -1265,6 +1265,70 @@ export class DataService {
     }
   }
 
+  // دوال 3CX
+  static async save3CXData(data: any): Promise<void> {
+    try {
+      const record = {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('threecx_data')
+        .insert([record]);
+
+      if (error) {
+        console.error('خطأ في حفظ بيانات 3CX:', error);
+        throw error;
+      }
+
+      console.log('تم حفظ بيانات 3CX بنجاح');
+    } catch (error) {
+      console.error('خطأ في save3CXData:', error);
+      throw error;
+    }
+  }
+
+  static async get3CXData(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('threecx_data')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('خطأ في جلب بيانات 3CX:', error);
+        throw error;
+      }
+
+      console.log('تم تحميل بيانات 3CX من قاعدة البيانات:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('خطأ في get3CXData:', error);
+      throw error;
+    }
+  }
+
+  static async delete3CXData(id: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('threecx_data')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('خطأ في حذف بيانات 3CX:', error);
+        throw error;
+      }
+
+      console.log('تم حذف بيانات 3CX بنجاح');
+    } catch (error) {
+      console.error('خطأ في delete3CXData:', error);
+      throw error;
+    }
+  }
+
   // دوال التسليم
   static async getDeliveryBookings(): Promise<any[]> {
     try {
