@@ -17,6 +17,7 @@ import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
 import { formatDateForDisplay } from "@/lib/dateUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 interface DeliveryBooking {
@@ -58,6 +59,7 @@ interface DeliveryBooking {
 export default function Delivery() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [bookings, setBookings] = useState<DeliveryBooking[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<DeliveryBooking | null>(null);
