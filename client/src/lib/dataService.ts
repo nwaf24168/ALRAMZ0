@@ -981,22 +981,6 @@ export class DataService {
       );
     }
   }
-        contact_method: recordData.contactMethod,
-        type: recordData.type,
-        customer_request: recordData.customerRequest,
-        action: recordData.action,
-        status: recordData.status,
-        updated_by: recordData.updatedBy,
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.error("خطأ Supabase في تحديث سجل الاستقبال:", error);
-      throw new Error(
-        `خطأ في تحديث سجل الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
-    }
-  }
 
   static async deleteReceptionRecord(id: string): Promise<void> {
     const { error } = await supabase

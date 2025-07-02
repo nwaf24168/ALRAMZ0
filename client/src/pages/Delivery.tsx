@@ -68,6 +68,7 @@ export default function Delivery() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [isDialogViewMode, setIsDialogViewMode] = useState(false);
 
   const [formData, setFormData] = useState<DeliveryBooking>({
     customer_name: "",
@@ -188,21 +189,21 @@ export default function Delivery() {
       evaluation_percentage: 0
     });
     setSelectedBooking(null);
-    setIsViewMode(false);
+    setIsDialogViewMode(false);
     setActiveTab("sales");
   };
 
   const handleEdit = (booking: DeliveryBooking) => {
     setSelectedBooking(booking);
     setFormData({ ...booking });
-    setIsViewMode(false);
+    setIsDialogViewMode(false);
     setIsDialogOpen(true);
   };
 
   const handleView = (booking: DeliveryBooking) => {
     setSelectedBooking(booking);
     setFormData({ ...booking });
-    setIsViewMode(true);
+    setIsDialogViewMode(true);
     setIsDialogOpen(true);
   };
 
@@ -560,7 +561,7 @@ export default function Delivery() {
   };
 
   const canEditStage = (stage: string) => {
-    if (isViewMode) return false;
+    if (isDialogViewMode) return false;
 
     switch (stage) {
       case "sales":
@@ -654,9 +655,9 @@ export default function Delivery() {
     }
   };
 
-  const isViewMode = user?.permissions?.level === "view";
+  const isReadOnly = user?.permissions?.level === "read";
   const [viewMode, setViewMode] = useState<"table" | "cards">(
-    isMobile || isViewMode ? "cards" : "table"
+    isMobile || isReadOnly ? "cards" : "table"
   );
 
   return (
@@ -953,7 +954,7 @@ export default function Delivery() {
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl">
-                {isViewMode ? "عرض" : selectedBooking ? "تعديل" : "إضافة"} حجز
+                {isDialogViewMode ? "عرض" : selectedBooking ? "تعديل" : "إضافة"} حجز
                 {selectedBooking && (
                   <span className="mr-2">
                     {getStatusBadge(getBookingStatus(selectedBooking))}
@@ -975,7 +976,7 @@ export default function Delivery() {
                   <TabsTrigger 
                     value="projects"
                     className={formData.projects_completed ? "bg-green-100 text-green-800" : ""}
-                    disabled={!canEditStage("projects") && !isViewMode}
+                    disabled={!canEditStage("projects") && !isDialogViewMode}
                   >
                     إدارة المشاريع
                     {formData.projects_completed && <CheckCircle className="mr-1 h-4 w-4" />}
@@ -983,7 +984,7 @@ export default function Delivery() {
                   <TabsTrigger 
                     value="customer_service"
                     className={formData.customer_service_completed ? "bg-green-100 text-green-800" : ""}
-                    disabled={!canEditStage("customer_service") && !isViewMode}
+                    disabled={!canEditStage("customer_service") && !isDialogViewMode}
                   >
                     راحة العملاء
                     {formData.customer_service_completed && <CheckCircle className="mr-1 h-4 w-4" />}
@@ -1374,7 +1375,7 @@ export default function Delivery() {
                 </TabsContent>
               </Tabs>
 
-              {!isViewMode && (
+              {!isDialogViewMode && (
                 <div className="flex justify-end space-x-2 pt-4 border-t">
                   <Button
                     type="button"
