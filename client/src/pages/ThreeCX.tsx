@@ -21,7 +21,8 @@ import {
   Users,
   Activity,
   BarChart3,
-  Target
+  Target,
+  Trash2
 } from "lucide-react";
 import {
   Table,
@@ -348,6 +349,24 @@ export default function ThreeCX() {
     XLSX.writeFile(wb, `3CX-call-data-${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  // حذف البيانات الأسبوعية
+  const clearWeeklyData = () => {
+    if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+      setWeeklyData([]);
+      
+      // إعادة حساب البيانات مع السنوية فقط
+      const allRecords = yearlyData;
+      setCallRecords(allRecords);
+      calculateAnalytics(allRecords);
+      calculateEmployeePerformance(allRecords);
+
+      toast({
+        title: "تم حذف البيانات الأسبوعية",
+        description: "تم حذف جميع البيانات الأسبوعية بنجاح",
+      });
+    }
+  };
+
   // تنسيق الوقت
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -395,6 +414,14 @@ export default function ThreeCX() {
             <Button onClick={exportData} disabled={callRecords.length === 0}>
               <Download className="w-4 h-4 ml-2" />
               تصدير البيانات
+            </Button>
+            <Button 
+              onClick={clearWeeklyData} 
+              disabled={weeklyData.length === 0}
+              variant="destructive"
+            >
+              <Trash2 className="w-4 h-4 ml-2" />
+              حذف البيانات الأسبوعية
             </Button>
           </div>
         </div>
