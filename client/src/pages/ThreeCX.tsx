@@ -367,115 +367,6 @@ export default function ThreeCX() {
     }
   };
 
-  // حذف البيانات السنوية
-  const clearYearlyData = () => {
-    if (window.confirm('هل أنت متأكد من حذف جميع البيانات السنوية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
-      setYearlyData([]);
-      
-      // إعادة حساب البيانات مع الأسبوعية فقط
-      const allRecords = weeklyData;
-      setCallRecords(allRecords);
-      calculateAnalytics(allRecords);
-      calculateEmployeePerformance(allRecords);
-
-      toast({
-        title: "تم حذف البيانات السنوية",
-        description: "تم حذف جميع البيانات السنوية بنجاح",
-      });
-    }
-  };
-
-  // حفظ البيانات في قاعدة البيانات
-  const saveDataToDatabase = async () => {
-    try {
-      setIsLoading(true);
-      
-      // حفظ كل سجل في قاعدة البيانات
-      for (const record of callRecords) {
-        await DataService.save3CXData({
-          call_time: record.callTime,
-          call_id: record.callId,
-          from_number: record.from,
-          to_number: record.to,
-          direction: record.direction,
-          status: record.status,
-          ringing_duration: record.ringingDuration,
-          talking_duration: record.talkingDuration,
-          agent_name: record.agentName,
-          is_business_hours: record.isBusinessHours,
-          response_time: record.responseTime,
-          period: 'weekly', // يمكن تخصيص هذا حسب نوع البيانات
-          created_by: user?.username || 'مجهول'
-        });
-      }
-
-      toast({
-        title: "تم حفظ البيانات",
-        description: "تم حفظ جميع البيانات في قاعدة البيانات بنجاح",
-      });
-    } catch (error) {
-      console.error('خطأ في حفظ البيانات:', error);
-      toast({
-        title: "خطأ في حفظ البيانات",
-        description: "حدث خطأ أثناء حفظ البيانات في قاعدة البيانات",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // تحميل البيانات من قاعدة البيانات
-  const loadDataFromDatabase = async () => {
-    try {
-      setIsLoading(true);
-      
-      const savedData = await DataService.get3CXData();
-      
-      if (savedData.length > 0) {
-        const records: CallRecord[] = savedData.map((record, index) => ({
-          id: `db-${record.id}`,
-          callTime: record.call_time,
-          callId: record.call_id,
-          from: record.from_number || '',
-          to: record.to_number || '',
-          direction: record.direction as 'Inbound' | 'Outbound',
-          status: record.status as 'Answered' | 'Unanswered',
-          ringingDuration: record.ringing_duration,
-          talkingDuration: record.talking_duration,
-          agentName: record.agent_name || 'غير محدد',
-          isBusinessHours: record.is_business_hours,
-          responseTime: record.response_time
-        }));
-
-        // إضافة البيانات المحملة للبيانات الحالية
-        const allRecords = [...callRecords, ...records];
-        setCallRecords(allRecords);
-        calculateAnalytics(allRecords);
-        calculateEmployeePerformance(allRecords);
-
-        toast({
-          title: "تم تحميل البيانات",
-          description: `تم تحميل ${records.length} سجل من قاعدة البيانات`,
-        });
-      } else {
-        toast({
-          title: "لا توجد بيانات",
-          description: "لا توجد بيانات محفوظة في قاعدة البيانات",
-        });
-      }
-    } catch (error) {
-      console.error('خطأ في تحميل البيانات:', error);
-      toast({
-        title: "خطأ في تحميل البيانات",
-        description: "حدث خطأ أثناء تحميل البيانات من قاعدة البيانات",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // تنسيق الوقت
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -519,26 +410,10 @@ export default function ThreeCX() {
               تحليل شامل لأداء المكالمات ومعدلات الرد
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2">
             <Button onClick={exportData} disabled={callRecords.length === 0}>
               <Download className="w-4 h-4 ml-2" />
               تصدير البيانات
-            </Button>
-            <Button 
-              onClick={saveDataToDatabase} 
-              disabled={callRecords.length === 0 || isLoading}
-              variant="outline"
-            >
-              <Upload className="w-4 h-4 ml-2" />
-              حفظ في قاعدة البيانات
-            </Button>
-            <Button 
-              onClick={loadDataFromDatabase} 
-              disabled={isLoading}
-              variant="outline"
-            >
-              <Download className="w-4 h-4 ml-2" />
-              تحميل من قاعدة البيانات
             </Button>
             <Button 
               onClick={clearWeeklyData} 
@@ -547,14 +422,6 @@ export default function ThreeCX() {
             >
               <Trash2 className="w-4 h-4 ml-2" />
               حذف البيانات الأسبوعية
-            </Button>
-            <Button 
-              onClick={clearYearlyData} 
-              disabled={yearlyData.length === 0}
-              variant="destructive"
-            >
-              <Trash2 className="w-4 h-4 ml-2" />
-              حذف البيانات السنوية
             </Button>
           </div>
         </div>
@@ -581,14 +448,9 @@ export default function ThreeCX() {
                   onChange={(e) => handleFileUpload(e, true)}
                   disabled={isLoading}
                 />
-                <div className="text-xs text-muted-foreground space-y-1">
-                  {yearlyData.length > 0 && (
-                    <p className="text-green-600">✓ تم تحميل {yearlyData.length} مكالمة سنوية</p>
-                  )}
-                  {yearlyData.length === 0 && (
-                    <p className="text-gray-500">لم يتم تحميل بيانات سنوية</p>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {yearlyData.length > 0 && `تم تحميل ${yearlyData.length} مكالمة سنوية`}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -613,14 +475,9 @@ export default function ThreeCX() {
                   onChange={(e) => handleFileUpload(e, false)}
                   disabled={isLoading}
                 />
-                <div className="text-xs text-muted-foreground space-y-1">
-                  {weeklyData.length > 0 && (
-                    <p className="text-green-600">✓ تم تحميل {weeklyData.length} مكالمة أسبوعية</p>
-                  )}
-                  {weeklyData.length === 0 && (
-                    <p className="text-gray-500">لم يتم تحميل بيانات أسبوعية</p>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {weeklyData.length > 0 && `تم تحميل ${weeklyData.length} مكالمة أسبوعية`}
+                </p>
               </div>
             </CardContent>
           </Card>
