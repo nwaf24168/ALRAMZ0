@@ -184,19 +184,41 @@ export default function ThreeCX() {
       const talkingSeconds = timeToSeconds(talking);
       const isInBusinessHours = isBusinessHours(callTime);
 
+      // تنظيف قيمة direction للتأكد من توافقها مع قاعدة البيانات
+      let cleanDirection: 'Inbound' | 'Outbound' = 'Inbound';
+      if (direction && typeof direction === 'string') {
+        const directionLower = direction.toLowerCase().trim();
+        if (directionLower === 'outbound' || directionLower === 'صادرة') {
+          cleanDirection = 'Outbound';
+        } else if (directionLower === 'inbound' || directionLower === 'واردة') {
+          cleanDirection = 'Inbound';
+        }
+      }
+
+      // تنظيف قيمة status للتأكد من توافقها مع قاعدة البيانات
+      let cleanStatus: 'Answered' | 'Unanswered' = 'Unanswered';
+      if (status && typeof status === 'string') {
+        const statusLower = status.toLowerCase().trim();
+        if (statusLower === 'answered' || statusLower === 'تم الرد') {
+          cleanStatus = 'Answered';
+        } else {
+          cleanStatus = 'Unanswered';
+        }
+      }
+
       return {
         id: `${index}-${Date.now()}`,
         callTime,
         callId,
         from,
         to,
-        direction: direction as 'Inbound' | 'Outbound',
-        status: status as 'Answered' | 'Unanswered',
+        direction: cleanDirection,
+        status: cleanStatus,
         ringingDuration: ringingSeconds,
         talkingDuration: talkingSeconds,
         agentName,
         isBusinessHours: isInBusinessHours,
-        responseTime: status === 'Answered' ? ringingSeconds : 0
+        responseTime: cleanStatus === 'Answered' ? ringingSeconds : 0
       };
     });
 
@@ -240,7 +262,7 @@ export default function ThreeCX() {
     
     // حفظ البيانات الجديدة
     for (const record of records) {
-      await DataService.saveThreeCXRecord({
+      const recordData = {
         callTime: new Date(record.callTime).toISOString(),
         callId: record.callId,
         fromNumber: record.from,
@@ -254,7 +276,17 @@ export default function ThreeCX() {
         responseTime: record.responseTime,
         period: period,
         createdBy: user?.username || 'unknown'
+      };
+
+      // تسجيل البيانات للتشخيص
+      console.log('حفظ سجل ThreeCX:', {
+        direction: recordData.direction,
+        status: recordData.status,
+        agentName: recordData.agentName,
+        callId: recordData.callId
       });
+
+      await DataService.saveThreeCXRecord(recordData);
     }
   };
 
