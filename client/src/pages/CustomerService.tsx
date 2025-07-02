@@ -2,7 +2,7 @@
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMetrics } from "@/context/MetricsContext";
-import { Phone, Clock, MessageSquare, UserCheck, FileText, Wrench, HelpCircle } from "lucide-react";
+import { Phone, Clock, MessageSquare, UserCheck, FileText, Wrench, HelpCircle, Upload, Download } from "lucide-react";
 import { 
   LineChart, 
   Line, 
@@ -20,9 +20,17 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataService } from "@/lib/dataService";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import * as XLSX from 'xlsx';
 
 export default function CustomerService() {
   const { currentPeriod, setCurrentPeriod } = useMetrics();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [customerServiceData, setCustomerServiceData] = useState([]);
 
   // بيانات المكالمات مع أسماء مختصرة للموبايل
   const callsData = [
@@ -51,6 +59,179 @@ export default function CustomerService() {
     { status: "قيد المعالجة", count: currentPeriod === "weekly" ? 15 : 180, color: "#f59e0b" },
   ];
 
+  // معالجة رفع ملف Excel
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)"
+      });
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array', cellDates: true }));
+
+      // الحصول على أول ورقة عمل
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      // تحويل البيانات إلى JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      if (!jsonData || jsonData.length < 2) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+        });
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // معالجة البيانات (تجاهل الصف الأول - العناوين)
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i] as any[];
+
+        // تجاهل الصفوف الفارغة
+        if (!row || row.length === 0 || !row.some(cell => cell)) {
+          continue;
+        }
+
+        try {
+          // ترتيب الأعمدة الصحيح لخدمة العملاء:
+          // [التاريخ، اسم العميل، رقم الجوال، المشروع، الموظف المختص، طريقة التواصل، نوع الطلب، طلب العميل، الإجراء المتخذ، الحالة]
+          
+          let formattedDate = '';
+          const dateValue = row[0];
+          
+          if (dateValue) {
+            if (typeof dateValue === 'number') {
+              // Excel date serial number
+              const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+              formattedDate = excelDate.toISOString().split('T')[0];
+            } else if (typeof dateValue === 'string') {
+              const parsedDate = new Date(dateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                formattedDate = parsedDate.toISOString().split('T')[0];
+              }
+            } else if (dateValue instanceof Date) {
+              formattedDate = dateValue.toISOString().split('T')[0];
+            }
+          }
+
+          // التحقق من وجود البيانات الأساسية
+          if (!formattedDate || !row[1] || !row[2]) {
+            errorCount++;
+            continue;
+          }
+
+          const recordData = {
+            date: formattedDate,
+            customerName: row[1] || '',
+            phoneNumber: row[2] || '',
+            project: row[3] || '',
+            employee: row[4] || user.username,
+            contactMethod: row[5] || 'اتصال هاتفي',
+            type: row[6] || 'استفسار',
+            customerRequest: row[7] || '',
+            action: row[8] || '',
+            status: row[9] || 'جديد',
+            createdBy: user.username,
+          };
+
+          await DataService.saveReceptionRecord(recordData);
+          successCount++;
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel"
+      });
+    } finally {
+      setIsLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
+    }
+  };
+
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      // تحضير نموذج البيانات للتصدير
+      const exportData = [
+        {
+          'التاريخ': '2024-01-01',
+          'اسم العميل': 'مثال العميل',
+          'رقم الجوال': '0501234567',
+          'المشروع': 'مشروع النخيل',
+          'الموظف المختص': 'أحمد محمد',
+          'طريقة التواصل': 'اتصال هاتفي',
+          'نوع الطلب': 'استفسار',
+          'طلب العميل': 'استفسار عن الوحدة',
+          'الإجراء المتخذ': 'تم التوضيح',
+          'الحالة': 'مكتمل'
+        }
+      ];
+
+      // إنشاء ورقة العمل
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'نموذج خدمة العملاء');
+
+      // تصدير الملف
+      const fileName = `نموذج_خدمة_العملاء_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "تم التصدير",
+        description: "تم تصدير نموذج Excel بنجاح"
+      });
+    } catch (error) {
+      console.error("خطأ في تصدير Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تصدير البيانات"
+      });
+    }
+  };
+
   // معلومات الكروت الرئيسية
   const metricsCards = [
     {
@@ -78,21 +259,49 @@ export default function CustomerService() {
       <div className="space-y-4 md:space-y-6 px-2 sm:px-4 lg:px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl sm:text-2xl font-bold">خدمة العملاء</h1>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button
-              variant={currentPeriod === "weekly" ? "default" : "outline"}
-              onClick={() => setCurrentPeriod("weekly")}
-              className="flex-1 sm:flex-none text-sm sm:text-base"
-            >
-              أسبوعي
-            </Button>
-            <Button
-              variant={currentPeriod === "yearly" ? "default" : "outline"}
-              onClick={() => setCurrentPeriod("yearly")}
-              className="flex-1 sm:flex-none text-sm sm:text-base"
-            >
-              سنوي
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex gap-2">
+              <Button
+                variant={currentPeriod === "weekly" ? "default" : "outline"}
+                onClick={() => setCurrentPeriod("weekly")}
+                className="flex-1 sm:flex-none text-sm sm:text-base"
+              >
+                أسبوعي
+              </Button>
+              <Button
+                variant={currentPeriod === "yearly" ? "default" : "outline"}
+                onClick={() => setCurrentPeriod("yearly")}
+                className="flex-1 sm:flex-none text-sm sm:text-base"
+              >
+                سنوي
+              </Button>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={exportToExcel}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                تصدير نموذج
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => document.getElementById('customerServiceFileInput')?.click()}
+                disabled={isLoading}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
+              >
+                <Upload className="w-4 h-4 mr-1" />
+                {isLoading ? 'جاري الاستيراد...' : 'استيراد Excel'}
+              </Button>
+              <input
+                id="customerServiceFileInput"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
           </div>
         </div>
 
