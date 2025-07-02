@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -954,7 +955,6 @@ export default function Complaints() {
                           <div
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               complaint.status === "تم حلها" ||
-```text
                               complaint.status === "تم الحل"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                 : complaint.status === "لازالت قائمة" ||
@@ -1027,7 +1027,7 @@ export default function Complaints() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">الأولوية</Label>
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(selectedComplaint.priority)}`}>
+                  <div className={"inline-flex items-center px-3 py-1 rounded-full text-sm font-medium " + getPriorityColor(selectedComplaint.priority)}>
                     {selectedComplaint.priority}
                   </div>
                 </div>
