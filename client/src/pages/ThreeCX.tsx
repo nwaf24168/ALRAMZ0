@@ -123,7 +123,9 @@ export default function ThreeCX() {
     console.log("معالجة بيانات Excel:", data.length, "سجل");
 
     const processedRecords: CallRecord[] = data.map((row, index) => {
-      const callTime = row['Call Time'] || row['وقت المكالمة'] || '';
+      // التعامل مع تنسيقات مختلفة من CSV (فواصل أو فواصل منقوطة)
+      const callTime = row['Call Time'] || row['Call'] || row['وقت المكالمة'] || '';
+      const callId = row['Call ID'] || row['ID'] || row['معرف المكالمة'] || '';
       const from = row['From'] || row['من'] || '';
       const to = row['To'] || row['إلى'] || '';
       const direction = row['Direction'] || row['الاتجاه'] || '';
@@ -163,7 +165,7 @@ export default function ThreeCX() {
       return {
         id: `${index}-${Date.now()}`,
         callTime,
-        callId: row['Call ID'] || row['معرف المكالمة'] || '',
+        callId,
         from,
         to,
         direction: direction as 'Inbound' | 'Outbound',
@@ -295,11 +297,46 @@ export default function ThreeCX() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        let jsonData: any[] = [];
+
+        if (fileName.endsWith('.csv')) {
+          // معالجة ملف CSV
+          const text = new TextDecoder().decode(e.target?.result as ArrayBuffer);
+          const lines = text.split('\n').filter(line => line.trim());
+          
+          if (lines.length === 0) {
+            toast({
+              title: "ملف فارغ",
+              description: "الملف لا يحتوي على بيانات",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // تحديد نوع الفاصل (فاصلة أو فاصلة منقوطة)
+          const header = lines[0];
+          const separator = header.includes(';') ? ';' : ',';
+          
+          // تحويل CSV إلى JSON
+          const headers = header.split(separator).map(h => h.trim().replace(/['"]/g, ''));
+          
+          jsonData = lines.slice(1).map(line => {
+            const values = line.split(separator).map(v => v.trim().replace(/['"]/g, ''));
+            const row: any = {};
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+            return row;
+          }).filter(row => Object.values(row).some(val => val !== ''));
+
+        } else {
+          // معالجة ملف Excel
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          jsonData = XLSX.utils.sheet_to_json(worksheet);
+        }
 
         if (jsonData.length === 0) {
           toast({
@@ -310,6 +347,7 @@ export default function ThreeCX() {
           return;
         }
 
+        console.log("عينة من البيانات المقروءة:", jsonData[0]);
         processExcelData(jsonData, isYearly);
       } catch (error) {
         console.error('خطأ في قراءة الملف:', error);
