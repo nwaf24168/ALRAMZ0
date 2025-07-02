@@ -65,6 +65,8 @@ import {
   X,
   Star,
   Settings,
+  Upload,
+  Download,
 } from "lucide-react";
 
 // أولويات الشكاوى
@@ -609,17 +611,17 @@ export default function Complaints() {
 
       const exportData = complaints.map((complaint, index) => ({
         'ت': index + 1,
-        'رقم الشكوى': complaint.id,
+        'الأولوية': complaint.priority,
         'التاريخ': complaint.date,
         'اسم العميل': complaint.customerName,
         'المشروع': complaint.project,
         'رقم الوحدة': complaint.unitNumber || '',
-        'المصدر': complaint.source,
+        'مصدر الشكوى': complaint.source,
         'الحالة': complaint.status,
-        'الوصف': complaint.description,
+        'الشكوى': complaint.description,
+        'إجراء الصيانة والتسليم': complaint.maintenanceDeliveryAction || '',
         'الإجراء': complaint.action || '',
-        'المدة (ساعات)': complaint.duration || 0,
-        'تاريخ الإنشاء': new Date(complaint.createdAt).toISOString().split('T')[0],
+        'الوقت المتوقع لإغلاق الشكوى': complaint.expectedClosureTime || '',
         'المنشئ': complaint.createdBy
       }));
 
@@ -642,6 +644,142 @@ export default function Complaints() {
         message: "فشل في تصدير البيانات",
         type: "error",
       });
+    }
+  };
+
+  // معالجة استيراد ملف Excel للشكاوى
+  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      addNotification({
+        title: "خطأ",
+        message: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)",
+        type: "error",
+      });
+      return;
+    }
+
+    if (!user) {
+      addNotification({
+        title: "خطأ",
+        message: "يجب تسجيل الدخول أولاً",
+        type: "error",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+      if (jsonData.length < 2) {
+        addNotification({
+          title: "خطأ",
+          message: "الملف فارغ أو لا يحتوي على بيانات صالحة",
+          type: "error",
+        });
+        return;
+      }
+
+      const headers = jsonData[0] as string[];
+      const rows = jsonData.slice(1) as any[][];
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+
+        try {
+          // معالجة التاريخ
+          let dateValue = row[2]; // عمود التاريخ
+          let formattedDate = new Date().toISOString().split('T')[0];
+          
+          if (dateValue) {
+            if (typeof dateValue === 'number') {
+              // Excel date serial number
+              const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+              formattedDate = excelDate.toISOString().split('T')[0];
+            } else if (typeof dateValue === 'string') {
+              const parsedDate = new Date(dateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                formattedDate = parsedDate.toISOString().split('T')[0];
+              }
+            } else if (dateValue instanceof Date) {
+              formattedDate = dateValue.toISOString().split('T')[0];
+            }
+          }
+
+          const complaint: Complaint = {
+            id: generateComplaintId(),
+            priority: row[1] || "متوسطة",
+            date: formattedDate,
+            customerName: row[3] || "",
+            project: row[4] || "",
+            unitNumber: row[5] || "",
+            source: row[6] || "الاستيراد",
+            status: row[7] || "جديدة",
+            requestNumber: generateRequestNumber(),
+            description: row[8] || "",
+            maintenanceDeliveryAction: row[9] || "",
+            action: row[10] || "",
+            expectedClosureTime: row[11] || "",
+            duration: 0,
+            createdBy: user.username,
+            createdAt: new Date().toISOString(),
+            updatedBy: null,
+            updatedAt: null,
+            updates: [],
+          };
+
+          // التحقق من البيانات الأساسية
+          if (!complaint.customerName || !complaint.description) {
+            errorCount++;
+            continue;
+          }
+
+          // حفظ الشكوى في قاعدة البيانات
+          await DataService.saveComplaint(complaint);
+          successCount++;
+
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // إعادة تحميل البيانات
+      await loadComplaints();
+
+      // إظهار نتيجة العملية
+      addNotification({
+        title: "تم الاستيراد",
+        message: `تم استيراد ${successCount} شكوى بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`,
+        type: "success",
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      addNotification({
+        title: "خطأ",
+        message: "فشل في معالجة ملف Excel",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
     }
   };
 
@@ -867,7 +1005,24 @@ export default function Complaints() {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleImportExcel}
+                  className="hidden"
+                  id="excel-import-upload"
+                  disabled={loading}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => document.getElementById('excel-import-upload')?.click()}
+                  disabled={loading || readOnly}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  استيراد Excel
+                </Button>
                 <Button onClick={exportToExcel}>
+                  <Download className="h-4 w-4 mr-2" />
                   تصدير إلى Excel
                 </Button>
               </div>
