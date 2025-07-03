@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/dataService";
+import { ThreeCXService } from "@/lib/threeCXService";
 import * as XLSX from 'xlsx';
 import { 
   Upload, 
@@ -187,7 +188,25 @@ export default function ThreeCX() {
     try {
       // حفظ البيانات في قاعدة البيانات
       const period = isYearly ? 'yearly' : 'weekly';
-      await DataService.save3CXCallRecords(businessHoursRecords, period, user?.username);
+      
+      // تحويل البيانات للتنسيق المطلوب
+      const recordsToSave = businessHoursRecords.map(record => ({
+        callTime: record.callTime,
+        callId: record.callId,
+        fromNumber: record.from,
+        toNumber: record.to,
+        direction: record.direction,
+        status: record.status,
+        ringingDuration: record.ringingDuration,
+        talkingDuration: record.talkingDuration,
+        agentName: record.agentName,
+        isBusinessHours: record.isBusinessHours,
+        responseTime: record.responseTime,
+        period: period as 'weekly' | 'yearly',
+        createdBy: user?.username
+      }));
+      
+      await ThreeCXService.saveCallRecords(recordsToSave);
 
       if (isYearly) {
         setYearlyData(businessHoursRecords);
@@ -388,7 +407,7 @@ export default function ThreeCX() {
         setIsLoading(true);
         
         // حذف من قاعدة البيانات
-        await DataService.clear3CXData('weekly');
+        await ThreeCXService.clearPeriodData('weekly');
         
         setWeeklyData([]);
         
@@ -423,7 +442,7 @@ export default function ThreeCX() {
         setIsLoading(true);
         
         // حذف من قاعدة البيانات
-        await DataService.clear3CXData('yearly');
+        await ThreeCXService.clearPeriodData('yearly');
         
         setYearlyData([]);
         

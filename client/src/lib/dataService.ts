@@ -1718,7 +1718,7 @@ export class DataService {
   static async getCSATHistory(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', limit: number = 10): Promise<any[]> {
     try {
       const { data, error } = await supabase
-        .from('csat_whatsapp')
+        .from('csat_scores')
         .select('*')
         .eq('period', period)
         .eq('source', source)
