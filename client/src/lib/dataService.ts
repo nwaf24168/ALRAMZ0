@@ -938,7 +938,7 @@ export class DataService {
         call_type: call.callType || 'مكالمة جودة',
         call_duration: call.callDuration,
         evaluation_score: call.evaluationScore,
-        qualification_status: call.qualification_status || 'غير مؤهل',
+        qualification_status: call.qualification_status || 'غيرمؤهل',
         qualification_reason: call.qualificationReason,
         notes: call.notes,
         created_by: call.createdBy || 'مجهول'
@@ -1537,6 +1537,116 @@ export class DataService {
     } catch (error) {
       console.error('خطأ في جلب تاريخ CSAT:', error);
       return [];
+    }
+  }
+
+  // دالة لحفظ وتحديث نتيجة CSAT للواتساب
+  static async saveCSATWhatsApp(period: 'weekly' | 'yearly', score: number, totalResponses?: number): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('csat_whatsapp')
+        .upsert(
+          {
+            period,
+            score,
+            total_responses: totalResponses || 0,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'period',
+          }
+        );
+
+      if (error) {
+        console.error('خطأ في حفظ نتيجة CSAT:', error);
+        throw new Error(`خطأ في حفظ نتيجة CSAT: ${error.message}`);
+      }
+
+      console.log('تم حفظ نتيجة CSAT بنجاح:', data);
+    } catch (error) {
+      console.error('خطأ في حفظ نتيجة CSAT:', error);
+      throw error;
+    }
+  }
+
+  // دالة لجلب نتيجة CSAT للواتساب
+  static async getCSATWhatsApp(period: 'weekly' | 'yearly'): Promise<{ score: number; totalResponses: number } | null> {
+    try {
+      const { data, error } = await supabase
+        .from('csat_whatsapp')
+        .select('score, total_responses')
+        .eq('period', period)
+        .single();
+
+      if (error) {
+        console.error('خطأ في جلب نتيجة CSAT:', error);
+        return null;
+      }
+
+      return {
+        score: data.score,
+        totalResponses: data.total_responses,
+      };
+    } catch (error) {
+      console.error('خطأ في جلب نتيجة CSAT:', error);
+      return null;
+    }
+  }
+
+  // دالة لمعالجة ملف Excel لـ CSAT
+  static async processCSATExcel(fileData: any[], period: 'weekly' | 'yearly'): Promise<{ score: number; totalResponses: number }> {
+    try {
+      // افتراض أن الملف يحتوي على عمود للنتيجة
+      // يمكنك تعديل هذا حسب تنسيق ملف Excel الخاص بك
+      let totalScore = 0;
+      let totalResponses = 0;
+
+      for (const row of fileData) {
+        // افتراض أن العمود الأول هو النتيجة
+        const score = parseFloat(row[0] || row.score || 0);
+        if (score > 0 && score <= 5) {
+          totalScore += score;
+          totalResponses++;
+        }
+      }
+
+      const averageScore = totalResponses > 0 ? totalScore / totalResponses : 0;
+
+      // حفظ النتيجة في قاعدة البيانات
+      await this.saveCSATWhatsApp(period, averageScore, totalResponses);
+
+      return {
+        score: averageScore,
+        totalResponses,
+      };
+    } catch (error) {
+      console.error('خطأ في معالجة ملف CSAT:', error);
+      throw error;
+    }
+  }
+
+  // دالة لحفظ سجل 3CX
+  static async saveThreeCXRecord(record: any): Promise<void> {
+    try {
+      const record = {
+        ...record,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('threecx_records')
+        .insert([record]);
+
+      if (error) {
+        console.error('خطأ في حفظ سجل 3CX:', error);
+        throw error;
+      }
+
+      console.log('تم حفظ سجل 3CX بنجاح');
+    } catch (error) {
+      console.error('خطأ في saveThreeCXRecord:', error);
+      throw error;
     }
   }
 }
