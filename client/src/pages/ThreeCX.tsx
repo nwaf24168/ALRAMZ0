@@ -22,8 +22,7 @@ import {
   Activity,
   BarChart3,
   Target,
-  Trash2,
-  MessageSquare
+  Trash2
 } from "lucide-react";
 import {
   Table,
@@ -94,8 +93,6 @@ export default function ThreeCX() {
   const [analytics, setAnalytics] = useState<CallAnalytics | null>(null);
   const [employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
   const [activeTab, setActiveTab] = useState<"weekly" | "yearly">("weekly");
-  const [csatScore, setCsatScore] = useState<string>("");
-  const [displayedCsatScore, setDisplayedCsatScore] = useState<string>("0");
 
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
@@ -400,26 +397,6 @@ export default function ThreeCX() {
     }
   };
 
-  // تحديث نتيجة CSAT
-  const handleCsatUpdate = () => {
-    if (csatScore.trim() !== "") {
-      const score = parseFloat(csatScore);
-      if (!isNaN(score) && score >= 0 && score <= 100) {
-        setDisplayedCsatScore(score.toFixed(1));
-        toast({
-          title: "تم تحديث نتيجة CSAT",
-          description: `تم تحديث النتيجة إلى ${score.toFixed(1)}%`,
-        });
-      } else {
-        toast({
-          title: "خطأ في القيمة",
-          description: "يرجى إدخال رقم صحيح بين 0 و 100",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
   // بيانات المخططات
   const chartColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1'];
 
@@ -564,7 +541,7 @@ export default function ThreeCX() {
 
         {/* إحصائيات عامة */}
         {analytics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -612,63 +589,8 @@ export default function ThreeCX() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">CSAT الواتس اب</p>
-                    <p className="text-2xl font-bold">{displayedCsatScore}%</p>
-                    <Badge variant={parseFloat(displayedCsatScore) >= 80 ? "default" : "secondary"} className="mt-1">
-                      {parseFloat(displayedCsatScore) >= 80 ? "ممتاز" : parseFloat(displayedCsatScore) >= 60 ? "جيد" : "يحتاج تحسين"}
-                    </Badge>
-                  </div>
-                  <MessageSquare className="w-8 h-8 text-emerald-600" />
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
-
-        {/* قسم إدخال نتيجة CSAT */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              تحديث نتيجة CSAT للواتس اب
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              أدخل نتيجة رضا العملاء من الواتس اب (0-100)
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <Label htmlFor="csat-score">نتيجة CSAT (%)</Label>
-                <Input
-                  id="csat-score"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  placeholder="أدخل النتيجة (مثال: 85.5)"
-                  value={csatScore}
-                  onChange={(e) => setCsatScore(e.target.value)}
-                />
-              </div>
-              <Button onClick={handleCsatUpdate} disabled={!csatScore.trim()}>
-                <Target className="w-4 h-4 ml-2" />
-                تحديث النتيجة
-              </Button>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>النتيجة الحالية: <span className="font-semibold">{displayedCsatScore}%</span></p>
-              <p className="text-xs">
-                • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         <Tabs defaultValue="performance" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
