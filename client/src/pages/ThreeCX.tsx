@@ -416,6 +416,41 @@ export default function ThreeCX() {
     }
   };
 
+  // حذف البيانات السنوية
+  const clearYearlyData = async () => {
+    if (window.confirm('هل أنت متأكد من حذف جميع البيانات السنوية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+      try {
+        setIsLoading(true);
+        
+        // حذف من قاعدة البيانات
+        await DataService.clear3CXData('yearly');
+        
+        setYearlyData([]);
+        
+        // إذا كانت الفترة النشطة سنوية، امحِ العرض
+        if (activeTab === "yearly") {
+          setCallRecords([]);
+          setAnalytics(null);
+          setEmployeePerformance([]);
+        }
+
+        toast({
+          title: "تم حذف البيانات السنوية",
+          description: "تم حذف جميع البيانات السنوية من قاعدة البيانات بنجاح",
+        });
+      } catch (error) {
+        console.error('خطأ في حذف البيانات:', error);
+        toast({
+          title: "خطأ في الحذف",
+          description: "حدث خطأ أثناء حذف البيانات من قاعدة البيانات",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   // تنسيق الوقت
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -564,6 +599,14 @@ export default function ThreeCX() {
               >
                 <Trash2 className="w-4 h-4 ml-2" />
                 حذف البيانات الأسبوعية
+              </Button>
+              <Button 
+                onClick={clearYearlyData} 
+                disabled={yearlyData.length === 0}
+                variant="destructive"
+              >
+                <Trash2 className="w-4 h-4 ml-2" />
+                حذف البيانات السنوية
               </Button>
             </div>
           </div>
