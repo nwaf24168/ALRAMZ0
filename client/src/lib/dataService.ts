@@ -1734,4 +1734,23 @@ export class DataService {
       return [];
     }
   }
+
+  static async deleteCSATRecord(recordId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('csat_whatsapp')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) {
+        console.error('خطأ Supabase في حذف سجل CSAT:', error);
+        throw new Error(`خطأ في حذف سجل CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      console.log('تم حذف سجل CSAT بنجاح');
+    } catch (error) {
+      console.error('خطأ في حذف سجل CSAT:', error);
+      throw error;
+    }
+  }
 }

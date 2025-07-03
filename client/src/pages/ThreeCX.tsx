@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,7 +139,7 @@ export default function ThreeCX() {
       // استخراج اسم الموظف من عمود To أو From
       let agentName = '';
       const callDetails = row['Call Activity Details'] || row['تفاصيل النشاط'] || '';
-      
+
       if (direction === 'Inbound' && to) {
         // للمكالمات الواردة، استخراج اسم الموظف من to
         agentName = to.includes('(') ? to.split('(')[0].trim() : to;
@@ -188,7 +187,7 @@ export default function ThreeCX() {
     try {
       // حفظ البيانات في قاعدة البيانات
       const period = isYearly ? 'yearly' : 'weekly';
-      
+
       // تحويل البيانات للتنسيق المطلوب
       const recordsToSave = businessHoursRecords.map(record => ({
         callTime: record.callTime,
@@ -205,7 +204,7 @@ export default function ThreeCX() {
         period: period as 'weekly' | 'yearly',
         createdBy: user?.username
       }));
-      
+
       await ThreeCXService.saveCallRecords(recordsToSave);
 
       if (isYearly) {
@@ -244,19 +243,19 @@ export default function ThreeCX() {
   const calculateAnalytics = (records: CallRecord[]) => {
     // تصفية المكالمات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = records.filter(r => r.isBusinessHours);
-    
+
     const totalCalls = businessHoursRecords.length;
     const answeredCalls = businessHoursRecords.filter(r => r.status === 'Answered').length;
     const unansweredCalls = totalCalls - answeredCalls;
-    
+
     // حساب معدل الرد بناءً على المكالمات في أوقات الدوام فقط
     const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
-    
+
     const answeredRecords = businessHoursRecords.filter(r => r.status === 'Answered' && r.responseTime > 0);
     const averageResponseTime = answeredRecords.length > 0 
       ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
       : 0;
-    
+
     const totalTalkTime = businessHoursRecords.reduce((sum, r) => sum + r.talkingDuration, 0);
     const businessHoursCalls = businessHoursRecords.length;
     const outsideHoursCalls = records.length - businessHoursCalls;
@@ -296,7 +295,7 @@ export default function ThreeCX() {
 
       const employee = employeeMap.get(record.agentName)!;
       employee.totalCalls++;
-      
+
       if (record.status === 'Answered') {
         employee.answeredCalls++;
         employee.totalTalkTime += record.talkingDuration;
@@ -310,7 +309,7 @@ export default function ThreeCX() {
         r.status === 'Answered' && 
         r.responseTime > 0
       );
-      
+
       const averageResponseTime = answeredRecords.length > 0
         ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
         : 0;
@@ -405,12 +404,12 @@ export default function ThreeCX() {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       try {
         setIsLoading(true);
-        
+
         // حذف من قاعدة البيانات
         await ThreeCXService.clearPeriodData('weekly');
-        
+
         setWeeklyData([]);
-        
+
         // إذا كانت الفترة النشطة أسبوعية، امحِ العرض
         if (activeTab === "weekly") {
           setCallRecords([]);
@@ -440,12 +439,12 @@ export default function ThreeCX() {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات السنوية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       try {
         setIsLoading(true);
-        
+
         // حذف من قاعدة البيانات
         await ThreeCXService.clearPeriodData('yearly');
-        
+
         setYearlyData([]);
-        
+
         // إذا كانت الفترة النشطة سنوية، امحِ العرض
         if (activeTab === "yearly") {
           setCallRecords([]);
@@ -475,7 +474,7 @@ export default function ThreeCX() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}س ${minutes}د ${secs}ث`;
     } else if (minutes > 0) {
@@ -547,14 +546,14 @@ export default function ThreeCX() {
         try {
           // حفظ النتيجة في قاعدة البيانات
           await DataService.saveCSATScore(score, 'whatsapp', activeTab, user?.username);
-          
+
           setDisplayedCsatScore(score.toFixed(1));
           setCsatScore(""); // مسح الحقل بعد الحفظ
-          
+
           // تحديث تاريخ النتائج
           const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
           setCsatHistory(history);
-          
+
           toast({
             title: "تم حفظ نتيجة CSAT",
             description: `تم حفظ النتيجة ${score.toFixed(1)}% في قاعدة البيانات`,
@@ -594,6 +593,32 @@ export default function ThreeCX() {
       fullName: emp.agentName,
       responseTime: Math.round(emp.averageResponseTime)
     }));
+
+  const handleDeleteCSATRecord = async (recordId: any) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+      try {
+        setIsLoading(true);
+        await DataService.deleteCSATScore(recordId);
+        toast({
+          title: "تم حذف النتيجة",
+          description: "تم حذف نتيجة CSAT بنجاح",
+        });
+
+        // تحديث تاريخ النتائج
+        const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
+        setCsatHistory(history);
+      } catch (error) {
+        console.error('خطأ في حذف نتيجة CSAT:', error);
+        toast({
+          title: "خطأ في الحذف",
+          description: "حدث خطأ أثناء حذف نتيجة CSAT",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   return (
     <Layout>
@@ -845,17 +870,25 @@ export default function ThreeCX() {
                   • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
                 </p>
               </div>
-              
+
               {csatHistory.length > 0 && (
                 <div className="border-t pt-3">
                   <h4 className="text-sm font-medium mb-2">آخر النتائج ({activeTab === 'weekly' ? 'أسبوعي' : 'سنوي'}):</h4>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {csatHistory.slice(0, 5).map((entry, index) => (
+                    {csatHistory.map((entry, index) => (
                       <div key={entry.id} className="flex justify-between text-xs bg-muted/50 p-2 rounded">
                         <span>{entry.score.toFixed(1)}%</span>
                         <span className="text-muted-foreground">
                           {new Date(entry.created_at).toLocaleDateString('ar-SA')} - {entry.created_by || 'غير محدد'}
                         </span>
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteCSATRecord(entry.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                       </div>
                     ))}
                   </div>
