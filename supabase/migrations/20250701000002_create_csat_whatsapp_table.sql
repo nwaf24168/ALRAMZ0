@@ -5,9 +5,9 @@ DROP TABLE IF EXISTS csat_whatsapp;
 CREATE TABLE csat_whatsapp (
   id SERIAL PRIMARY KEY,
   score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
-  source VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
-  period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
-  created_by VARCHAR(100),
+  source TEXT NOT NULL DEFAULT 'whatsapp',
+  period TEXT NOT NULL CHECK (period IN ('weekly', 'yearly')),
+  created_by TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

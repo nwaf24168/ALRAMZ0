@@ -1665,7 +1665,6 @@ export class DataService {
     try {
       const insertData = {
         score: score,
-        source: source,
         period: period,
         created_by: createdBy || 'مجهول'
       };
@@ -1692,7 +1691,6 @@ export class DataService {
         .from('csat_whatsapp')
         .select('score')
         .eq('period', period)
-        .eq('source', source)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -1718,10 +1716,9 @@ export class DataService {
   static async getCSATHistory(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', limit: number = 10): Promise<any[]> {
     try {
       const { data, error } = await supabase
-        .from('csat_scores')
+        .from('csat_whatsapp')
         .select('*')
         .eq('period', period)
-        .eq('source', source)
         .order('created_at', { ascending: false })
         .limit(limit);
 
