@@ -1,14 +1,27 @@
-
 -- إنشاء جدول نتائج CSAT للواتس اب
 CREATE TABLE IF NOT EXISTS csat_whatsapp (
-    id SERIAL PRIMARY KEY,
-    score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
-    source TEXT DEFAULT 'whatsapp',
-    period TEXT CHECK (period IN ('weekly', 'yearly')) DEFAULT 'weekly',
-    created_by TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+  id SERIAL PRIMARY KEY,
+  score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
+  source VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
+  period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'yearly')),
+  created_by VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- إنشاء فهارس للأداء
+CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_period ON csat_whatsapp(period);
+CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_source ON csat_whatsapp(source);
+CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_created_at ON csat_whatsapp(created_at);
+
+-- تمكين RLS
+ALTER TABLE csat_whatsapp ENABLE ROW LEVEL SECURITY;
+
+-- إنشاء سياسة للسماح بجميع العمليات
+CREATE POLICY "Enable all operations on csat_whatsapp" ON csat_whatsapp
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
 -- تحديث جدول 3CX ليشمل البيانات المطلوبة
 DROP TABLE IF EXISTS threecx_data;
@@ -61,13 +74,10 @@ CREATE INDEX IF NOT EXISTS idx_threecx_business_hours ON threecx_data(is_busines
 CREATE INDEX IF NOT EXISTS idx_threecx_status ON threecx_data(status);
 CREATE INDEX IF NOT EXISTS idx_threecx_direction ON threecx_data(direction);
 
-CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_period ON csat_whatsapp(period);
-CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_source ON csat_whatsapp(source);
-CREATE INDEX IF NOT EXISTS idx_csat_whatsapp_created_at ON csat_whatsapp(created_at);
+CREATE INDEX IF NOT EXISTS idx_threecx_period ON threecx_data(period);
 
 -- تفعيل RLS
 ALTER TABLE threecx_data ENABLE ROW LEVEL SECURITY;
-ALTER TABLE csat_whatsapp ENABLE ROW LEVEL SECURITY;
 ALTER TABLE business_hours_settings ENABLE ROW LEVEL SECURITY;
 
 -- سياسات الأمان
@@ -75,11 +85,6 @@ CREATE POLICY "Users can view all 3CX data" ON threecx_data FOR SELECT USING (tr
 CREATE POLICY "Users can insert 3CX data" ON threecx_data FOR INSERT WITH CHECK (true);
 CREATE POLICY "Users can update 3CX data" ON threecx_data FOR UPDATE USING (true);
 CREATE POLICY "Users can delete 3CX data" ON threecx_data FOR DELETE USING (true);
-
-CREATE POLICY "Users can view CSAT data" ON csat_whatsapp FOR SELECT USING (true);
-CREATE POLICY "Users can insert CSAT data" ON csat_whatsapp FOR INSERT WITH CHECK (true);
-CREATE POLICY "Users can update CSAT data" ON csat_whatsapp FOR UPDATE USING (true);
-CREATE POLICY "Users can delete CSAT data" ON csat_whatsapp FOR DELETE USING (true);
 
 CREATE POLICY "Users can view business hours" ON business_hours_settings FOR SELECT USING (true);
 CREATE POLICY "Users can update business hours" ON business_hours_settings FOR UPDATE USING (true);

@@ -1,0 +1,42 @@
+تم استرداد المستخدم من localStorage: nawaf
+المؤشرات المحملة من قاعدة البيانات: 
+(15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+تم تحديث المؤشرات: 
+(15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+تم تحميل المستخدمين من قاعدة البيانات: 
+(9) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+بيانات خدمة العملاء: 
+Object {calls: {…}, inquiries: {…}, maintenance: {…}}
+بيانات الرضا: 
+Object {comments: Array(0), serviceQuality: {…}, closureTime: {…}, firstTimeResolution: {…}}
+التعليقات: 
+Array [{…}]
+خطأ Supabase في جلب نتيجة CSAT: 
+Object {code: "42703", details: null, hint: "Perhaps you meant to reference the column "csat_whatsapp.score".", message: "column csat_whatsapp.source does not exist"}
+
+خطأ Supabase في جلب تاريخ CSAT: 
+Object {code: "42703", details: null, hint: "Perhaps you meant to reference the column "csat_whatsapp.score".", message: "column csat_whatsapp.source does not exist"}
+code: "42703"
+details: null
+hint: "Perhaps you meant to reference the column "csat_whatsapp.score"."
+message: "column csat_whatsapp.source does not exist"
+[[Prototype]]: Object
+
+تم تحميل 0 سجل مكالمة للفترة weekly
+خطأ Supabase في حفظ نتيجة CSAT: 
+Object {code: "PGRST204", details: null, hint: null, message: "Could not find the 'created_by' column of 'csat_whatsapp' in the schema cache"}
+
+خطأ في حفظ نتيجة CSAT: 
+Error {}
+
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+خطأ في حفظ نتيجة CSAT: 
+Error {}
+
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
