@@ -96,6 +96,7 @@ export default function ThreeCX() {
   const [activeTab, setActiveTab] = useState<"weekly" | "yearly">("weekly");
   const [csatScore, setCsatScore] = useState<string>("");
   const [displayedCsatScore, setDisplayedCsatScore] = useState<string>("0");
+  const [csatHistory, setCsatHistory] = useState<any[]>([]);
 
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
@@ -400,16 +401,56 @@ export default function ThreeCX() {
     }
   };
 
+  // تحميل نتيجة CSAT من قاعدة البيانات عند تغيير الفترة
+  useEffect(() => {
+    const loadCSATScore = async () => {
+      try {
+        const latestScore = await DataService.getLatestCSATScore('whatsapp', activeTab);
+        if (latestScore !== null) {
+          setDisplayedCsatScore(latestScore.toFixed(1));
+        } else {
+          setDisplayedCsatScore("0");
+        }
+
+        // تحميل تاريخ النتائج
+        const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
+        setCsatHistory(history);
+      } catch (error) {
+        console.error('خطأ في تحميل نتيجة CSAT:', error);
+      }
+    };
+
+    loadCSATScore();
+  }, [activeTab]);
+
   // تحديث نتيجة CSAT
-  const handleCsatUpdate = () => {
+  const handleCsatUpdate = async () => {
     if (csatScore.trim() !== "") {
       const score = parseFloat(csatScore);
       if (!isNaN(score) && score >= 0 && score <= 100) {
-        setDisplayedCsatScore(score.toFixed(1));
-        toast({
-          title: "تم تحديث نتيجة CSAT",
-          description: `تم تحديث النتيجة إلى ${score.toFixed(1)}%`,
-        });
+        try {
+          // حفظ النتيجة في قاعدة البيانات
+          await DataService.saveCSATScore(score, 'whatsapp', activeTab, user?.username);
+          
+          setDisplayedCsatScore(score.toFixed(1));
+          setCsatScore(""); // مسح الحقل بعد الحفظ
+          
+          // تحديث تاريخ النتائج
+          const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
+          setCsatHistory(history);
+          
+          toast({
+            title: "تم حفظ نتيجة CSAT",
+            description: `تم حفظ النتيجة ${score.toFixed(1)}% في قاعدة البيانات`,
+          });
+        } catch (error) {
+          console.error('خطأ في حفظ نتيجة CSAT:', error);
+          toast({
+            title: "خطأ في الحفظ",
+            description: "حدث خطأ أثناء حفظ نتيجة CSAT",
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "خطأ في القيمة",
@@ -661,11 +702,29 @@ export default function ThreeCX() {
                 تحديث النتيجة
               </Button>
             </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>النتيجة الحالية: <span className="font-semibold">{displayedCsatScore}%</span></p>
-              <p className="text-xs">
-                • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
-              </p>
+            <div className="mt-4 space-y-3">
+              <div className="text-sm text-muted-foreground">
+                <p>النتيجة الحالية: <span className="font-semibold">{displayedCsatScore}%</span></p>
+                <p className="text-xs">
+                  • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
+                </p>
+              </div>
+              
+              {csatHistory.length > 0 && (
+                <div className="border-t pt-3">
+                  <h4 className="text-sm font-medium mb-2">آخر النتائج ({activeTab === 'weekly' ? 'أسبوعي' : 'سنوي'}):</h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {csatHistory.slice(0, 5).map((entry, index) => (
+                      <div key={entry.id} className="flex justify-between text-xs bg-muted/50 p-2 rounded">
+                        <span>{entry.score.toFixed(1)}%</span>
+                        <span className="text-muted-foreground">
+                          {new Date(entry.created_at).toLocaleDateString('ar-SA')} - {entry.created_by || 'غير محدد'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

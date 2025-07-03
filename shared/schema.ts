@@ -179,6 +179,16 @@ export const threecxData = pgTable("threecx_data", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const csatScores = pgTable("csat_scores", {
+  id: serial("id").primaryKey(),
+  score: real("score").notNull(),
+  source: text("source").notNull().default("whatsapp"),
+  period: text("period").notNull().default("weekly"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -196,6 +206,7 @@ export const insertBookingSchema = createInsertSchema(bookings);
 export const insertReceptionRecordSchema = createInsertSchema(receptionRecords);
 export const insertQualityCallSchema = createInsertSchema(qualityCalls);
 export const insertThreeCXSchema = createInsertSchema(threecxData);
+export const insertCSATSchema = createInsertSchema(csatScores);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -218,3 +229,5 @@ export type InsertQualityCall = z.infer<typeof insertQualityCallSchema>;
 export type QualityCall = typeof qualityCalls.$inferSelect;
 export type InsertThreeCX = z.infer<typeof insertThreeCXSchema>;
 export type ThreeCXData = typeof threecxData.$inferSelect;
+export type InsertCSAT = z.infer<typeof insertCSATSchema>;
+export type CSATScore = typeof csatScores.$inferSelect;

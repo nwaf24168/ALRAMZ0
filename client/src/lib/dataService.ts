@@ -938,7 +938,7 @@ export class DataService {
         call_type: call.callType || 'مكالمة جودة',
         call_duration: call.callDuration,
         evaluation_score: call.evaluationScore,
-        qualification_status: call.qualificationStatus || 'غير مؤهل',
+        qualification_status: call.qualification_status || 'غير مؤهل',
         qualification_reason: call.qualificationReason,
         notes: call.notes,
         created_by: call.createdBy || 'مجهول'
@@ -1467,5 +1467,76 @@ export class DataService {
 
   static removeRealtimeSubscription(channel: RealtimeChannel): void {
     supabase.removeChannel(channel);
+  }
+
+  // حفظ وجلب نتائج CSAT
+  static async saveCSATScore(score: number, source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', createdBy?: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('csat_scores')
+        .insert({
+          score: score,
+          source: source,
+          period: period,
+          created_by: createdBy
+        });
+
+      if (error) {
+        console.error('خطأ Supabase في حفظ نتيجة CSAT:', error);
+        throw new Error(`خطأ في حفظ نتيجة CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+    } catch (error) {
+      console.error('خطأ في حفظ نتيجة CSAT:', error);
+      throw error;
+    }
+  }
+
+  static async getLatestCSATScore(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly'): Promise<number | null> {
+    try {
+      const { data, error } = await supabase
+        .from('csat_scores')
+        .select('score')
+        .eq('source', source)
+        .eq('period', period)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // لا توجد نتائج
+          return null;
+        }
+        console.error('خطأ Supabase في جلب نتيجة CSAT:', error);
+        throw new Error(`خطأ في جلب نتيجة CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      return data?.score || null;
+    } catch (error) {
+      console.error('خطأ في جلب نتيجة CSAT:', error);
+      return null;
+    }
+  }
+
+  static async getCSATHistory(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', limit: number = 10): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('csat_scores')
+        .select('*')
+        .eq('source', source)
+        .eq('period', period)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('خطأ Supabase في جلب تاريخ CSAT:', error);
+        throw new Error(`خطأ في جلب تاريخ CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('خطأ في جلب تاريخ CSAT:', error);
+      return [];
+    }
   }
 }
