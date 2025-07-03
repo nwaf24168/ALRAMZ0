@@ -1663,25 +1663,12 @@ export class DataService {
   // حفظ وجلب نتائج CSAT
   static async saveCSATScore(score: number, source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', createdBy?: string): Promise<void> {
     try {
-      // التحقق من وجود الجدول والأعمدة أولاً
-      const { data: tableInfo, error: tableError } = await supabase
-        .from('csat_whatsapp')
-        .select('score')
-        .limit(1);
-
-      if (tableError && tableError.code === '42P01') {
-        console.error('جدول csat_whatsapp غير موجود');
-        throw new Error('جدول CSAT غير موجود. يرجى إنشاء الجدول أولاً.');
-      }
-
-      const insertData: any = {
+      const insertData = {
         score: score,
-        period: period
+        source: source,
+        period: period,
+        created_by: createdBy || 'مجهول'
       };
-
-      // إضافة الحقول فقط إذا كانت الأعمدة موجودة
-      if (source) insertData.source = source;
-      if (createdBy) insertData.created_by = createdBy;
 
       const { error } = await supabase
         .from('csat_whatsapp')
@@ -1691,6 +1678,8 @@ export class DataService {
         console.error('خطأ Supabase في حفظ نتيجة CSAT:', error);
         throw new Error(`خطأ في حفظ نتيجة CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
       }
+
+      console.log('تم حفظ نتيجة CSAT بنجاح:', insertData);
     } catch (error) {
       console.error('خطأ في حفظ نتيجة CSAT:', error);
       throw error;
@@ -1699,32 +1688,26 @@ export class DataService {
 
   static async getLatestCSATScore(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly'): Promise<number | null> {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('csat_whatsapp')
         .select('score')
         .eq('period', period)
+        .eq('source', source)
         .order('created_at', { ascending: false })
-        .limit(1);
-
-      // إضافة فلتر المصدر فقط إذا كان العمود موجوداً
-      try {
-        query = query.eq('source', source);
-      } catch (err) {
-        // إذا فشل، نتجاهل فلتر المصدر
-        console.log('عمود source غير موجود، سيتم تجاهل الفلتر');
-      }
-
-      const { data, error } = await query.single();
+        .limit(1)
+        .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
           // لا توجد نتائج
+          console.log('لا توجد نتائج CSAT للفترة:', period);
           return null;
         }
         console.error('خطأ Supabase في جلب نتيجة CSAT:', error);
         return null;
       }
 
+      console.log('تم جلب نتيجة CSAT بنجاح:', data?.score);
       return data?.score || null;
     } catch (error) {
       console.error('خطأ في جلب نتيجة CSAT:', error);
@@ -1734,28 +1717,20 @@ export class DataService {
 
   static async getCSATHistory(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', limit: number = 10): Promise<any[]> {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('csat_whatsapp')
         .select('*')
         .eq('period', period)
+        .eq('source', source)
         .order('created_at', { ascending: false })
         .limit(limit);
-
-      // إضافة فلتر المصدر فقط إذا كان العمود موجوداً
-      try {
-        query = query.eq('source', source);
-      } catch (err) {
-        // إذا فشل، نتجاهل فلتر المصدر
-        console.log('عمود source غير موجود، سيتم تجاهل الفلتر');
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error('خطأ Supabase في جلب تاريخ CSAT:', error);
         return [];
       }
 
+      console.log('تم جلب تاريخ CSAT بنجاح:', data?.length || 0, 'سجل');
       return data || [];
     } catch (error) {
       console.error('خطأ في جلب تاريخ CSAT:', error);

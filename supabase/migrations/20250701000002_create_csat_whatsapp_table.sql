@@ -1,5 +1,8 @@
--- إنشاء جدول نتائج CSAT للواتس اب
-CREATE TABLE IF NOT EXISTS csat_whatsapp (
+-- حذف الجدول القديم إذا كان موجوداً
+DROP TABLE IF EXISTS csat_whatsapp;
+
+-- إنشاء جدول نتائج CSAT للواتس اب مع جميع الأعمدة المطلوبة
+CREATE TABLE csat_whatsapp (
   id SERIAL PRIMARY KEY,
   score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
   source VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
