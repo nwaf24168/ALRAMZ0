@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,9 +43,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>; <>{children}</>;
+  return <>{children}</>;
 };
 
+// مكون للمسارات الداخلية
 const AppRoutesInner = () => {
   const { isAuthenticated } = useAuth();
 
@@ -161,6 +163,7 @@ const AppRoutesInner = () => {
   );
 };
 
+// المكون الرئيسي
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
