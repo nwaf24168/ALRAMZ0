@@ -1,5 +1,5 @@
 -- حذف الجدول القديم إذا كان موجوداً
-DROP TABLE IF EXISTS csat_whatsapp;
+DROP TABLE IF EXISTS csat_whatsapp CASCADE;
 
 -- إنشاء جدول نتائج CSAT للواتس اب مع جميع الأعمدة المطلوبة
 CREATE TABLE csat_whatsapp (
