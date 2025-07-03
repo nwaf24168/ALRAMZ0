@@ -1469,11 +1469,202 @@ export class DataService {
     supabase.removeChannel(channel);
   }
 
+  // دوال 3CX الكاملة
+  static async save3CXCallRecords(records: any[], period: 'weekly' | 'yearly' = 'weekly', createdBy?: string): Promise<void> {
+    try {
+      // حذف البيانات القديمة للفترة
+      await this.clear3CXData(period);
+
+      // إدراج البيانات الجديدة
+      const recordsToInsert = records.map(record => ({
+        call_time: record.callTime,
+        call_id: record.callId,
+        from_number: record.from,
+        to_number: record.to,
+        direction: record.direction,
+        status: record.status,
+        ringing_duration: record.ringingDuration,
+        talking_duration: record.talkingDuration,
+        agent_name: record.agentName,
+        is_business_hours: record.isBusinessHours,
+        response_time: record.responseTime,
+        period: period,
+        created_by: createdBy,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('threecx_data')
+        .insert(recordsToInsert);
+
+      if (error) {
+        console.error('خطأ في حفظ بيانات 3CX:', error);
+        throw new Error(`خطأ في حفظ بيانات 3CX: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      console.log(`تم حفظ ${recordsToInsert.length} سجل مكالمة للفترة ${period}`);
+    } catch (error) {
+      console.error('خطأ في save3CXCallRecords:', error);
+      throw error;
+    }
+  }
+
+  static async get3CXCallRecords(period: 'weekly' | 'yearly' = 'weekly'): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('threecx_data')
+        .select('*')
+        .eq('period', period)
+        .order('call_time', { ascending: false });
+
+      if (error) {
+        console.error('خطأ في جلب بيانات 3CX:', error);
+        throw new Error(`خطأ في جلب بيانات 3CX: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      const records = (data || []).map(record => ({
+        id: `${record.id}-${record.call_time}`,
+        callTime: record.call_time,
+        callId: record.call_id,
+        from: record.from_number,
+        to: record.to_number,
+        direction: record.direction,
+        status: record.status,
+        ringingDuration: record.ringing_duration,
+        talkingDuration: record.talking_duration,
+        agentName: record.agent_name,
+        isBusinessHours: record.is_business_hours,
+        responseTime: record.response_time
+      }));
+
+      console.log(`تم تحميل ${records.length} سجل مكالمة للفترة ${period}`);
+      return records;
+    } catch (error) {
+      console.error('خطأ في get3CXCallRecords:', error);
+      return [];
+    }
+  }
+
+  static async clear3CXData(period: 'weekly' | 'yearly'): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('threecx_data')
+        .delete()
+        .eq('period', period);
+
+      if (error) {
+        console.error('خطأ في حذف بيانات 3CX:', error);
+        throw new Error(`خطأ في حذف بيانات 3CX: ${error.message || error.details || "خطأ غير معروف"}`);
+      }
+
+      console.log(`تم حذف بيانات 3CX للفترة ${period}`);
+    } catch (error) {
+      console.error('خطأ في clear3CXData:', error);
+      throw error;
+    }
+  }
+
+  static async get3CXAnalytics(period: 'weekly' | 'yearly' = 'weekly'): Promise<any> {
+    try {
+      const records = await this.get3CXCallRecords(period);
+      
+      // تصفية المكالمات في أوقات الدوام فقط
+      const businessHoursRecords = records.filter(r => r.isBusinessHours);
+      
+      const totalCalls = businessHoursRecords.length;
+      const answeredCalls = businessHoursRecords.filter(r => r.status === 'Answered').length;
+      const unansweredCalls = totalCalls - answeredCalls;
+      
+      const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
+      
+      const answeredRecords = businessHoursRecords.filter(r => r.status === 'Answered' && r.responseTime > 0);
+      const averageResponseTime = answeredRecords.length > 0 
+        ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
+        : 0;
+      
+      const totalTalkTime = businessHoursRecords.reduce((sum, r) => sum + r.talkingDuration, 0);
+      const businessHoursCalls = businessHoursRecords.length;
+      const outsideHoursCalls = records.length - businessHoursCalls;
+
+      return {
+        totalCalls,
+        answeredCalls,
+        unansweredCalls,
+        answerRate,
+        averageResponseTime,
+        totalTalkTime,
+        businessHoursCalls,
+        outsideHoursCalls
+      };
+    } catch (error) {
+      console.error('خطأ في get3CXAnalytics:', error);
+      return null;
+    }
+  }
+
+  static async get3CXEmployeePerformance(period: 'weekly' | 'yearly' = 'weekly'): Promise<any[]> {
+    try {
+      const records = await this.get3CXCallRecords(period);
+      const businessHoursRecords = records.filter(r => r.isBusinessHours);
+      
+      const employeeMap = new Map();
+
+      businessHoursRecords.forEach(record => {
+        if (record.agentName === 'غير محدد') return;
+
+        if (!employeeMap.has(record.agentName)) {
+          employeeMap.set(record.agentName, {
+            agentName: record.agentName,
+            totalCalls: 0,
+            answeredCalls: 0,
+            averageResponseTime: 0,
+            answerRate: 0,
+            totalTalkTime: 0
+          });
+        }
+
+        const employee = employeeMap.get(record.agentName);
+        employee.totalCalls++;
+        
+        if (record.status === 'Answered') {
+          employee.answeredCalls++;
+          employee.totalTalkTime += record.talkingDuration;
+        }
+      });
+
+      // حساب المعدلات النهائية
+      const performance = Array.from(employeeMap.values()).map(emp => {
+        const answeredRecords = businessHoursRecords.filter(r => 
+          r.agentName === emp.agentName && 
+          r.status === 'Answered' && 
+          r.responseTime > 0
+        );
+        
+        const averageResponseTime = answeredRecords.length > 0
+          ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
+          : 0;
+
+        return {
+          ...emp,
+          answerRate: emp.totalCalls > 0 ? (emp.answeredCalls / emp.totalCalls) * 100 : 0,
+          averageResponseTime
+        };
+      });
+
+      performance.sort((a, b) => b.totalCalls - a.totalCalls);
+      return performance;
+    } catch (error) {
+      console.error('خطأ في get3CXEmployeePerformance:', error);
+      return [];
+    }
+  }
+
   // حفظ وجلب نتائج CSAT
   static async saveCSATScore(score: number, source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', createdBy?: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('csat_scores')
+        .from('csat_whatsapp')
         .insert({
           score: score,
           source: source,
@@ -1494,7 +1685,7 @@ export class DataService {
   static async getLatestCSATScore(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly'): Promise<number | null> {
     try {
       const { data, error } = await supabase
-        .from('csat_scores')
+        .from('csat_whatsapp')
         .select('score')
         .eq('source', source)
         .eq('period', period)
@@ -1521,7 +1712,7 @@ export class DataService {
   static async getCSATHistory(source: string = 'whatsapp', period: 'weekly' | 'yearly' = 'weekly', limit: number = 10): Promise<any[]> {
     try {
       const { data, error } = await supabase
-        .from('csat_scores')
+        .from('csat_whatsapp')
         .select('*')
         .eq('source', source)
         .eq('period', period)

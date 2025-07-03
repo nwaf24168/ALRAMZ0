@@ -97,6 +97,7 @@ export default function ThreeCX() {
   const [csatScore, setCsatScore] = useState<string>("");
   const [displayedCsatScore, setDisplayedCsatScore] = useState<string>("0");
   const [csatHistory, setCsatHistory] = useState<any[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
@@ -123,7 +124,7 @@ export default function ThreeCX() {
   };
 
   // معالجة ملف Excel
-  const processExcelData = (data: any[], isYearly: boolean = false) => {
+  const processExcelData = async (data: any[], isYearly: boolean = false) => {
     console.log("معالجة بيانات Excel:", data.length, "سجل");
 
     const processedRecords: CallRecord[] = data.map((row, index) => {
@@ -183,28 +184,41 @@ export default function ThreeCX() {
     // تصفية السجلات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = processedRecords.filter(record => record.isBusinessHours);
 
-    if (isYearly) {
-      setYearlyData(businessHoursRecords);
-      // إذا كانت الفترة النشطة سنوية، اعرض البيانات السنوية
-      if (activeTab === "yearly") {
-        setCallRecords(businessHoursRecords);
-        calculateAnalytics(businessHoursRecords);
-        calculateEmployeePerformance(businessHoursRecords);
-      }
-    } else {
-      setWeeklyData(businessHoursRecords);
-      // إذا كانت الفترة النشطة أسبوعية، اعرض البيانات الأسبوعية
-      if (activeTab === "weekly") {
-        setCallRecords(businessHoursRecords);
-        calculateAnalytics(businessHoursRecords);
-        calculateEmployeePerformance(businessHoursRecords);
-      }
-    }
+    try {
+      // حفظ البيانات في قاعدة البيانات
+      const period = isYearly ? 'yearly' : 'weekly';
+      await DataService.save3CXCallRecords(businessHoursRecords, period, user?.username);
 
-    toast({
-      title: "تم رفع البيانات بنجاح",
-      description: `تم معالجة ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة`,
-    });
+      if (isYearly) {
+        setYearlyData(businessHoursRecords);
+        // إذا كانت الفترة النشطة سنوية، اعرض البيانات السنوية
+        if (activeTab === "yearly") {
+          setCallRecords(businessHoursRecords);
+          calculateAnalytics(businessHoursRecords);
+          calculateEmployeePerformance(businessHoursRecords);
+        }
+      } else {
+        setWeeklyData(businessHoursRecords);
+        // إذا كانت الفترة النشطة أسبوعية، اعرض البيانات الأسبوعية
+        if (activeTab === "weekly") {
+          setCallRecords(businessHoursRecords);
+          calculateAnalytics(businessHoursRecords);
+          calculateEmployeePerformance(businessHoursRecords);
+        }
+      }
+
+      toast({
+        title: "تم رفع وحفظ البيانات بنجاح",
+        description: `تم معالجة وحفظ ${businessHoursRecords.length} مكالمة في أوقات الدوام من أصل ${processedRecords.length} مكالمة في قاعدة البيانات`,
+      });
+    } catch (error) {
+      console.error('خطأ في حفظ البيانات:', error);
+      toast({
+        title: "خطأ في الحفظ",
+        description: "تم معالجة البيانات ولكن حدث خطأ أثناء حفظها في قاعدة البيانات",
+        variant: "destructive",
+      });
+    }
   };
 
   // حساب التحليلات العامة
@@ -311,7 +325,7 @@ export default function ThreeCX() {
     setIsLoading(true);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -328,7 +342,7 @@ export default function ThreeCX() {
           return;
         }
 
-        processExcelData(jsonData, isYearly);
+        await processExcelData(jsonData, isYearly);
       } catch (error) {
         console.error('خطأ في قراءة الملف:', error);
         toast({
@@ -368,21 +382,37 @@ export default function ThreeCX() {
   };
 
   // حذف البيانات الأسبوعية
-  const clearWeeklyData = () => {
+  const clearWeeklyData = async () => {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
-      setWeeklyData([]);
-      
-      // إذا كانت الفترة النشطة أسبوعية، امحِ العرض
-      if (activeTab === "weekly") {
-        setCallRecords([]);
-        setAnalytics(null);
-        setEmployeePerformance([]);
-      }
+      try {
+        setIsLoading(true);
+        
+        // حذف من قاعدة البيانات
+        await DataService.clear3CXData('weekly');
+        
+        setWeeklyData([]);
+        
+        // إذا كانت الفترة النشطة أسبوعية، امحِ العرض
+        if (activeTab === "weekly") {
+          setCallRecords([]);
+          setAnalytics(null);
+          setEmployeePerformance([]);
+        }
 
-      toast({
-        title: "تم حذف البيانات الأسبوعية",
-        description: "تم حذف جميع البيانات الأسبوعية بنجاح",
-      });
+        toast({
+          title: "تم حذف البيانات الأسبوعية",
+          description: "تم حذف جميع البيانات الأسبوعية من قاعدة البيانات بنجاح",
+        });
+      } catch (error) {
+        console.error('خطأ في حذف البيانات:', error);
+        toast({
+          title: "خطأ في الحذف",
+          description: "حدث خطأ أثناء حذف البيانات من قاعدة البيانات",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -401,10 +431,12 @@ export default function ThreeCX() {
     }
   };
 
-  // تحميل نتيجة CSAT من قاعدة البيانات عند تغيير الفترة
+  // تحميل البيانات من قاعدة البيانات عند بدء التشغيل وعند تغيير الفترة
   useEffect(() => {
-    const loadCSATScore = async () => {
+    const loadAllData = async () => {
+      setIsLoading(true);
       try {
+        // تحميل نتيجة CSAT
         const latestScore = await DataService.getLatestCSATScore('whatsapp', activeTab);
         if (latestScore !== null) {
           setDisplayedCsatScore(latestScore.toFixed(1));
@@ -415,12 +447,42 @@ export default function ThreeCX() {
         // تحميل تاريخ النتائج
         const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
         setCsatHistory(history);
+
+        // تحميل بيانات المكالمات
+        const savedRecords = await DataService.get3CXCallRecords(activeTab);
+        if (savedRecords.length > 0) {
+          if (activeTab === 'weekly') {
+            setWeeklyData(savedRecords);
+            setCallRecords(savedRecords);
+          } else {
+            setYearlyData(savedRecords);
+            setCallRecords(savedRecords);
+          }
+
+          // حساب التحليلات من البيانات المحفوظة
+          const analyticsData = await DataService.get3CXAnalytics(activeTab);
+          setAnalytics(analyticsData);
+
+          const performanceData = await DataService.get3CXEmployeePerformance(activeTab);
+          setEmployeePerformance(performanceData);
+
+          console.log(`تم تحميل ${savedRecords.length} سجل مكالمة للفترة ${activeTab} من قاعدة البيانات`);
+        }
+
+        setDataLoaded(true);
       } catch (error) {
-        console.error('خطأ في تحميل نتيجة CSAT:', error);
+        console.error('خطأ في تحميل البيانات:', error);
+        toast({
+          title: "خطأ في التحميل",
+          description: "حدث خطأ أثناء تحميل البيانات من قاعدة البيانات",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadCSATScore();
+    loadAllData();
   }, [activeTab]);
 
   // تحديث نتيجة CSAT
@@ -603,8 +665,20 @@ export default function ThreeCX() {
           </Card>
         </div>
 
+        {/* مؤشر التحميل */}
+        {isLoading && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="mr-3">جاري التحميل...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* إحصائيات عامة */}
-        {analytics && (
+        {analytics && !isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <Card>
               <CardContent className="p-6">
@@ -728,6 +802,23 @@ export default function ThreeCX() {
             </div>
           </CardContent>
         </Card>
+
+        {/* رسالة عدم وجود بيانات */}
+        {!isLoading && !analytics && dataLoaded && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Phone className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">لا توجد بيانات مكالمات</h3>
+              <p className="text-muted-foreground mb-4">
+                لم يتم العثور على بيانات مكالمات للفترة {activeTab === 'weekly' ? 'الأسبوعية' : 'السنوية'}.
+                يرجى رفع ملف Excel يحتوي على بيانات المكالمات.
+              </p>
+              <Badge variant="outline">
+                {activeTab === 'weekly' ? 'الفترة الأسبوعية' : 'الفترة السنوية'}
+              </Badge>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="performance" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
