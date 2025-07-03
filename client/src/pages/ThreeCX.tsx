@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,12 +94,8 @@ export default function ThreeCX() {
   const [analytics, setAnalytics] = useState<CallAnalytics | null>(null);
   const [employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
   const [activeTab, setActiveTab] = useState<"weekly" | "yearly">("weekly");
-  const [csatScore, setCsatScore] = useState<number>(0);
-  const [csatTotalResponses, setCsatTotalResponses] = useState<number>(0);
-  const [manualCsatScore, setManualCsatScore] = useState<string>('');
-  const [csatFileInputRef, setCsatFileInputRef] = useState<HTMLInputElement | null>(null);
+  const [csatScore, setCsatScore] = useState<string>("");
   const [displayedCsatScore, setDisplayedCsatScore] = useState<string>("0");
-  const [csatHistory, setCsatHistory] = useState<any[]>([]);
 
   // دوال مساعدة للتحقق من أوقات الدوام
   const isBusinessHours = (dateTime: string): boolean => {
@@ -140,7 +137,7 @@ export default function ThreeCX() {
       // استخراج اسم الموظف من عمود To أو From
       let agentName = '';
       const callDetails = row['Call Activity Details'] || row['تفاصيل النشاط'] || '';
-
+      
       if (direction === 'Inbound' && to) {
         // للمكالمات الواردة، استخراج اسم الموظف من to
         agentName = to.includes('(') ? to.split('(')[0].trim() : to;
@@ -213,19 +210,19 @@ export default function ThreeCX() {
   const calculateAnalytics = (records: CallRecord[]) => {
     // تصفية المكالمات لتشمل فقط المكالمات في أوقات الدوام
     const businessHoursRecords = records.filter(r => r.isBusinessHours);
-
+    
     const totalCalls = businessHoursRecords.length;
     const answeredCalls = businessHoursRecords.filter(r => r.status === 'Answered').length;
     const unansweredCalls = totalCalls - answeredCalls;
-
+    
     // حساب معدل الرد بناءً على المكالمات في أوقات الدوام فقط
     const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
-
+    
     const answeredRecords = businessHoursRecords.filter(r => r.status === 'Answered' && r.responseTime > 0);
     const averageResponseTime = answeredRecords.length > 0 
       ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
       : 0;
-
+    
     const totalTalkTime = businessHoursRecords.reduce((sum, r) => sum + r.talkingDuration, 0);
     const businessHoursCalls = businessHoursRecords.length;
     const outsideHoursCalls = records.length - businessHoursCalls;
@@ -265,7 +262,7 @@ export default function ThreeCX() {
 
       const employee = employeeMap.get(record.agentName)!;
       employee.totalCalls++;
-
+      
       if (record.status === 'Answered') {
         employee.answeredCalls++;
         employee.totalTalkTime += record.talkingDuration;
@@ -279,7 +276,7 @@ export default function ThreeCX() {
         r.status === 'Answered' && 
         r.responseTime > 0
       );
-
+      
       const averageResponseTime = answeredRecords.length > 0
         ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
         : 0;
@@ -373,7 +370,7 @@ export default function ThreeCX() {
   const clearWeeklyData = () => {
     if (window.confirm('هل أنت متأكد من حذف جميع البيانات الأسبوعية؟ هذا الإجراء لا يمكن التراجع عنه.')) {
       setWeeklyData([]);
-
+      
       // إذا كانت الفترة النشطة أسبوعية، امحِ العرض
       if (activeTab === "weekly") {
         setCallRecords([]);
@@ -393,7 +390,7 @@ export default function ThreeCX() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-
+    
     if (hours > 0) {
       return `${hours}س ${minutes}د ${secs}ث`;
     } else if (minutes > 0) {
@@ -403,121 +400,24 @@ export default function ThreeCX() {
     }
   };
 
-    // تحديد الفترة الحالية بشكل افتراضي إلى "weekly"
-    const [currentPeriod, setCurrentPeriod] = useState<"weekly" | "yearly">("weekly");
-
-  // تحميل نتيجة CSAT من قاعدة البيانات عند تغيير الفترة
-  useEffect(() => {
-    const loadCSATScore = async () => {
-      try {
-        const latestScore = await DataService.getLatestCSATScore('whatsapp', activeTab);
-        if (latestScore !== null) {
-          setDisplayedCsatScore(latestScore.toFixed(1));
-        } else {
-          setDisplayedCsatScore("0");
-        }
-
-        // تحميل تاريخ النتائج
-        const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
-        setCsatHistory(history);
-      } catch (error) {
-        console.error('خطأ في تحميل نتيجة CSAT:', error);
-      }
-    };
-
-    loadCSATScore();
-  }, [activeTab]);
-
-    // تحميل نتيجة CSAT عند تغيير الفترة
-  useEffect(() => {
-    const loadCSATData = async () => {
-      try {
-        const csatData = await DataService.getCSATWhatsApp(currentPeriod);
-        if (csatData) {
-          setCsatScore(csatData.score);
-          setCsatTotalResponses(csatData.totalResponses);
-        }
-      } catch (error) {
-        console.error('خطأ في تحميل بيانات CSAT:', error);
-      }
-    };
-
-    loadCSATData();
-  }, [currentPeriod]);
-
-  const handleCsatUpdate = async () => {
-    if (manualCsatScore.trim() !== "") {
-        const score = parseFloat(manualCsatScore);
-        if (!isNaN(score) && score >= 0 && score <= 100) {
-          try {
-            // حفظ النتيجة في قاعدة البيانات
-            await DataService.saveCSATScore(score, 'whatsapp', activeTab, user?.username);
-
-            setDisplayedCsatScore(score.toFixed(1));
-            setCsatScore(score); // مسح الحقل بعد الحفظ
-
-            // تحديث تاريخ النتائج
-            const history = await DataService.getCSATHistory('whatsapp', activeTab, 5);
-            setCsatHistory(history);
-
-            toast({
-              title: "تم حفظ نتيجة CSAT",
-              description: `تم حفظ النتيجة ${score.toFixed(1)}% في قاعدة البيانات`,
-            });
-          } catch (error) {
-            console.error('خطأ في حفظ نتيجة CSAT:', error);
-            toast({
-              title: "خطأ في الحفظ",
-              description: "حدث خطأ أثناء حفظ نتيجة CSAT",
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: "خطأ في القيمة",
-            description: "يرجى إدخال رقم صحيح بين 0 و 100",
-            variant: "destructive",
-          });
-        }
-      }
-  };
-
-  const handleCSATFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        // معالجة البيانات
-        // const csatResult = await DataService.processCSATExcel(jsonData, activeTab);
-        let score = 0;
-        // setCsatScore(csatResult.score);
-        // setCsatTotalResponses(csatResult.totalResponses);
-
+  // تحديث نتيجة CSAT
+  const handleCsatUpdate = () => {
+    if (csatScore.trim() !== "") {
+      const score = parseFloat(csatScore);
+      if (!isNaN(score) && score >= 0 && score <= 100) {
+        setDisplayedCsatScore(score.toFixed(1));
         toast({
-          title: "تم رفع الملف بنجاح",
-          description: `تم تحديث نتيجة CSAT إلى ${score.toFixed(2)} من ${csatTotalResponses} استجابة`,
+          title: "تم تحديث نتيجة CSAT",
+          description: `تم تحديث النتيجة إلى ${score.toFixed(1)}%`,
         });
-
-        // إعادة تعيين input
-        event.target.value = '';
-      } catch (error) {
-        console.error('خطأ في معالجة ملف CSAT:', error);
+      } else {
         toast({
+          title: "خطأ في القيمة",
+          description: "يرجى إدخال رقم صحيح بين 0 و 100",
           variant: "destructive",
-          title: "خطأ",
-          description: "حدث خطأ في معالجة ملف CSAT",
         });
       }
-    };
-    reader.readAsArrayBuffer(file);
+    }
   };
 
   // بيانات المخططات
@@ -572,7 +472,6 @@ export default function ThreeCX() {
                 variant={activeTab === "weekly" ? "default" : "ghost"}
                 onClick={() => {
                   setActiveTab("weekly");
-                  setCurrentPeriod("weekly");
                   const weeklyRecords = weeklyData.filter(r => r.isBusinessHours);
                   setCallRecords(weeklyRecords);
                   calculateAnalytics(weeklyRecords);
@@ -586,7 +485,6 @@ export default function ThreeCX() {
                 variant={activeTab === "yearly" ? "default" : "ghost"}
                 onClick={() => {
                   setActiveTab("yearly");
-                  setCurrentPeriod("yearly");
                   const yearlyRecords = yearlyData.filter(r => r.isBusinessHours);
                   setCallRecords(yearlyRecords);
                   calculateAnalytics(yearlyRecords);
@@ -715,7 +613,7 @@ export default function ThreeCX() {
               </CardContent>
             </Card>
 
-           <Card>
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -754,54 +652,20 @@ export default function ThreeCX() {
                   max="100"
                   step="0.1"
                   placeholder="أدخل النتيجة (مثال: 85.5)"
-                  value={manualCsatScore}
-                  onChange={(e) => setManualCsatScore(e.target.value)}
+                  value={csatScore}
+                  onChange={(e) => setCsatScore(e.target.value)}
                 />
               </div>
-              <Button onClick={handleCsatUpdate} disabled={!manualCsatScore.trim()}>
+              <Button onClick={handleCsatUpdate} disabled={!csatScore.trim()}>
                 <Target className="w-4 h-4 ml-2" />
                 تحديث النتيجة
               </Button>
             </div>
-            <div className="mt-4 space-y-3">
-              <div className="text-sm text-muted-foreground">
-                <p>النتيجة الحالية: <span className="font-semibold">{displayedCsatScore}%</span></p>
-                <p className="text-xs">
-                  • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
-                </p>
-              </div>
-
-              <div className="border-t pt-4">
-                    <label className="block text-sm font-medium mb-2">
-                      رفع ملف Excel لـ CSAT
-                    </label>
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleCSATFileUpload}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      ref={(ref) => setCsatFileInputRef(ref)}
-                    />
-                    <div className="text-xs text-gray-500 mt-1">
-                      يمكن رفع ملفات Excel أو CSV تحتوي على نتائج CSAT
-                    </div>
-                  </div>
-
-              {csatHistory.length > 0 && (
-                <div className="border-t pt-3">
-                  <h4 className="text-sm font-medium mb-2">آخر النتائج ({activeTab === 'weekly' ? 'أسبوعي' : 'سنوي'}):</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {csatHistory.slice(0, 5).map((entry, index) => (
-                      <div key={entry.id} className="flex justify-between text-xs bg-muted/50 p-2 rounded">
-                        <span>{entry.score.toFixed(1)}%</span>
-                        <span className="text-muted-foreground">
-                          {new Date(entry.created_at).toLocaleDateString('ar-SA')} - {entry.created_by || 'غير محدد'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>النتيجة الحالية: <span className="font-semibold">{displayedCsatScore}%</span></p>
+              <p className="text-xs">
+                • 80% فما فوق: ممتاز | 60-79%: جيد | أقل من 60%: يحتاج تحسين
+              </p>
             </div>
           </CardContent>
         </Card>
