@@ -937,7 +937,6 @@ export class DataService {
         unit_number: call.unitNumber,
         call_type: call.callType || 'مكالمة جودة',
         call_duration: call.callDuration,
-```text
         evaluation_score: call.evaluationScore,
         qualification_status: call.qualification_status || 'غير مؤهل',
         qualification_reason: call.qualificationReason,
