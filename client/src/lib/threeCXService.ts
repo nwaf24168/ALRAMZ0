@@ -37,7 +37,9 @@ export class ThreeCXService {
         direction: (record.direction === 'Inbound' || record.direction === 'Outbound') ? 
                   record.direction : 
                   (record.direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
-        status: record.status || 'Unknown',
+        status: (record.status === 'Answered' || record.status === 'Unanswered') ? 
+                record.status : 
+                (record.status?.toLowerCase().includes('answer') ? 'Answered' : 'Unanswered'),
         ringing_duration: record.ringingDuration || 0,
         talking_duration: record.talkingDuration || 0,
         agent_name: record.agentName || '',

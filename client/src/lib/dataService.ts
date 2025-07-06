@@ -1484,7 +1484,9 @@ export class DataService {
         direction: (record.direction === 'Inbound' || record.direction === 'Outbound') ? 
                   record.direction : 
                   (record.direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
-        status: record.status,
+        status: (record.status === 'Answered' || record.status === 'Unanswered') ? 
+                record.status : 
+                (record.status?.toLowerCase().includes('answer') ? 'Answered' : 'Unanswered'),
         ringing_duration: record.ringingDuration,
         talking_duration: record.talkingDuration,
         agent_name: record.agentName,

@@ -173,7 +173,9 @@ export default function ThreeCX() {
         to,
         direction: (direction === 'Inbound' || direction === 'Outbound') ? direction : 
                   (direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
-        status: status as 'Answered' | 'Unanswered',
+        status: (status === 'Answered' || status === 'Unanswered') ? 
+                status : 
+                (status?.toLowerCase().includes('answer') || status?.toLowerCase().includes('أجيب') ? 'Answered' : 'Unanswered'),
         ringingDuration: ringingSeconds,
         talkingDuration: talkingSeconds,
         agentName,
