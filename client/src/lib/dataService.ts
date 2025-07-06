@@ -1568,21 +1568,21 @@ export class DataService {
   static async get3CXAnalytics(period: 'weekly' | 'yearly' = 'weekly'): Promise<any> {
     try {
       const records = await this.get3CXCallRecords(period);
-      
+
       // تصفية المكالمات في أوقات الدوام فقط
       const businessHoursRecords = records.filter(r => r.isBusinessHours);
-      
+
       const totalCalls = businessHoursRecords.length;
       const answeredCalls = businessHoursRecords.filter(r => r.status === 'Answered').length;
       const unansweredCalls = totalCalls - answeredCalls;
-      
+
       const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
-      
+
       const answeredRecords = businessHoursRecords.filter(r => r.status === 'Answered' && r.responseTime > 0);
       const averageResponseTime = answeredRecords.length > 0 
         ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length 
         : 0;
-      
+
       const totalTalkTime = businessHoursRecords.reduce((sum, r) => sum + r.talkingDuration, 0);
       const businessHoursCalls = businessHoursRecords.length;
       const outsideHoursCalls = records.length - businessHoursCalls;
@@ -1607,7 +1607,7 @@ export class DataService {
     try {
       const records = await this.get3CXCallRecords(period);
       const businessHoursRecords = records.filter(r => r.isBusinessHours);
-      
+
       const employeeMap = new Map();
 
       businessHoursRecords.forEach(record => {
@@ -1626,7 +1626,7 @@ export class DataService {
 
         const employee = employeeMap.get(record.agentName);
         employee.totalCalls++;
-        
+
         if (record.status === 'Answered') {
           employee.answeredCalls++;
           employee.totalTalkTime += record.talkingDuration;
@@ -1640,7 +1640,7 @@ export class DataService {
           r.status === 'Answered' && 
           r.responseTime > 0
         );
-        
+
         const averageResponseTime = answeredRecords.length > 0
           ? answeredRecords.reduce((sum, r) => sum + r.responseTime, 0) / answeredRecords.length
           : 0;
