@@ -34,7 +34,9 @@ export class ThreeCXService {
         call_id: record.callId,
         from_number: record.fromNumber || '',
         to_number: record.toNumber || '',
-        direction: record.direction || 'Unknown',
+        direction: (record.direction === 'Inbound' || record.direction === 'Outbound') ? 
+                  record.direction : 
+                  (record.direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
         status: record.status || 'Unknown',
         ringing_duration: record.ringingDuration || 0,
         talking_duration: record.talkingDuration || 0,

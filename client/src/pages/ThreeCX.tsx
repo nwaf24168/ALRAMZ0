@@ -171,7 +171,8 @@ export default function ThreeCX() {
         callId: row['Call ID'] || row['معرف المكالمة'] || '',
         from,
         to,
-        direction: direction as 'Inbound' | 'Outbound',
+        direction: (direction === 'Inbound' || direction === 'Outbound') ? direction : 
+                  (direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
         status: status as 'Answered' | 'Unanswered',
         ringingDuration: ringingSeconds,
         talkingDuration: talkingSeconds,

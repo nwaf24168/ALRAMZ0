@@ -937,6 +937,7 @@ export class DataService {
         unit_number: call.unitNumber,
         call_type: call.callType || 'مكالمة جودة',
         call_duration: call.callDuration,
+```text
         evaluation_score: call.evaluationScore,
         qualification_status: call.qualification_status || 'غير مؤهل',
         qualification_reason: call.qualificationReason,
@@ -1481,7 +1482,9 @@ export class DataService {
         call_id: record.callId,
         from_number: record.from,
         to_number: record.to,
-        direction: record.direction,
+        direction: (record.direction === 'Inbound' || record.direction === 'Outbound') ? 
+                  record.direction : 
+                  (record.direction?.toLowerCase().includes('in') ? 'Inbound' : 'Outbound'),
         status: record.status,
         ringing_duration: record.ringingDuration,
         talking_duration: record.talkingDuration,
