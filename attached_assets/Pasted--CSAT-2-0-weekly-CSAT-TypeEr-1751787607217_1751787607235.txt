@@ -1,0 +1,14 @@
+تم جلب تاريخ CSAT بنجاح: 2 سجل
+تم تحميل 0 سجل مكالمة للفترة weekly
+خطأ في حذف نتيجة CSAT: 
+TypeError {}
+message: "DataService.deleteCSATScore is not a function"
+stack: "TypeError: DataService.deleteCSATScore is not a function↵ at handleDeleteCSATRecord (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/ThreeCX.tsx:458:27)↵ at onClick (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/src/pages/ThreeCX.tsx:1156:36)↵ at HTMLUnknownElement.callCallback2 (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:3674:22)↵ at Object.invokeGuardedCallbackDev (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:3699:24)↵ at invokeGuardedCallback (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:3733:39)↵ at invokeGuardedCallbackAndCatchFirstError (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:3736:33)↵ at executeDispatch (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:7014:11)↵ at processDispatchQueueItemsInOrder (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:7034:15)↵ at processDispatchQueue (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:7043:13)↵ at dispatchEventsForPlugins (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-UPELNCPK.js?v=1b6df27e:7051:11)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://7fc92613-f515-4463-a583-dfd2b5d8cbfe-00-2jk2gvtzkubf6.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
