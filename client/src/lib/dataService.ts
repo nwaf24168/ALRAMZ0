@@ -1753,4 +1753,9 @@ export class DataService {
       throw error;
     }
   }
+
+  // إضافة دالة deleteCSATScore للتوافق مع الكود الموجود
+  static async deleteCSATScore(recordId: number): Promise<void> {
+    return this.deleteCSATRecord(recordId);
+  }
 }
