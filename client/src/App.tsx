@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +10,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AuthProvider, useAuth, AuthContext } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { MetricsProvider } from "@/context/MetricsContext";
 import Login from "./pages/Login";
@@ -48,7 +49,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // مكون للمسارات الداخلية
 const AppRoutesInner = () => {
-  const { isAuthenticated } = useAuth();
+  // تحقق من وجود AuthContext قبل استخدامه
+  const authContext = React.useContext(AuthContext);
+  
+  if (!authContext) {
+    // إذا لم يكن AuthContext متاحاً، عرض صفحة تحميل أو خطأ
+    return <div>جاري التحميل...</div>;
+  }
+
+  const { isAuthenticated } = authContext;
 
   return (
     <Routes>
