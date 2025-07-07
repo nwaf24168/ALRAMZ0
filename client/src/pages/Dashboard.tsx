@@ -423,7 +423,7 @@ const CustomerServiceStats = () => {
                 const firstTimeResolutionValue = calculateSatisfactionPercentage(
                   maintenanceSatisfaction.firstTimeResolution,
                 );
-                
+
                 const averageValue = (serviceQualityValue + closureTimeValue + firstTimeResolutionValue) / 3;
 
                 return [
