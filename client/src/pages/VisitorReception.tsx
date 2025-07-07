@@ -438,13 +438,13 @@ export default function VisitorReception() {
                           <Badge variant="outline">{record.visitReason}</Badge>
                         </TableCell>
                         <TableCell>{record.requestedEmployee}</TableCell>
-                        <TableCell>{record.date}</TableCell>
-                        <TableCell>{record.time}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs">
-                            {creatorInfo.branch}
+                            {getBranchByCreator(record.createdBy)}
                           </Badge>
                         </TableCell>
+                        <TableCell>{record.date}</TableCell>
+                        <TableCell>{record.time}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="تفاصيل العملية">
