@@ -1223,21 +1223,21 @@ export default function Complaints() {
                 </div>
                 <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
                   <Label className="text-sm font-medium">الشكوى</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[100px]">
+                  <div className="text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 rounded border min-h-[100px] border-gray-300 dark:border-gray-600">
                     {selectedComplaint.description}
-                  </p>
+                  </div>
                 </div>
                 <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
                   <Label className="text-sm font-medium">إجراء الصيانة والتسليم</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                  <div className="text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 rounded border min-h-[80px] border-gray-300 dark:border-gray-600">
                     {selectedComplaint.maintenanceDeliveryAction || "لم يتم اتخاذ إجراء بعد"}
-                  </p>
+                  </div>
                 </div>
                 <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
                   <Label className="text-sm font-medium">الإجراء</Label>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                  <div className="text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 rounded border min-h-[80px] border-gray-300 dark:border-gray-600">
                     {selectedComplaint.action || "لم يتم اتخاذ إجراء بعد"}
-                  </p>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
