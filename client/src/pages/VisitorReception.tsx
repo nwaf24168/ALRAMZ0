@@ -289,7 +289,7 @@ export default function VisitorReception() {
     }
 
     setIsImporting(true);
-    
+
     try {
       const XLSX = await import('xlsx');
       const arrayBuffer = await importFile.arrayBuffer();
@@ -304,7 +304,7 @@ export default function VisitorReception() {
       // بدء من الصف الثاني (تخطي العناوين)
       for (let i = 1; i < data.length; i++) {
         const row = data[i] as any[];
-        
+
         // التحقق من وجود البيانات الأساسية
         if (!row[0] || !row[1]) {
           errorCount++;
@@ -368,7 +368,7 @@ export default function VisitorReception() {
       }
 
       await loadVisitorRecords();
-      
+
       toast({
         title: "تم الاستيراد",
         description: `تم استيراد ${successCount} سجل بنجاح. ${errorCount > 0 ? `فشل في ${errorCount} سجل.` : ''}`
@@ -581,13 +581,13 @@ export default function VisitorReception() {
                           <Badge variant="outline">{record.visitReason}</Badge>
                         </TableCell>
                         <TableCell>{record.requestedEmployee}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {record.branch || getCreatorInfo(record.createdBy).branch}
-                          </Badge>
-                        </TableCell>
                         <TableCell>{record.date}</TableCell>
                         <TableCell>{record.time}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {record.branch || creatorInfo.branch}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="تفاصيل العملية">
