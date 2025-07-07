@@ -412,42 +412,59 @@ const CustomerServiceStats = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-              {[
-                {
-                  title: "رضا العملاء عن الخدمات",
-                  value: calculateSatisfactionPercentage(
-                    maintenanceSatisfaction.serviceQuality,
-                  ),
-                },
-                {
-                  title: "رضا العملاء عن مدة الإغلاق",
-                  value: calculateSatisfactionPercentage(
-                    maintenanceSatisfaction.closureTime,
-                  ),
-                },
-                {
-                  title: "نسبة الحل من أول مرة",
-                  value: calculateSatisfactionPercentage(
-                    maintenanceSatisfaction.firstTimeResolution,
-                  ),
-                },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className={`text-center p-4 sm:p-6 rounded-xl transition-all duration-300 ${getColorByPercentage(item.value)}`}
-                >
-                  <div className="text-3xl sm:text-4xl mb-2">
-                    {getSatisfactionEmoji(item.value)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              {(() => {
+                const serviceQualityValue = calculateSatisfactionPercentage(
+                  maintenanceSatisfaction.serviceQuality,
+                );
+                const closureTimeValue = calculateSatisfactionPercentage(
+                  maintenanceSatisfaction.closureTime,
+                );
+                const firstTimeResolutionValue = calculateSatisfactionPercentage(
+                  maintenanceSatisfaction.firstTimeResolution,
+                );
+                
+                const averageValue = (serviceQualityValue + closureTimeValue + firstTimeResolutionValue) / 3;
+
+                return [
+                  {
+                    title: "رضا العملاء عن الخدمات",
+                    value: serviceQualityValue,
+                  },
+                  {
+                    title: "رضا العملاء عن مدة الإغلاق",
+                    value: closureTimeValue,
+                  },
+                  {
+                    title: "نسبة الحل من أول مرة",
+                    value: firstTimeResolutionValue,
+                  },
+                  {
+                    title: "المتوسط العام",
+                    value: averageValue,
+                    isAverage: true,
+                  },
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className={`text-center p-4 sm:p-6 rounded-xl transition-all duration-300 ${
+                      item.isAverage 
+                        ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 text-blue-500 border-blue-500/20 border" 
+                        : getColorByPercentage(item.value)
+                    }`}
+                  >
+                    <div className="text-3xl sm:text-4xl mb-2">
+                      {item.isAverage ? "📊" : getSatisfactionEmoji(item.value)}
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-bold mb-2">
+                      {item.value.toFixed(1)}%
+                    </div>
+                    <div className="text-xs sm:text-sm opacity-90">
+                      {item.title}
+                    </div>
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold mb-2">
-                    {item.value.toFixed(1)}%
-                  </div>
-                  <div className="text-xs sm:text-sm opacity-90">
-                    {item.title}
-                  </div>
-                </div>
-              ))}
+                ));
+              })()
             </div>
           </CardContent>
         </Card>
