@@ -60,6 +60,33 @@ export default function VisitorReception() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  // دالة للحصول على معلومات المنشئ
+  const getCreatorInfo = (username: string) => {
+    const creators = {
+      'nouf': {
+        name: 'نوف',
+        department: 'الاستقبال',
+        branch: 'فرع المبيعات'
+      },
+      'abdulrahman': {
+        name: 'عبدالرحمن',
+        department: 'الاستقبال',
+        branch: 'الفرع الرئيسي'
+      },
+      'fahad': {
+        name: 'فهد',
+        department: 'الاستقبال',
+        branch: 'فرع الشرقية'
+      }
+    };
+
+    return creators[username.toLowerCase()] || {
+      name: username,
+      department: 'غير محدد',
+      branch: 'غير محدد'
+    };
+  };
+
   // تحميل البيانات عند تحميل الصفحة
   useEffect(() => {
     loadVisitorRecords();
@@ -91,40 +118,13 @@ export default function VisitorReception() {
       record.phoneNumber.includes(searchTerm) ||
       record.visitReason.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.requestedEmployee.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesBranch = selectedBranch === "" || 
       record.branch === selectedBranch || 
       getCreatorInfo(record.createdBy).branch === selectedBranch;
-    
+
     return matchesSearch && matchesBranch;
   });
-
-  // دالة للحصول على معلومات المنشئ
-  const getCreatorInfo = (username: string) => {
-    const creators = {
-      'nouf': {
-        name: 'نوف',
-        department: 'الاستقبال',
-        branch: 'فرع المبيعات'
-      },
-      'abdulrahman': {
-        name: 'عبدالرحمن',
-        department: 'الاستقبال',
-        branch: 'الفرع الرئيسي'
-      },
-      'fahad': {
-        name: 'فهد',
-        department: 'الاستقبال',
-        branch: 'فرع الشرقية'
-      }
-    };
-
-    return creators[username.toLowerCase()] || {
-      name: username,
-      department: 'غير محدد',
-      branch: 'غير محدد'
-    };
-  };
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -321,7 +321,7 @@ export default function VisitorReception() {
         try {
           // أخذ التاريخ كما هو من Excel
           let formattedDate = row[4] || new Date().toISOString().split('T')[0];
-          
+
           // إذا كان التاريخ رقم من Excel، تحويله
           if (typeof formattedDate === 'number') {
             const excelDate = new Date((formattedDate - 25569) * 86400 * 1000);
@@ -338,7 +338,7 @@ export default function VisitorReception() {
 
           // معالجة الوقت من Excel
           let formattedTime = row[5] || new Date().toTimeString().slice(0, 5);
-          
+
           // إذا كان الوقت رقم عشري من Excel، تحويله إلى صيغة الوقت
           if (typeof formattedTime === 'number') {
             // Excel يحفظ الوقت كجزء من اليوم (0.5 = 12:00 PM)
@@ -349,24 +349,24 @@ export default function VisitorReception() {
           } else if (typeof formattedTime === 'string') {
             // إزالة أي مسافات أو رموز غير مرغوبة
             formattedTime = formattedTime.trim();
-            
+
             // معالجة صيغة AM/PM
             if (formattedTime.includes('AM') || formattedTime.includes('PM')) {
               const isPM = formattedTime.includes('PM');
               let timeOnly = formattedTime.replace(/AM|PM/g, '').trim();
-              
+
               if (timeOnly.includes(':')) {
                 const parts = timeOnly.split(':');
                 let hours = parseInt(parts[0]);
                 const minutes = parts[1] ? parseInt(parts[1]) : 0;
-                
+
                 // تحويل من 12-hour إلى 24-hour
                 if (isPM && hours !== 12) {
                   hours += 12;
                 } else if (!isPM && hours === 12) {
                   hours = 0;
                 }
-                
+
                 formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
               }
             }
