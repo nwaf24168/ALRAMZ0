@@ -938,7 +938,7 @@ export class DataService {
         call_type: call.callType || 'مكالمة جودة',
         call_duration: call.callDuration,
         evaluation_score: call.evaluationScore,
-        qualification_status: call.qualification_status || 'غير مؤهل',
+        qualification_status: call`qualification_status || 'غير مؤهل',
         qualification_reason: call.qualificationReason,
         notes: call.notes,
         created_by: call.createdBy || 'مجهول'
@@ -1239,6 +1239,7 @@ export class DataService {
         requested_employee: recordData.requestedEmployee,
         date: recordData.date,
         time: recordData.time,
+        branch: recordData.branch,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);

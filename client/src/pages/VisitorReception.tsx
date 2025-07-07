@@ -169,6 +169,7 @@ export default function VisitorReception() {
       return;
     }
 
+    const creatorInfo = getCreatorInfo(user.username);
     const recordData = {
       name,
       phoneNumber,
@@ -177,6 +178,7 @@ export default function VisitorReception() {
       date,
       time,
       createdBy: user.username,
+      branch: creatorInfo.branch,
     };
 
     try {
@@ -248,7 +250,8 @@ export default function VisitorReception() {
         'الموظف المطلوب': record.requestedEmployee,
         'التاريخ': record.date,
         'الوقت': record.time,
-        'تاريخ الإنشاء': new Date(record.createdBy).toISOString().split('T')[0],
+        'الفرع': record.branch || getCreatorInfo(record.createdBy).branch,
+        'تاريخ الإنشاء': record.createdAt ? new Date(record.createdAt).toISOString().split('T')[0] : '',
         'المنشئ': record.createdBy
       }));
 
@@ -440,7 +443,7 @@ export default function VisitorReception() {
                         <TableCell>{record.requestedEmployee}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs">
-                            {creatorInfo.branch}
+                            {record.branch || getCreatorInfo(record.createdBy).branch}
                           </Badge>
                         </TableCell>
                         <TableCell>{record.date}</TableCell>
@@ -544,7 +547,9 @@ export default function VisitorReception() {
                           <MapPin className="h-4 w-4 text-primary" />
                           <div>
                             <Label className="text-sm font-medium text-muted-foreground">الموقع</Label>
-                            <p className="text-sm font-semibold text-foreground mt-1">{creatorInfo.branch}</p>
+                            <p className="text-sm font-semibold text-foreground mt-1">
+                              {selectedRecord.branch || getCreatorInfo(selectedRecord.createdBy).branch}
+                            </p>
                           </div>
                         </div>
                       </div>
