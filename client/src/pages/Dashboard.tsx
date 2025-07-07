@@ -464,7 +464,7 @@ const CustomerServiceStats = () => {
                     </div>
                   </div>
                 ));
-              })()
+              })()}
             </div>
           </CardContent>
         </Card>
