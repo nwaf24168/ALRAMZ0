@@ -466,53 +466,53 @@ export default function VisitorReception() {
 
         {/* نافذة تفاصيل العملية */}
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-card text-card-foreground border-border">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
+              <DialogTitle className="flex items-center gap-2 text-foreground">
+                <Eye className="h-5 w-5 text-primary" />
                 تفاصيل العملية
               </DialogTitle>
             </DialogHeader>
             {selectedRecord && (
               <div className="space-y-6">
                 {/* معلومات الزائر */}
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Users className="h-5 w-5" />
+                <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
+                    <Users className="h-5 w-5 text-primary" />
                     معلومات الزائر
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الاسم</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.name}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">الاسم</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.name}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">رقم الجوال</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.phoneNumber}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">رقم الجوال</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.phoneNumber}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">سبب الزيارة</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.visitReason}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">سبب الزيارة</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.visitReason}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الموظف المطلوب</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.requestedEmployee}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">الموظف المطلوب</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.requestedEmployee}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">التاريخ</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.date}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">التاريخ</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.date}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الوقت</Label>
-                      <p className="text-sm font-semibold">{selectedRecord.time}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">الوقت</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">{selectedRecord.time}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* معلومات المنشئ */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
+                    <User className="h-5 w-5 text-primary" />
                     معلومات المنشئ
                   </h3>
                   {(() => {
@@ -520,22 +520,22 @@ export default function VisitorReception() {
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-600" />
+                          <User className="h-4 w-4 text-primary" />
                           <div>
-                            <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الاسم</Label>
-                            <p className="text-sm font-semibold">{creatorInfo.name}</p>
+                            <Label className="text-sm font-medium text-muted-foreground">الاسم</Label>
+                            <p className="text-sm font-semibold text-foreground mt-1">{creatorInfo.name}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-blue-600 border-blue-600">
+                          <Badge variant="outline" className="text-primary border-primary bg-primary/10">
                             {creatorInfo.department}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-green-600" />
+                          <MapPin className="h-4 w-4 text-primary" />
                           <div>
-                            <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الموقع</Label>
-                            <p className="text-sm font-semibold">{creatorInfo.branch}</p>
+                            <Label className="text-sm font-medium text-muted-foreground">الموقع</Label>
+                            <p className="text-sm font-semibold text-foreground mt-1">{creatorInfo.branch}</p>
                           </div>
                         </div>
                       </div>
@@ -544,18 +544,18 @@ export default function VisitorReception() {
                 </div>
 
                 {/* معلومات النظام */}
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3">معلومات النظام</h3>
+                <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                  <h3 className="text-lg font-semibold mb-3 text-foreground">معلومات النظام</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">تاريخ الإنشاء</Label>
-                      <p className="text-sm font-semibold">
+                      <Label className="text-sm font-medium text-muted-foreground">تاريخ الإنشاء</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">
                         {selectedRecord.createdAt ? new Date(selectedRecord.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}
                       </p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">وقت الإنشاء</Label>
-                      <p className="text-sm font-semibold">
+                      <Label className="text-sm font-medium text-muted-foreground">وقت الإنشاء</Label>
+                      <p className="text-sm font-semibold text-foreground mt-1">
                         {selectedRecord.createdAt ? new Date(selectedRecord.createdAt).toLocaleTimeString('ar-SA') : 'غير محدد'}
                       </p>
                     </div>
@@ -563,7 +563,7 @@ export default function VisitorReception() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)} className="border-border text-foreground">
                     إغلاق
                   </Button>
                 </div>
