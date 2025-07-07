@@ -55,6 +55,10 @@ export default function VisitorReception() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
+  // متغيرات الاستيراد
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
   // تحميل البيانات عند تحميل الصفحة
   useEffect(() => {
     loadVisitorRecords();
@@ -244,16 +248,12 @@ export default function VisitorReception() {
       const XLSX = await import('xlsx');
 
       const exportData = records.map((record, index) => ({
-        'ت': index + 1,
-        'اسم الزائر': record.name,
+        'الاسم': record.name,
         'رقم الجوال': record.phoneNumber,
         'سبب الزيارة': record.visitReason,
         'الموظف المطلوب': record.requestedEmployee,
         'التاريخ': record.date,
-        'الوقت': record.time,
-        'الفرع': record.branch || getCreatorInfo(record.createdBy).branch,
-        'تاريخ الإنشاء': record.createdAt ? new Date(record.createdAt).toISOString().split('T')[0] : '',
-        'المنشئ': record.createdBy
+        'الوقت': record.time
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -274,6 +274,116 @@ export default function VisitorReception() {
         title: "خطأ",
         description: "فشل في تصدير البيانات"
       });
+    }
+  };
+
+  // استيراد البيانات من Excel
+  const importFromExcel = async () => {
+    if (!importFile) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel أولاً"
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    
+    try {
+      const XLSX = await import('xlsx');
+      const arrayBuffer = await importFile.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // بدء من الصف الثاني (تخطي العناوين)
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i] as any[];
+        
+        // التحقق من وجود البيانات الأساسية
+        if (!row[0] || !row[1]) {
+          errorCount++;
+          continue;
+        }
+
+        try {
+          // تحويل التاريخ إذا كان من Excel
+          let formattedDate = '';
+          if (row[4]) {
+            const dateValue = row[4];
+            if (typeof dateValue === 'number') {
+              // Excel date serial number
+              const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+              formattedDate = excelDate.toISOString().split('T')[0];
+            } else if (typeof dateValue === 'string') {
+              const parsedDate = new Date(dateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                formattedDate = parsedDate.toISOString().split('T')[0];
+              }
+            } else if (dateValue instanceof Date) {
+              formattedDate = dateValue.toISOString().split('T')[0];
+            }
+          }
+
+          // إذا لم يكن هناك تاريخ، استخدم التاريخ الحالي
+          if (!formattedDate) {
+            formattedDate = new Date().toISOString().split('T')[0];
+          }
+
+          // إذا لم يكن هناك وقت، استخدم الوقت الحالي
+          let formattedTime = row[5] || new Date().toTimeString().slice(0, 5);
+
+          if (!user?.username) {
+            toast({
+              title: "خطأ",
+              description: "يجب تسجيل الدخول أولاً",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const creatorInfo = getCreatorInfo(user.username);
+          const recordData = {
+            name: row[0] || '',
+            phoneNumber: row[1] || '',
+            visitReason: row[2] || '',
+            requestedEmployee: row[3] || '',
+            date: formattedDate,
+            time: formattedTime,
+            createdBy: user.username,
+            branch: creatorInfo.branch,
+          };
+
+          await DataService.saveVisitorRecord(recordData);
+          successCount++;
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      await loadVisitorRecords();
+      
+      toast({
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} سجل بنجاح. ${errorCount > 0 ? `فشل في ${errorCount} سجل.` : ''}`
+      });
+
+    } catch (error) {
+      console.error("خطأ في استيراد البيانات:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في استيراد البيانات من ملف Excel"
+      });
+    } finally {
+      setIsImporting(false);
+      setImportFile(null);
     }
   };
 
@@ -405,14 +515,43 @@ export default function VisitorReception() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>سجلات الزوار</CardTitle>
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="البحث في السجلات..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="excel-import"
+                  />
+                  <label
+                    htmlFor="excel-import"
+                    className="cursor-pointer bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                  >
+                    اختيار ملف Excel
+                  </label>
+                  {importFile && (
+                    <Button
+                      onClick={importFromExcel}
+                      disabled={isImporting}
+                      size="sm"
+                    >
+                      {isImporting ? "جاري الاستيراد..." : "استيراد"}
+                    </Button>
+                  )}
+                  <Button onClick={exportToExcel} size="sm" variant="outline">
+                    تصدير إلى Excel
+                  </Button>
+                </div>
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="البحث في السجلات..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -587,7 +726,6 @@ export default function VisitorReception() {
           </DialogContent>
         </Dialog>
 
-        <Button onClick={exportToExcel}>تصدير الي Excel</Button>
       </div>
     </Layout>
   );
