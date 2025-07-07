@@ -440,7 +440,7 @@ export default function VisitorReception() {
                         <TableCell>{record.requestedEmployee}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs">
-                            {getBranchByCreator(record.createdBy)}
+                            {creatorInfo.branch}
                           </Badge>
                         </TableCell>
                         <TableCell>{record.date}</TableCell>
