@@ -85,7 +85,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">اسم العميل</div>
-                    <div className="font-medium text-white">{complaint.customerName}</div>
+                    <div className="font-medium text-gray-100">{complaint.customerName}</div>
                   </div>
                 </div>
 
@@ -95,7 +95,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">المشروع</div>
-                    <div className="font-medium text-white">{complaint.projectName}</div>
+                    <div className="font-medium text-gray-100">{complaint.projectName}</div>
                   </div>
                 </div>
 
@@ -105,7 +105,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">رقم الوحدة</div>
-                    <div className="font-medium text-white">{complaint.unitNumber}</div>
+                    <div className="font-medium text-gray-100">{complaint.unitNumber}</div>
                   </div>
                 </div>
 
@@ -115,7 +115,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">مصدر الشكوى</div>
-                    <div className="font-medium text-white">{complaint.complaintSource}</div>
+                    <div className="font-medium text-gray-100">{complaint.complaintSource}</div>
                   </div>
                 </div>
               </div>
@@ -133,7 +133,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">المدة</div>
-                    <div className="font-medium text-white">{complaint.duration}</div>
+                    <div className="font-medium text-gray-100">{complaint.duration}</div>
                   </div>
                 </div>
 
@@ -143,7 +143,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">تاريخ الإنشاء</div>
-                    <div className="font-medium text-white">{complaint.createdAt}</div>
+                    <div className="font-medium text-gray-100">{complaint.createdAt}</div>
                   </div>
                 </div>
 
@@ -153,7 +153,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">تم الإنشاء بواسطة</div>
-                    <div className="font-medium text-white">{complaint.createdBy}</div>
+                    <div className="font-medium text-gray-100">{complaint.createdBy}</div>
                   </div>
                 </div>
               </div>
@@ -168,7 +168,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                 تفاصيل الشكوى
               </h3>
               <div className="p-4 bg-gray-800/30 rounded-lg">
-                <p className="text-white leading-relaxed">{complaint.details}</p>
+                <p className="text-gray-200 leading-relaxed">{complaint.details}</p>
               </div>
             </div>
 
@@ -178,7 +178,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                 الإجراء المتخذ
               </h3>
               <div className="p-4 bg-gray-800/30 rounded-lg">
-                <p className="text-white leading-relaxed">{complaint.action}</p>
+                <p className="text-gray-200 leading-relaxed">{complaint.action}</p>
               </div>
             </div>
           </div>
