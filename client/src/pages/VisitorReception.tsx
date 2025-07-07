@@ -329,15 +329,42 @@ export default function VisitorReception() {
             }
           }
 
-          // أخذ الوقت كما هو من Excel
+          // معالجة الوقت من Excel
           let formattedTime = row[5] || new Date().toTimeString().slice(0, 5);
           
-          // إذا كان الوقت نص، تنظيفه
-          if (typeof formattedTime === 'string') {
+          // إذا كان الوقت رقم عشري من Excel، تحويله إلى صيغة الوقت
+          if (typeof formattedTime === 'number') {
+            // Excel يحفظ الوقت كجزء من اليوم (0.5 = 12:00 PM)
+            const totalMinutes = formattedTime * 24 * 60;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = Math.floor(totalMinutes % 60);
+            formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          } else if (typeof formattedTime === 'string') {
             // إزالة أي مسافات أو رموز غير مرغوبة
             formattedTime = formattedTime.trim();
+            
+            // معالجة صيغة AM/PM
+            if (formattedTime.includes('AM') || formattedTime.includes('PM')) {
+              const isPM = formattedTime.includes('PM');
+              let timeOnly = formattedTime.replace(/AM|PM/g, '').trim();
+              
+              if (timeOnly.includes(':')) {
+                const parts = timeOnly.split(':');
+                let hours = parseInt(parts[0]);
+                const minutes = parts[1] ? parseInt(parts[1]) : 0;
+                
+                // تحويل من 12-hour إلى 24-hour
+                if (isPM && hours !== 12) {
+                  hours += 12;
+                } else if (!isPM && hours === 12) {
+                  hours = 0;
+                }
+                
+                formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+              }
+            }
             // إذا كان الوقت بصيغة HH:MM:SS، اقتطاع الثواني
-            if (formattedTime.includes(':') && formattedTime.split(':').length === 3) {
+            else if (formattedTime.includes(':') && formattedTime.split(':').length === 3) {
               formattedTime = formattedTime.split(':').slice(0, 2).join(':');
             }
           }
