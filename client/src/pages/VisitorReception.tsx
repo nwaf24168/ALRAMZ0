@@ -106,7 +106,7 @@ export default function VisitorReception() {
         branch: 'فرع الشرقية'
       }
     };
-    
+
     return creators[username.toLowerCase()] || {
       name: username,
       department: 'غير محدد',
@@ -423,35 +423,44 @@ export default function VisitorReception() {
                     <TableHead>الموظف المطلوب</TableHead>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>الوقت</TableHead>
+                    <TableHead>الفرع</TableHead>
                     <TableHead className="text-right">العمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.name}</TableCell>
-                      <TableCell>{record.phoneNumber}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{record.visitReason}</Badge>
-                      </TableCell>
-                      <TableCell>{record.requestedEmployee}</TableCell>
-                      <TableCell>{record.date}</TableCell>
-                      <TableCell>{record.time}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="تفاصيل العملية">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)} title="تعديل">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)} title="حذف">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredRecords.map((record) => {
+                    const creatorInfo = getCreatorInfo(record.createdBy);
+                    return (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.name}</TableCell>
+                        <TableCell>{record.phoneNumber}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{record.visitReason}</Badge>
+                        </TableCell>
+                        <TableCell>{record.requestedEmployee}</TableCell>
+                        <TableCell>{record.date}</TableCell>
+                        <TableCell>{record.time}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {creatorInfo.branch}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="تفاصيل العملية">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)} title="تعديل">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)} title="حذف">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
