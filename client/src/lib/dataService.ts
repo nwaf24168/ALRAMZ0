@@ -1192,6 +1192,7 @@ export class DataService {
         date: record.date,
         time: record.time,
         created_by: record.createdBy,
+        branch: record.branch,
       });
 
     if (error) {

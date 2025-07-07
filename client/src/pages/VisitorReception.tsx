@@ -34,6 +34,7 @@ interface VisitorRecord {
   date: string;
   time: string;
   createdBy: string;
+  branch: string;
 }
 
 export default function VisitorReception() {
