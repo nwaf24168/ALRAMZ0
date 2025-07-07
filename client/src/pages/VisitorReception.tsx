@@ -46,6 +46,7 @@ export default function VisitorReception() {
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState<VisitorRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
 
   // بيانات النموذج
   const [name, setName] = useState("");
@@ -85,12 +86,18 @@ export default function VisitorReception() {
     }
   };
 
-  const filteredRecords = records.filter(record =>
-    record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.phoneNumber.includes(searchTerm) ||
-    record.visitReason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.requestedEmployee.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecords = records.filter(record => {
+    const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.phoneNumber.includes(searchTerm) ||
+      record.visitReason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.requestedEmployee.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesBranch = selectedBranch === "" || 
+      record.branch === selectedBranch || 
+      getCreatorInfo(record.createdBy).branch === selectedBranch;
+    
+    return matchesSearch && matchesBranch;
+  });
 
   // دالة للحصول على معلومات المنشئ
   const getCreatorInfo = (username: string) => {
@@ -574,14 +581,27 @@ export default function VisitorReception() {
                     تصدير إلى Excel
                   </Button>
                 </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="البحث في السجلات..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">جميع الفروع</option>
+                    <option value="فرع المبيعات">فرع المبيعات</option>
+                    <option value="الفرع الرئيسي">الفرع الرئيسي</option>
+                    <option value="فرع الشرقية">فرع الشرقية</option>
+                    <option value="غير محدد">غير محدد</option>
+                  </select>
+                  <div className="relative w-64">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="البحث في السجلات..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
