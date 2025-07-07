@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Users, Eye, MapPin, User } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { DataService } from "@/lib/dataService";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +39,8 @@ interface VisitorRecord {
 export default function VisitorReception() {
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<VisitorRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<VisitorRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState<VisitorRecord[]>([]);
@@ -85,6 +87,33 @@ export default function VisitorReception() {
     record.requestedEmployee.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // دالة للحصول على معلومات المنشئ
+  const getCreatorInfo = (username: string) => {
+    const creators = {
+      'nouf': {
+        name: 'نوف',
+        department: 'الاستقبال',
+        branch: 'فرع المبيعات'
+      },
+      'abdulrahman': {
+        name: 'عبدالرحمن',
+        department: 'الاستقبال',
+        branch: 'الفرع الرئيسي'
+      },
+      'fahad': {
+        name: 'فهد',
+        department: 'الاستقبال',
+        branch: 'فرع الشرقية'
+      }
+    };
+    
+    return creators[username.toLowerCase()] || {
+      name: username,
+      department: 'غير محدد',
+      branch: 'غير محدد'
+    };
+  };
+
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
   };
@@ -98,6 +127,11 @@ export default function VisitorReception() {
     setDate(record.date);
     setTime(record.time);
     setIsDialogOpen(true);
+  };
+
+  const handleViewDetails = (record: VisitorRecord) => {
+    setSelectedRecord(record);
+    setIsDetailsDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -405,10 +439,13 @@ export default function VisitorReception() {
                       <TableCell>{record.time}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="تفاصيل العملية">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)} title="تعديل">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)} title="حذف">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -426,6 +463,115 @@ export default function VisitorReception() {
             </div>
           </CardContent>
         </Card>
+
+        {/* نافذة تفاصيل العملية */}
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                تفاصيل العملية
+              </DialogTitle>
+            </DialogHeader>
+            {selectedRecord && (
+              <div className="space-y-6">
+                {/* معلومات الزائر */}
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    معلومات الزائر
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الاسم</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">رقم الجوال</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.phoneNumber}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">سبب الزيارة</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.visitReason}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الموظف المطلوب</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.requestedEmployee}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">التاريخ</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.date}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الوقت</Label>
+                      <p className="text-sm font-semibold">{selectedRecord.time}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* معلومات المنشئ */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    معلومات المنشئ
+                  </h3>
+                  {(() => {
+                    const creatorInfo = getCreatorInfo(selectedRecord.createdBy);
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-blue-600" />
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الاسم</Label>
+                            <p className="text-sm font-semibold">{creatorInfo.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-blue-600 border-blue-600">
+                            {creatorInfo.department}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-green-600" />
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">الموقع</Label>
+                            <p className="text-sm font-semibold">{creatorInfo.branch}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* معلومات النظام */}
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">معلومات النظام</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">تاريخ الإنشاء</Label>
+                      <p className="text-sm font-semibold">
+                        {selectedRecord.createdAt ? new Date(selectedRecord.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">وقت الإنشاء</Label>
+                      <p className="text-sm font-semibold">
+                        {selectedRecord.createdAt ? new Date(selectedRecord.createdAt).toLocaleTimeString('ar-SA') : 'غير محدد'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+                    إغلاق
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Button onClick={exportToExcel}>تصدير الي Excel</Button>
       </div>
     </Layout>
