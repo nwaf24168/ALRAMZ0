@@ -312,31 +312,35 @@ export default function VisitorReception() {
         }
 
         try {
-          // تحويل التاريخ إذا كان من Excel
-          let formattedDate = '';
-          if (row[4]) {
-            const dateValue = row[4];
-            if (typeof dateValue === 'number') {
-              // Excel date serial number
-              const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
-              formattedDate = excelDate.toISOString().split('T')[0];
-            } else if (typeof dateValue === 'string') {
-              const parsedDate = new Date(dateValue);
-              if (!isNaN(parsedDate.getTime())) {
-                formattedDate = parsedDate.toISOString().split('T')[0];
-              }
-            } else if (dateValue instanceof Date) {
-              formattedDate = dateValue.toISOString().split('T')[0];
+          // أخذ التاريخ كما هو من Excel
+          let formattedDate = row[4] || new Date().toISOString().split('T')[0];
+          
+          // إذا كان التاريخ رقم من Excel، تحويله
+          if (typeof formattedDate === 'number') {
+            const excelDate = new Date((formattedDate - 25569) * 86400 * 1000);
+            formattedDate = excelDate.toISOString().split('T')[0];
+          } else if (formattedDate instanceof Date) {
+            formattedDate = formattedDate.toISOString().split('T')[0];
+          } else if (typeof formattedDate === 'string' && formattedDate.includes('/')) {
+            // تحويل التاريخ من dd/mm/yyyy إلى yyyy-mm-dd
+            const parts = formattedDate.split('/');
+            if (parts.length === 3) {
+              formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
             }
           }
 
-          // إذا لم يكن هناك تاريخ، استخدم التاريخ الحالي
-          if (!formattedDate) {
-            formattedDate = new Date().toISOString().split('T')[0];
-          }
-
-          // إذا لم يكن هناك وقت، استخدم الوقت الحالي
+          // أخذ الوقت كما هو من Excel
           let formattedTime = row[5] || new Date().toTimeString().slice(0, 5);
+          
+          // إذا كان الوقت نص، تنظيفه
+          if (typeof formattedTime === 'string') {
+            // إزالة أي مسافات أو رموز غير مرغوبة
+            formattedTime = formattedTime.trim();
+            // إذا كان الوقت بصيغة HH:MM:SS، اقتطاع الثواني
+            if (formattedTime.includes(':') && formattedTime.split(':').length === 3) {
+              formattedTime = formattedTime.split(':').slice(0, 2).join(':');
+            }
+          }
 
           if (!user?.username) {
             toast({
