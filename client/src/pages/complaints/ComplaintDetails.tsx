@@ -167,8 +167,8 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                 <AlertCircle className="w-4 h-4 text-yellow-400" />
                 تفاصيل الشكوى
               </h3>
-              <div className="p-4 bg-gray-800/30 rounded-lg">
-                <p className="text-gray-200 leading-relaxed">{complaint.details}</p>
+              <div className="p-4 bg-[#1a1c23] border border-gray-700/50 rounded-lg">
+                <p className="text-gray-100 leading-relaxed text-sm">{complaint.details}</p>
               </div>
             </div>
 
@@ -177,8 +177,8 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-green-400" />
                 الإجراء المتخذ
               </h3>
-              <div className="p-4 bg-gray-800/30 rounded-lg">
-                <p className="text-gray-200 leading-relaxed">{complaint.action}</p>
+              <div className="p-4 bg-[#1a1c23] border border-gray-700/50 rounded-lg">
+                <p className="text-gray-100 leading-relaxed text-sm">{complaint.action}</p>
               </div>
             </div>
           </div>
