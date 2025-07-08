@@ -1,751 +1,1028 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, FileUp, Download, Edit, Trash2, Search, Filter, Calendar, BarChart3, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import Layout from '@/components/layout/Layout';
-import { DataService } from '@/lib/dataService';
-import { useNotification } from '@/context/NotificationContext';
-import { sendBookingEmail } from '@/lib/emailService';
-import * as XLSX from 'xlsx';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
+import { Plus, Edit, Eye, Calendar, User, Building, CreditCard, CheckCircle, Trash2, BarChart3, TrendingUp, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { Link } from "react-router-dom";
+import Layout from "@/components/layout/Layout";
+import { useAuth } from "@/context/AuthContext";
+import { DataService } from "@/lib/dataService";
+import { formatDateForDisplay } from "@/lib/dateUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-// واجهة البيانات
+
 interface DeliveryBooking {
-  id: number;
-  customerName: string;
-  project: string;
-  unit: string;
-  status: string;
-  booking_date: string;
-  handover_date: string;
-  sale_type: string;
-  payment_method: string;
-  notes?: string;
-  created_at: string;
+  id?: number;
+  // مرحلة المبيعات
+  booking_date?: string;
+  customer_name: string;
+  customer_phone?: string;
+  project?: string;
+  building?: string;
+  unit?: string;
+  payment_method?: string;
+  sale_type?: string;
+  unit_value?: number;
+  handover_date?: string;
+  sales_employee?: string;
+  sales_completed?: boolean;
+
+  // مرحلة إدارة المشاريع
+  construction_completion_date?: string;
+  final_handover_date?: string;
+  electricity_meter_transfer_date?: string;
+  water_meter_transfer_date?: string;
+  customer_delivery_date?: string;
+  project_notes?: string;
+  projects_completed?: boolean;
+
+  // مرحلة راحة العملاء
+  customer_evaluation_done?: boolean;
+  evaluation_percentage?: number;
+  customer_service_completed?: boolean;
+
+  status?: string;
+  created_by?: string;
+  created_at?: string;
   updated_at?: string;
 }
 
-// المكون الرئيسي
-const Delivery = () => {
+export default function Delivery() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [bookings, setBookings] = useState<DeliveryBooking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [projectFilter, setProjectFilter] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBooking, setEditingBooking] = useState<DeliveryBooking | null>(null);
-  const [importProgress, setImportProgress] = useState(0);
-  const [isImporting, setIsImporting] = useState(false);
-  const [currentUser] = useState('مستخدم النظام');
+  const [selectedBooking, setSelectedBooking] = useState<DeliveryBooking | null>(null);
+  const [activeTab, setActiveTab] = useState("sales");
+  const [loading, setLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
-  const { showNotification } = useNotification();
-
-  // نموذج الحجز الجديد
-  const [newBooking, setNewBooking] = useState({
-    customerName: '',
-    project: '',
-    unit: '',
-    status: 'قيد الانتظار',
-    booking_date: '',
-    handover_date: '',
-    sale_type: 'بيع',
-    payment_method: 'نقدي',
-    notes: ''
+  const [formData, setFormData] = useState<DeliveryBooking>({
+    customer_name: "",
+    customer_phone: "",
+    project: "",
+    building: "",
+    unit: "",
+    payment_method: "",
+    sale_type: "",
+    unit_value: 0,
+    sales_employee: user?.username || "",
+    sales_completed: false,
+    projects_completed: false,
+    customer_evaluation_done: false,
+    customer_service_completed: false,
+    evaluation_percentage: 0
   });
 
-  // تحميل البيانات
+  useEffect(() => {
+    loadBookings();
+    // إعداد تحديث دوري للبيانات كل 30 ثانية
+    const interval = setInterval(() => {
+      loadBookings();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const loadBookings = async () => {
     try {
       setLoading(true);
       const data = await DataService.getDeliveryBookings();
-      console.log('تم تحميل حجوزات التسليم من قاعدة البيانات:', data.length);
+      console.log("تم تحميل حجوزات التسليم من قاعدة البيانات:", data.length);
       setBookings(data);
     } catch (error) {
-      console.error('خطأ في تحميل حجوزات التسليم:', error);
-      showNotification('خطأ في تحميل البيانات', 'error');
+      console.error("خطأ في تحميل الحجوزات:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تحميل بيانات الحجوزات"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
+  // تحديد الحالة بناءً على المراحل المكتملة
+  const getBookingStatus = (booking: DeliveryBooking): string => {
+    if (booking.customer_service_completed) {
+      return "مكتمل";
+    } else if (booking.projects_completed) {
+      return "في راحة العملاء";
+    } else if (booking.sales_completed) {
+      return "في إدارة المشاريع";
+    } else {
+      return "في المبيعات";
+    }
+  };
 
-  // إنشاء حجز جديد
-  const handleCreateBooking = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
 
-      const bookingData = {
-        ...newBooking,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // تحديث المرحلة والحالة بناءً على البيانات
+      const dataToSave = {
+        ...formData,
+        created_by: formData.created_by || user?.username,
+        status: getBookingStatus(formData)
       };
 
-      await DataService.createDeliveryBooking(bookingData);
-      
-      // إرسال إيميل إشعار
-      await sendBookingEmail({
-        type: 'new',
-        booking: {
-          id: Date.now(),
-          ...bookingData
-        }
-      });
+      if (selectedBooking?.id) {
+        await DataService.updateDeliveryBooking(selectedBooking.id, dataToSave);
+        toast({
+          title: "تم التحديث",
+          description: "تم تحديث بيانات الحجز بنجاح"
+        });
+
+      } else {
+        await DataService.createDeliveryBooking(dataToSave);
+        toast({
+          title: "تم الحفظ",
+          description: "تم إضافة الحجز الجديد بنجاح"
+        });
+
+      }
 
       await loadBookings();
+      resetForm();
       setIsDialogOpen(false);
-      setNewBooking({
-        customerName: '',
-        project: '',
-        unit: '',
-        status: 'قيد الانتظار',
-        booking_date: '',
-        handover_date: '',
-        sale_type: 'بيع',
-        payment_method: 'نقدي',
-        notes: ''
-      });
-
-      showNotification('تم إنشاء الحجز بنجاح', 'success');
     } catch (error) {
-      console.error('خطأ في إنشاء حجز التسليم:', error);
-      showNotification('خطأ في إنشاء الحجز', 'error');
+      console.error("خطأ في حفظ الحجز:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في حفظ بيانات الحجز"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // تحديث حجز
-  const handleUpdateBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingBooking) return;
+  const resetForm = () => {
+    setFormData({
+      customer_name: "",
+      customer_phone: "",
+      project: "",
+      building: "",
+      unit: "",
+      payment_method: "",
+      sale_type: "",
+      unit_value: 0,
+      sales_employee: user?.username || "",
+      sales_completed: false,
+      projects_completed: false,
+      customer_evaluation_done: false,
+      customer_service_completed: false,
+      evaluation_percentage: 0
+    });
+    setSelectedBooking(null);
+    setIsViewMode(false);
+    setActiveTab("sales");
+  };
+
+  const handleEdit = (booking: DeliveryBooking) => {
+    setSelectedBooking(booking);
+    setFormData({ ...booking });
+    setIsViewMode(false);
+    setIsDialogOpen(true);
+  };
+
+  const handleView = (booking: DeliveryBooking) => {
+    setSelectedBooking(booking);
+    setFormData({ ...booking });
+    setIsViewMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (bookingId: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الحجز؟")) return;
 
     try {
       setLoading(true);
-      const updatedData = {
-        ...editingBooking,
-        updated_at: new Date().toISOString()
-      };
-
-      await DataService.updateDeliveryBooking(editingBooking.id, updatedData);
-      
-      // إرسال إيميل إشعار
-      await sendBookingEmail({
-        type: 'update',
-        booking: {
-          ...updatedData,
-          updatedBy: currentUser
-        }
+      await DataService.deleteDeliveryBooking(bookingId);
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف الحجز بنجاح"
       });
-
       await loadBookings();
-      setEditingBooking(null);
-      showNotification('تم تحديث الحجز بنجاح', 'success');
     } catch (error) {
-      console.error('خطأ في تحديث الحجز:', error);
-      showNotification('خطأ في تحديث الحجز', 'error');
+      console.error("خطأ في حذف الحجز:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في حذف الحجز"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // حذف حجز
-  const handleDeleteBooking = async (id: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الحجز؟')) return;
-
+  // تصدير البيانات إلى Excel
+  const exportToExcel = async () => {
     try {
-      setLoading(true);
-      await DataService.deleteDeliveryBooking(id);
-      await loadBookings();
-      showNotification('تم حذف الحجز بنجاح', 'success');
+      const XLSX = await import('xlsx');
+
+      // تحضير البيانات للتصدير
+      const exportData = bookings.map((booking, index) => ({
+        'ت': index + 1,
+        'تاريخ الحجز': booking.booking_date || '',
+        'اسم العميل': booking.customer_name || '',
+        'رقم العميل': booking.customer_phone || '',
+        'المشروع': booking.project || '',
+        'العمارة': booking.building || '',
+        'الوحدة': booking.unit || '',
+        'طريقة الدفع': booking.payment_method || '',
+        'نوع البيع': booking.sale_type || '',
+        'قيمة الوحدة': booking.unit_value || 0,
+        'تاريخ الإفراغ': booking.handover_date || '',
+        'موظف المبيعات': booking.sales_employee || '',
+        'مكتملة - المبيعات': booking.sales_completed ? 'نعم' : 'لا',
+        'تاريخ انتهاء البناء': booking.construction_completion_date || '',
+        'تاريخ الاستلام النهائي': booking.final_handover_date || '',
+        'تاريخ نقل عداد الكهرباء': booking.electricity_meter_transfer_date || '',
+        'تاريخ نقل عداد الماء': booking.water_meter_transfer_date || '',
+        'تاريخ التسليم للعميل': booking.customer_delivery_date || '',
+        'ملاحظات المشروع': booking.project_notes || '',
+        'مكتملة - المشاريع': booking.projects_completed ? 'نعم' : 'لا',
+        'تم التقييم': booking.customer_evaluation_done ? 'نعم' : 'لا',
+        'نسبة التقييم': booking.evaluation_percentage || 0,
+        'مكتملة - راحة العملاء': booking.customer_service_completed ? 'نعم' : 'لا',
+        'الحالة': getBookingStatus(booking),
+        'تاريخ الإنشاء': booking.created_at ? new Date(booking.created_at).toISOString().split('T')[0] : '',
+        'المنشئ': booking.created_by || ''
+      }));
+
+      // إنشاء ورقة العمل
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'حجوزات التسليم');
+
+      // تصدير الملف
+      const fileName = `حجوزات_التسليم_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "تم التصدير",
+        description: `تم تصدير ${bookings.length} حجز إلى ملف Excel بنجاح`
+      });
     } catch (error) {
-      console.error('خطأ في حذف الحجز:', error);
-      showNotification('خطأ في حذف الحجز', 'error');
-    } finally {
-      setLoading(false);
+      console.error("خطأ في تصدير Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في تصدير البيانات إلى Excel"
+      });
     }
   };
 
-  // معالجة رفع ملف Excel
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // استيراد البيانات من Excel
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsImporting(true);
-      setImportProgress(0);
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)"
+      });
+      return;
+    }
 
+    if (!user?.username) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const XLSX = await import('xlsx');
+
+      // قراءة الملف
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
       if (jsonData.length < 2) {
-        showNotification('الملف فارغ أو لا يحتوي على بيانات كافية', 'error');
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+        });
         return;
       }
 
-      const headers = jsonData[0];
-      const rows = jsonData.slice(1);
-
+      // معالجة البيانات
       let successCount = 0;
       let errorCount = 0;
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+
+        // التحقق من وجود البيانات الأساسية
+        if (!row[1]) { // اسم العميل
+          errorCount++;
+          continue;
+        }
+
         try {
-          // التقدم
-          setImportProgress(Math.round(((i + 1) / rows.length) * 100));
-
-          // تخطي الصفوف الفارغة
-          if (!row || row.length === 0 || !row.some(cell => cell && cell.toString().trim())) {
-            continue;
-          }
-
-          // إنشاء كائن الحجز من البيانات
-          const bookingData: any = {};
-
-          // تعيين البيانات حسب أسماء الأعمدة
-          headers.forEach((header: string, index: number) => {
-            const cellValue = row[index];
-            const headerName = header?.toString().toLowerCase().trim();
-
-            if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
-              switch (headerName) {
-                case 'اسم العميل':
-                case 'customer_name':
-                case 'customername':
-                  bookingData.customerName = cellValue.toString().trim();
-                  break;
-                case 'المشروع':
-                case 'project':
-                  bookingData.project = cellValue.toString().trim();
-                  break;
-                case 'الوحدة':
-                case 'unit':
-                  bookingData.unit = cellValue.toString().trim();
-                  break;
-                case 'الحالة':
-                case 'status':
-                  bookingData.status = cellValue.toString().trim();
-                  break;
-                case 'تاريخ الحجز':
-                case 'booking_date':
-                case 'bookingdate':
-                  try {
-                    const dateValue = new Date(cellValue);
-                    if (!isNaN(dateValue.getTime())) {
-                      bookingData.booking_date = dateValue.toISOString().split('T')[0];
-                    }
-                  } catch (e) {
-                    console.warn('تاريخ غير صحيح:', cellValue);
-                  }
-                  break;
-                case 'تاريخ التسليم':
-                case 'handover_date':
-                case 'handoverdate':
-                  try {
-                    const dateValue = new Date(cellValue);
-                    if (!isNaN(dateValue.getTime())) {
-                      bookingData.handover_date = dateValue.toISOString().split('T')[0];
-                    }
-                  } catch (e) {
-                    console.warn('تاريخ غير صحيح:', cellValue);
-                  }
-                  break;
-                case 'نوع البيع':
-                case 'sale_type':
-                case 'saletype':
-                  const saleTypeValue = cellValue.toString().trim();
-                  // تطبيع القيم المختلفة
-                  if (saleTypeValue.includes('بيع') || saleTypeValue.includes('البيع') || saleTypeValue.toLowerCase().includes('sale')) {
-                    bookingData.sale_type = 'بيع';
-                  } else if (saleTypeValue.includes('إيجار') || saleTypeValue.includes('ايجار') || saleTypeValue.toLowerCase().includes('rent')) {
-                    bookingData.sale_type = 'إيجار';
-                  } else if (saleTypeValue.includes('رهن') || saleTypeValue.toLowerCase().includes('mortgage')) {
-                    bookingData.sale_type = 'رهن';
-                  } else {
-                    // استخدام قيمة افتراضية
-                    bookingData.sale_type = 'بيع';
-                    console.warn(`قيمة نوع البيع غير معروفة: ${saleTypeValue}, استخدام القيمة الافتراضية: بيع`);
-                  }
-                  break;
-                case 'طريقة الدفع':
-                case 'payment_method':
-                case 'paymentmethod':
-                  const paymentMethodValue = cellValue.toString().trim();
-                  // تطبيع القيم المختلفة
-                  if (paymentMethodValue.includes('نقد') || paymentMethodValue.includes('كاش') || paymentMethodValue.toLowerCase().includes('cash')) {
-                    bookingData.payment_method = 'نقدي';
-                  } else if (paymentMethodValue.includes('بنك') || paymentMethodValue.includes('تحويل') || paymentMethodValue.toLowerCase().includes('bank')) {
-                    bookingData.payment_method = 'بنكي';
-                  } else if (paymentMethodValue.includes('تقسيط') || paymentMethodValue.includes('اقساط') || paymentMethodValue.toLowerCase().includes('installment')) {
-                    bookingData.payment_method = 'تقسيط';
-                  } else if (paymentMethodValue.includes('شيك') || paymentMethodValue.toLowerCase().includes('cheque')) {
-                    bookingData.payment_method = 'شيك';
-                  } else {
-                    // استخدام قيمة افتراضية
-                    bookingData.payment_method = 'نقدي';
-                    console.warn(`قيمة طريقة الدفع غير معروفة: ${paymentMethodValue}, استخدام القيمة الافتراضية: نقدي`);
-                  }
-                  break;
-                case 'ملاحظات':
-                case 'notes':
-                  bookingData.notes = cellValue.toString().trim();
-                  break;
-              }
+          // تنظيف وتحضير البيانات مع معالجة القيم الفارغة
+          const cleanSaleType = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            if (trimmed === 'بيع على الخارطة' || trimmed === 'جاهز') {
+              return trimmed;
             }
-          });
+            // إذا كانت القيمة غير صحيحة، اتركها فارغة
+            return '';
+          };
 
-          // التحقق من البيانات المطلوبة
-          if (!bookingData.customerName) {
-            console.warn(`السطر ${i + 2}: اسم العميل مطلوب`);
-            errorCount++;
-            continue;
-          }
+          const cleanPaymentMethod = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            const validMethods = ['نقد', 'بنك', 'تقسيط', 'شيك'];
+            return validMethods.includes(trimmed) ? trimmed : '';
+          };
 
-          // تعيين القيم الافتراضية للحقول المطلوبة
-          if (!bookingData.project) bookingData.project = '';
-          if (!bookingData.unit) bookingData.unit = '';
-          if (!bookingData.status) bookingData.status = 'قيد الانتظار';
-          if (!bookingData.sale_type) bookingData.sale_type = 'بيع';
-          if (!bookingData.payment_method) bookingData.payment_method = 'نقدي';
-          if (!bookingData.notes) bookingData.notes = '';
+          const cleanDate = (value: any): string | undefined => {
+            if (!value) return undefined;
+            try {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) return undefined;
+              return date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
 
-          // إضافة البيانات التقنية
-          bookingData.created_at = new Date().toISOString();
-          bookingData.updated_at = new Date().toISOString();
+          const cleanNumber = (value: any): number => {
+            if (!value) return 0;
+            const parsed = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+            return isNaN(parsed) ? 0 : parsed;
+          };
 
-          // حفظ الحجز
+          const cleanBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const str = value.toString().trim().toLowerCase();
+            return str === 'نعم' || str === 'true' || str === '1';
+          };
+
+          const bookingData: DeliveryBooking = {
+            booking_date: cleanDate(row[0]),
+            customer_name: row[1] ? row[1].toString().trim() : '',
+            customer_phone: row[2] ? row[2].toString().trim() : '',
+            project: row[3] ? row[3].toString().trim() : '',
+            building: row[4] ? row[4].toString().trim() : '',
+            unit: row[5] ? row[5].toString().trim() : '',
+            payment_method: cleanPaymentMethod(row[6]),
+            sale_type: cleanSaleType(row[7]),
+            unit_value: cleanNumber(row[8]),
+            handover_date: cleanDate(row[9]),
+            sales_employee: row[11] ? row[11].toString().trim() : user.username,
+            sales_completed: cleanBoolean(row[12]),
+            construction_completion_date: cleanDate(row[13]),
+            final_handover_date: cleanDate(row[14]),
+            electricity_meter_transfer_date: cleanDate(row[15]),
+            water_meter_transfer_date: cleanDate(row[16]),
+            customer_delivery_date: cleanDate(row[17]),
+            project_notes: row[18] ? row[18].toString().trim() : '',
+            customer_evaluation_done: cleanBoolean(row[19]),
+            evaluation_percentage: cleanNumber(row[20]),
+            projects_completed: cleanBoolean(row[10]),
+            customer_service_completed: cleanBoolean(row[19]) && cleanNumber(row[20]) > 0,
+            created_by: user.username
+          };
+
+          // تحديد الحالة
+          bookingData.status = getBookingStatus(bookingData);
+
           await DataService.createDeliveryBooking(bookingData);
           successCount++;
-
         } catch (error) {
-          console.error(`خطأ في معالجة السطر ${i + 2}:`, error);
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
           errorCount++;
         }
       }
 
+      // تحديث قائمة الحجوزات
       await loadBookings();
-      setImportProgress(100);
 
-      showNotification(
-        `تم رفع ${successCount} حجز بنجاح${errorCount > 0 ? ` (${errorCount} خطأ)` : ''}`,
-        successCount > 0 ? 'success' : 'error'
-      );
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} حجز بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`
+      });
 
     } catch (error) {
-      console.error('خطأ في رفع الملف:', error);
-      showNotification('خطأ في رفع الملف', 'error');
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel"
+      });
     } finally {
-      setIsImporting(false);
-      setImportProgress(0);
-      // إعادة تعيين قيمة input
-      if (event.target) {
-        event.target.value = '';
-      }
+      setLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
     }
   };
 
-  // تصدير البيانات
-  const handleExportData = () => {
+  // استيراد كامل مع استبدال البيانات
+  const handleFullExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)"
+      });
+      return;
+    }
+
+    // تأكيد العملية
+    const confirmImport = window.confirm(
+      "سيتم حذف جميع الحجوزات الموجودة واستبدالها بالبيانات من ملف Excel. هل أنت متأكد من المتابعة؟"
+    );
+
+    if (!confirmImport) {
+      event.target.value = '';
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً"
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const exportData = filteredBookings.map(booking => ({
-        'رقم الحجز': booking.id,
-        'اسم العميل': booking.customerName,
-        'المشروع': booking.project,
-        'الوحدة': booking.unit,
-        'الحالة': booking.status,
-        'تاريخ الحجز': booking.booking_date,
-        'تاريخ التسليم': booking.handover_date,
-        'نوع البيع': booking.sale_type,
-        'طريقة الدفع': booking.payment_method,
-        'الملاحظات': booking.notes || '',
-        'تاريخ الإنشاء': new Date(booking.created_at).toLocaleDateString('ar-SA')
-      }));
+      const XLSX = await import('xlsx');
 
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'حجوزات التسليم');
-      XLSX.writeFile(wb, `حجوزات_التسليم_${new Date().toLocaleDateString('ar-SA')}.xlsx`);
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
 
-      showNotification('تم تصدير البيانات بنجاح', 'success');
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (jsonData.length < 2) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+        });
+        return;
+      }
+
+      // حذف جميع الحجوزات الموجودة أولاً
+      for (const booking of bookings) {
+        if (booking.id) {
+          await DataService.deleteDeliveryBooking(booking.id);
+        }
+      }
+
+      // معالجة البيانات الجديدة
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+
+        // التحقق من وجود البيانات الأساسية
+        if (!row[1]) { // اسم العميل
+          errorCount++;
+          continue;
+        }
+
+        try {
+          // تنظيف وتحضير البيانات مع معالجة القيم الفارغة
+          const cleanSaleType = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            if (trimmed === 'بيع على الخارطة' || trimmed === 'جاهز') {
+              return trimmed;
+            }
+            // إذا كانت القيمة غير صحيحة، اتركها فارغة
+            return '';
+          };
+
+          const cleanPaymentMethod = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            const validMethods = ['نقد', 'بنك', 'تقسيط', 'شيك'];
+            return validMethods.includes(trimmed) ? trimmed : '';
+          };
+
+          const cleanDate = (value: any): string | undefined => {
+            if (!value) return undefined;
+            try {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) return undefined;
+              return date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
+
+          const cleanNumber = (value: any): number => {
+            if (!value) return 0;
+            const parsed = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+            return isNaN(parsed) ? 0 : parsed;
+          };
+
+          const cleanBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const str = value.toString().trim().toLowerCase();
+            return str === 'نعم' || str === 'true' || str === '1';
+          };
+
+          const bookingData: DeliveryBooking = {
+            booking_date: cleanDate(row[0]),
+            customer_name: row[1] ? row[1].toString().trim() : '',
+            customer_phone: row[2] ? row[2].toString().trim() : '',
+            project: row[3] ? row[3].toString().trim() : '',
+            building: row[4] ? row[4].toString().trim() : '',
+            unit: row[5] ? row[5].toString().trim() : '',
+            payment_method: cleanPaymentMethod(row[6]),
+            sale_type: cleanSaleType(row[7]),
+            unit_value: cleanNumber(row[8]),
+            handover_date: cleanDate(row[9]),
+            sales_employee: row[11] ? row[11].toString().trim() : user.username,
+            sales_completed: cleanBoolean(row[12]),
+            construction_completion_date: cleanDate(row[13]),
+            final_handover_date: cleanDate(row[14]),
+            electricity_meter_transfer_date: cleanDate(row[15]),
+            water_meter_transfer_date: cleanDate(row[16]),
+            customer_delivery_date: cleanDate(row[17]),
+            project_notes: row[18] ? row[18].toString().trim() : '',
+            customer_evaluation_done: cleanBoolean(row[19]),
+            evaluation_percentage: cleanNumber(row[20]),
+            projects_completed: cleanBoolean(row[10]),
+            customer_service_completed: cleanBoolean(row[19]) && cleanNumber(row[20]) > 0,
+            created_by: user.username
+          };
+
+          // تحديد الحالة
+          bookingData.status = getBookingStatus(bookingData);
+
+          await DataService.createDeliveryBooking(bookingData);
+          successCount++;
+        } catch (error) {
+          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      // تحديث قائمة الحجوزات
+      await loadBookings();
+
+      // إظهار نتيجة العملية
+      toast({
+        title: "تم الاستيراد الكامل",
+        description: `تم استبدال البيانات بـ ${successCount} حجز جديد${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`
+      });
+
     } catch (error) {
-      console.error('خطأ في تصدير البيانات:', error);
-      showNotification('خطأ في تصدير البيانات', 'error');
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل في معالجة ملف Excel"
+      });
+    } finally {
+      setLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
     }
   };
 
-  // تصفية البيانات
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = !searchTerm || 
-      booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.unit.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = !statusFilter || statusFilter === 'all' || booking.status === statusFilter;
-    const matchesProject = !projectFilter || projectFilter === 'all' || booking.project === projectFilter;
-    
-    return matchesSearch && matchesStatus && matchesProject;
-  });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "في المبيعات":
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">في المبيعات</Badge>;
+      case "في إدارة المشاريع":
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800">في إدارة المشاريع</Badge>;
+      case "في راحة العملاء":
+        return <Badge variant="default" className="bg-purple-100 text-purple-800">في راحة العملاء</Badge>;
+      case "مكتمل":
+        return <Badge variant="destructive" className="bg-green-100 text-green-800">مكتمل</Badge>;
+      default:
+        return <Badge>غير محدد</Badge>;
+    }
+  };
+
+  const canEditStage = (stage: string) => {
+    if (isViewMode) return false;
+
+    switch (stage) {
+      case "sales":
+        return user?.role?.includes("مبيعات") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
+      case "projects":
+        return user?.role?.includes("مشاريع") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
+      case "customer_service":
+        return user?.role?.includes("راحة العملاء") || user?.role?.includes("مدير") || user?.permissions?.scope === "full";
+      default:
+        return false;
+    }
+  };
+
+  // تصفية البيانات حسب الحالة
+  const filteredBookings = filterStatus === "all" 
+    ? bookings 
+    : bookings.filter(booking => getBookingStatus(booking) === filterStatus);
 
   // إحصائيات سريعة
   const stats = {
-    total: bookings.length,
-    pending: bookings.filter(b => b.status === 'قيد الانتظار').length,
-    inProgress: bookings.filter(b => b.status === 'قيد التجهيز').length,
-    completed: bookings.filter(b => b.status === 'تم التسليم').length
+    inSales: bookings.filter(b => getBookingStatus(b) === "في المبيعات").length,
+    inProjects: bookings.filter(b => getBookingStatus(b) === "في إدارة المشاريع").length,
+    inCustomerService: bookings.filter(b => getBookingStatus(b) === "في راحة العملاء").length,
+    completed: bookings.filter(b => getBookingStatus(b) === "مكتمل").length,
+    total: bookings.length
   };
 
-  // الحصول على قوائم فريدة للمشاريع والحالات
-  const uniqueProjects = [...new Set(bookings.map(b => b.project))].filter(Boolean);
-  const uniqueStatuses = [...new Set(bookings.map(b => b.status))].filter(Boolean);
+  // وظائف تحديد الكل
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = filteredBookings.map(booking => booking.id?.toString() || '');
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === filteredBookings.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "لم يتم تحديد أي عناصر للحذف"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} حجز؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteDeliveryBooking(parseInt(id));
+      }
+
+      toast({
+        title: "تم الحذف بنجاح",
+        description: `تم حذف ${selectedItems.size} حجز`
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      loadBookings();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ أثناء الحذف الجماعي"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isViewMode = user?.permissions?.level === "view";
+  const [viewMode, setViewMode] = useState<"table" | "cards">(
+    isMobile || isViewMode ? "cards" : "table"
+  );
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* العنوان والإحصائيات */}
-        <div className="flex items-center justify-between">
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">إدارة التسليم</h1>
-            <p className="text-muted-foreground">
-              إدارة حجوزات التسليم ومتابعة حالة الوحدات
+            <h1 className="text-3xl font-bold">إدارة التسليم</h1>
+            <p className="text-muted-foreground mt-1">
+              إدارة مراحل التسليم الثلاث: المبيعات، إدارة المشاريع، راحة العملاء
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex gap-2">
             <Link to="/delivery-analytics">
-              <Button variant="outline" size="sm">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                التحليلات
+              <Button variant="outline">
+                <BarChart3 className="ml-2 h-4 w-4" />
+                تحليلات التسليم
               </Button>
             </Link>
+
+            {/* أزرار Excel */}
+            <Button 
+              variant="outline" 
+              onClick={exportToExcel}
+              disabled={loading || bookings.length === 0}
+            >
+              <Download className="ml-2 h-4 w-4" />
+              تصدير Excel
+            </Button>
+
+            <Button 
+              variant="outline"
+              onClick={() => document.getElementById('excel-import')?.click()}
+              disabled={loading}
+            >
+              <Upload className="ml-2 h-4 w-4" />
+              استيراد Excel
+            </Button>
+
+            <Button 
+              variant="outline"
+              onClick={() => document.getElementById('excel-full-import')?.click()}
+              disabled={loading}
+              className="text-orange-600 hover:text-orange-700"
+            >
+              <FileSpreadsheet className="ml-2 h-4 w-4" />
+              استيراد كامل
+            </Button>
+
+            <Button 
+              onClick={() => {
+                resetForm();
+                setIsDialogOpen(true);
+              }}
+              disabled={loading}
+            >
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة حجز جديد
+            </Button>
+
+            {/* أزرار التحديد الجماعي */}
+            {filteredBookings.length > 0 && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={handleSelectAll}
+                  disabled={loading}
+                >
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                  {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </Button>
+
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={loading}
+                  >
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    حذف المحدد ({selectedItems.size})
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* حقول الملفات المخفية */}
+            <input
+              id="excel-import"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelImport}
+              style={{ display: 'none' }}
+            />
+
+            <input
+              id="excel-full-import"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFullExcelImport}
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
 
-        {/* بطاقات الإحصائيات */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">إجمالي الحجوزات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+        {/* إحصائيات سريعة محسنة */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700">في المبيعات</p>
+                  <p className="text-2xl font-bold text-blue-900">{stats.inSales}</p>
+                </div>
+                <Building className="h-8 w-8 text-blue-600" />
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">قيد الانتظار</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+
+          <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-700">في إدارة المشاريع</p>
+                  <p className="text-2xl font-bold text-orange-900">{stats.inProjects}</p>
+                </div>
+                <Calendar className="h-8 w-8 text-orange-600" />
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">قيد التجهيز</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+
+          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700">في راحة العملاء</p>
+                  <p className="text-2xl font-bold text-purple-900">{stats.inCustomerService}</p>
+                </div>
+                <User className="h-8 w-8 text-purple-600" />
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">تم التسليم</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+
+          <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700">مكتمل</p>
+                  <p className="text-2xl font-bold text-green-900">{stats.completed}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">إجمالي الحجوزات</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-gray-600" />
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* شريط الأدوات */}
+
+
+        {/* فلتر الحالة */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="status-filter">تصفية حسب الحالة:</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الحجوزات</SelectItem>
+                <SelectItem value="في المبيعات">في المبيعات</SelectItem>
+                <SelectItem value="في إدارة المشاريع">في إدارة المشاريع</SelectItem>
+                <SelectItem value="في راحة العملاء">في راحة العملاء</SelectItem>
+                <SelectItem value="مكتمل">مكتمل</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline">
+            {loading ? "جاري التحديث..." : `آخر تحديث: ${new Date().toLocaleTimeString('ar-SA')}`}
+          </Badge>
+        </div>
+
+        {/* جدول الحجوزات */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>حجوزات التسليم</CardTitle>
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                  disabled={isImporting}
-                />
-                <label htmlFor="file-upload">
-                  <Button variant="outline" size="sm" disabled={isImporting} asChild>
-                    <span>
-                      <FileUp className="w-4 h-4 mr-2" />
-                      {isImporting ? 'جاري الرفع...' : 'رفع Excel'}
-                    </span>
-                  </Button>
-                </label>
-                <Button variant="outline" size="sm" onClick={handleExportData}>
-                  <Download className="w-4 h-4 mr-2" />
-                  تصدير
-                </Button>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      حجز جديد
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>إضافة حجز جديد</DialogTitle>
-                      <DialogDescription>
-                        أدخل بيانات الحجز الجديد
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateBooking} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="customerName">اسم العميل</Label>
-                          <Input
-                            id="customerName"
-                            value={newBooking.customerName}
-                            onChange={(e) => setNewBooking({...newBooking, customerName: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="project">المشروع</Label>
-                          <Input
-                            id="project"
-                            value={newBooking.project}
-                            onChange={(e) => setNewBooking({...newBooking, project: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="unit">الوحدة</Label>
-                          <Input
-                            id="unit"
-                            value={newBooking.unit}
-                            onChange={(e) => setNewBooking({...newBooking, unit: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="status">الحالة</Label>
-                          <Select value={newBooking.status} onValueChange={(value) => setNewBooking({...newBooking, status: value})}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="قيد الانتظار">قيد الانتظار</SelectItem>
-                              <SelectItem value="قيد التجهيز">قيد التجهيز</SelectItem>
-                              <SelectItem value="جاهز للتسليم">جاهز للتسليم</SelectItem>
-                              <SelectItem value="تم التسليم">تم التسليم</SelectItem>
-                              <SelectItem value="ملغي">ملغي</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="booking_date">تاريخ الحجز</Label>
-                          <Input
-                            id="booking_date"
-                            type="date"
-                            value={newBooking.booking_date}
-                            onChange={(e) => setNewBooking({...newBooking, booking_date: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="handover_date">تاريخ التسليم</Label>
-                          <Input
-                            id="handover_date"
-                            type="date"
-                            value={newBooking.handover_date}
-                            onChange={(e) => setNewBooking({...newBooking, handover_date: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="sale_type">نوع البيع</Label>
-                          <Select value={newBooking.sale_type} onValueChange={(value) => setNewBooking({...newBooking, sale_type: value})}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="بيع">بيع</SelectItem>
-                              <SelectItem value="إيجار">إيجار</SelectItem>
-                              <SelectItem value="رهن">رهن</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="payment_method">طريقة الدفع</Label>
-                          <Select value={newBooking.payment_method} onValueChange={(value) => setNewBooking({...newBooking, payment_method: value})}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="نقدي">نقدي</SelectItem>
-                              <SelectItem value="بنكي">بنكي</SelectItem>
-                              <SelectItem value="تقسيط">تقسيط</SelectItem>
-                              <SelectItem value="شيك">شيك</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="notes">الملاحظات</Label>
-                        <Textarea
-                          id="notes"
-                          value={newBooking.notes}
-                          onChange={(e) => setNewBooking({...newBooking, notes: e.target.value})}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                          إلغاء
-                        </Button>
-                        <Button type="submit" disabled={loading}>
-                          {loading ? 'جاري الحفظ...' : 'حفظ'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
+            <CardTitle>قائمة الحجوزات ({filteredBookings.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* شريط البحث والتصفية */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="البحث في الحجوزات..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="تصفية حسب الحالة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
-                  {uniqueStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="تصفية حسب المشروع" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع المشاريع</SelectItem>
-                  {uniqueProjects.map(project => (
-                    <SelectItem key={project} value={project}>{project}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* شريط تقدم الرفع */}
-            {isImporting && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">جاري رفع البيانات...</span>
-                  <span className="text-sm text-muted-foreground">{importProgress}%</span>
-                </div>
-                <Progress value={importProgress} className="w-full" />
-              </div>
-            )}
-
-            {/* جدول البيانات */}
-            <div className="rounded-md border">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>رقم الحجز</TableHead>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>اسم العميل</TableHead>
+                    <TableHead>رقم العميل</TableHead>
                     <TableHead>المشروع</TableHead>
-                    <TableHead>الوحدة</TableHead>
+                    <TableHead>العمارة/الوحدة</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>تاريخ الحجز</TableHead>
-                    <TableHead>تاريخ التسليم</TableHead>
-                    <TableHead>نوع البيع</TableHead>
-                    <TableHead>طريقة الدفع</TableHead>
+                    <TableHead>موظف المبيعات</TableHead>
+                    <TableHead>المراحل</TableHead>
                     <TableHead>الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
-                        جاري التحميل...
+                  {filteredBookings.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.has(booking.id?.toString() || '')}
+                          onCheckedChange={() => handleItemSelect(booking.id?.toString() || '')}
+                        />
                       </TableCell>
-                    </TableRow>
-                  ) : filteredBookings.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
-                        لا توجد حجوزات
+                      <TableCell className="font-medium">{booking.customer_name}</TableCell>
+                      <TableCell>{booking.customer_phone || '-'}</TableCell>
+                      <TableCell>{booking.project || '-'}</TableCell>
+                      <TableCell>{`${booking.building || '-'} / ${booking.unit || '-'}`}</TableCell>
+                      <TableCell>{getStatusBadge(getBookingStatus(booking))}</TableCell>
+                      <TableCell>
+                        {booking.booking_date ? formatDateForDisplay(booking.booking_date) : '-'}
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredBookings.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-medium">{booking.id}</TableCell>
-                        <TableCell>{booking.customerName}</TableCell>
-                        <TableCell>{booking.project}</TableCell>
-                        <TableCell>{booking.unit}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            booking.status === 'تم التسليم' ? 'default' :
-                            booking.status === 'قيد التجهيز' ? 'secondary' :
-                            booking.status === 'جاهز للتسليم' ? 'outline' :
-                            'destructive'
-                          }>
-                            {booking.status}
+                      <TableCell>{booking.sales_employee || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Badge variant={booking.sales_completed ? "default" : "secondary"} className="text-xs">
+                            مبيعات
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('ar-SA') : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {booking.handover_date ? new Date(booking.handover_date).toLocaleDateString('ar-SA') : '-'}
-                        </TableCell>
-                        <TableCell>{booking.sale_type}</TableCell>
-                        <TableCell>{booking.payment_method}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingBooking(booking)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteBooking(booking.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          <Badge variant={booking.projects_completed ? "default" : "secondary"} className="text-xs">
+                            مشاريع
+                          </Badge>
+                          <Badge variant={booking.customer_service_completed ? "default" : "secondary"} className="text-xs">
+                            عملاء
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleView(booking)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(booking)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(booking.id!)}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredBookings.length === 0 && (
+<TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        {loading ? "جاري تحميل البيانات..." : "لا توجد حجوزات"}
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -753,130 +1030,450 @@ const Delivery = () => {
           </CardContent>
         </Card>
 
-        {/* حوار التعديل */}
-        <Dialog open={!!editingBooking} onOpenChange={(open) => !open && setEditingBooking(null)}>
-          <DialogContent>
+        {/* نافذة الحوار للإضافة/التعديل */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>تعديل الحجز</DialogTitle>
-              <DialogDescription>
-                تعديل بيانات الحجز رقم {editingBooking?.id}
-              </DialogDescription>
+              <DialogTitle className="text-xl">
+                {isViewMode ? "عرض" : selectedBooking ? "تعديل" : "إضافة"} حجز
+                {selectedBooking && (
+                  <span className="mr-2">
+                    {getStatusBadge(getBookingStatus(selectedBooking))}
+                  </span>
+                )}
+              </DialogTitle>
             </DialogHeader>
-            {editingBooking && (
-              <form onSubmit={handleUpdateBooking} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger 
+                    value="sales"
+                    className={formData.sales_completed ? "bg-green-100 text-green-800" : ""}
+                  >
+                    مرحلة المبيعات
+                    {formData.sales_completed && <CheckCircle className="mr-1 h-4 w-4" />}
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="projects"
+                    className={formData.projects_completed ? "bg-green-100 text-green-800" : ""}
+                    disabled={!canEditStage("projects") && !isViewMode}
+                  >
+                    إدارة المشاريع
+                    {formData.projects_completed && <CheckCircle className="mr-1 h-4 w-4" />}
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="customer_service"
+                    className={formData.customer_service_completed ? "bg-green-100 text-green-800" : ""}
+                    disabled={!canEditStage("customer_service") && !isViewMode}
+                  >
+                    راحة العملاء
+                    {formData.customer_service_completed && <CheckCircle className="mr-1 h-4 w-4" />}
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* مرحلة المبيعات */}
+                <TabsContent value="sales" className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 className="font-semibold text-blue-800 mb-2">المرحلة الأولى: المبيعات</h3>
+                    <p className="text-sm text-blue-600">يتم تعبئة هذه البيانات من قبل قسم المبيعات</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="booking_date">تاريخ الحجز *</Label>
+                      <Input
+                        id="booking_date"
+                        type="date"
+                        value={formData.booking_date || ""}
+                        onChange={(e) => setFormData({...formData, booking_date: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="customer_name">اسم العميل *</Label>
+                      <Input
+                        id="customer_name"
+                        value={formData.customer_name}
+                        onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="customer_phone">رقم العميل</Label>
+                      <Input
+                        id="customer_phone"
+                        value={formData.customer_phone || ""}
+                        onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        placeholder="05xxxxxxxx"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="project">المشروع</Label>
+                      <Input
+                        id="project"
+                        value={formData.project || ""}
+                        onChange={(e) => setFormData({...formData, project: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        placeholder="أدخل اسم المشروع"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="building">العمارة</Label>
+                      <Input
+                        id="building"
+                        value={formData.building || ""}
+                        onChange={(e) => setFormData({...formData, building: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        placeholder="رقم أو اسم العمارة"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="unit">الوحدة</Label>
+                      <Input
+                        id="unit"
+                        value={formData.unit || ""}
+                        onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                        placeholder="رقم الوحدة"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="payment_method">طريقة الدفع</Label>
+                      <Select
+                        value={formData.payment_method || ""}
+                        onChange={(value) => setFormData({...formData, payment_method: value})}
+                        disabled={!canEditStage("sales")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر طريقة الدفع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="نقد">نقد</SelectItem>
+                          <SelectItem value="بنك">بنك</SelectItem>
+                          <SelectItem value="تقسيط">تقسيط</SelectItem>
+                          <SelectItem value="شيك">شيك</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="sale_type">نوع البيع</Label>
+                      <Select
+                        value={formData.sale_type || ""}
+                        onValueChange={(value) => setFormData({...formData, sale_type: value})}
+                        disabled={!canEditStage("sales")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر نوع البيع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="بيع على الخارطة">بيع على الخارطة</SelectItem>
+                          <SelectItem value="جاهز">جاهز</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="unit_value">قيمة الوحدة (ريال)</Label>
+                      <Input
+                        id="unit_value"
+                        type="number"
+                        value={formData.unit_value || ""}
+                        onChange={(e) => setFormData({...formData, unit_value: parseFloat(e.target.value)})}
+                        disabled={!canEditStage("sales")}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="handover_date">تاريخ الإفراغ</Label>
+                      <Input
+                        id="handover_date"
+                        type="date"
+                        value={formData.handover_date || ""}
+                        onChange={(e) => setFormData({...formData, handover_date: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="sales_employee">اسم موظف المبيعات</Label>
+                      <Input
+                        id="sales_employee"
+                        value={formData.sales_employee || ""}
+                        onChange={(e) => setFormData({...formData, sales_employee: e.target.value})}
+                        disabled={!canEditStage("sales")}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
+                    <Checkbox
+                      id="sales_completed"
+                      checked={formData.sales_completed || false}
+                      onCheckedChange={(checked) => setFormData({...formData, sales_completed: !!checked})}
+                      disabled={!canEditStage("sales")}
+                    />
+                    <Label htmlFor="sales_completed" className="font-medium">
+                      ✅ تم تعبئة البيانات من قبل المبيعات وجاهزة للمرحلة التالية
+                    </Label>
+                  </div>
+                </TabsContent>
+
+                {/* مرحلة إدارة المشاريع */}
+                <TabsContent value="projects" className="space-y-4">
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <h3 className="font-semibold text-orange-800 mb-2">المرحلة الثانية: إدارة المشاريع</h3>
+                    <p className="text-sm text-orange-600">يتم تعبئة هذه البيانات من قبل قسم إدارة المشاريع</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="construction_completion_date">تاريخ انتهاء أعمال البناء</Label>
+                      <Input
+                        id="construction_completion_date"
+                        type="date"
+                        value={formData.construction_completion_date || ""}
+                        onChange={(e) => setFormData({...formData, construction_completion_date: e.target.value})}
+                        disabled={!canEditStage("projects")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="final_handover_date">تاريخ الاستلام النهائي للوحدة</Label>
+                      <Input
+                        id="final_handover_date"
+                        type="date"
+                        value={formData.final_handover_date || ""}
+                        onChange={(e) => setFormData({...formData, final_handover_date: e.target.value})}
+                        disabled={!canEditStage("projects")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="electricity_meter_transfer_date">تاريخ نقل عداد الكهرباء</Label>
+                      <Input
+                        id="electricity_meter_transfer_date"
+                        type="date"
+                        value={formData.electricity_meter_transfer_date || ""}
+                        onChange={(e) => setFormData({...formData, electricity_meter_transfer_date: e.target.value})}
+                        disabled={!canEditStage("projects")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="water_meter_transfer_date">تاريخ نقل عداد الماء</Label>
+                      <Input
+                        id="water_meter_transfer_date"
+                        type="date"
+                        value={formData.water_meter_transfer_date || ""}
+                        onChange={(e) => setFormData({...formData, water_meter_transfer_date: e.target.value})}
+                        disabled={!canEditStage("projects")}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="customer_delivery_date">تاريخ التسليم للعميل</Label>
+                      <Input
+                        id="customer_delivery_date"
+                        type="date"
+                        value={formData.customer_delivery_date || ""}
+                        onChange={(e) => setFormData({...formData, customer_delivery_date: e.target.value})}
+                        disabled={!canEditStage("projects")}
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="edit-customerName">اسم العميل</Label>
-                    <Input
-                      id="edit-customerName"
-                      value={editingBooking.customerName}
-                      onChange={(e) => setEditingBooking({...editingBooking, customerName: e.target.value})}
-                      required
+                    <Label htmlFor="project_notes">ملاحظات</Label>
+                    <Textarea
+                      id="project_notes"
+                      value={formData.project_notes || ""}
+                      onChange={(e) => setFormData({...formData, project_notes: e.target.value})}
+                      disabled={!canEditStage("projects")}
+                      placeholder="اكتب أي ملاحظات خاصة بالمشروع..."
+                      rows={3}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-project">المشروع</Label>
-                    <Input
-                      id="edit-project"
-                      value={editingBooking.project}
-                      onChange={(e) => setEditingBooking({...editingBooking, project: e.target.value})}
+
+                  <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-lg">
+                    <Checkbox
+                      id="projects_completed"
+                      checked={formData.projects_completed || false}
+                      onCheckedChange={(checked) => setFormData({...formData, projects_completed: !!checked})}
+                      disabled={!canEditStage("projects")}
                     />
+                    <Label htmlFor="projects_completed" className="font-medium">
+                      ✅ تم تعبئة البيانات من قبل إدارة المشاريع وجاهزة للمرحلة التالية
+                    </Label>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-unit">الوحدة</Label>
-                    <Input
-                      id="edit-unit"
-                      value={editingBooking.unit}
-                      onChange={(e) => setEditingBooking({...editingBooking, unit: e.target.value})}
-                    />
+                </TabsContent>
+
+                {/* مرحلة راحة العملاء */}
+                <TabsContent value="customer_service" className="space-y-6">
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-purple-800">المرحلة الثالثة: راحة العملاء</h3>
+                        <p className="text-sm text-purple-600 mt-1">يتم تعبئة هذه البيانات من قبل قسم راحة العملاء</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-status">الحالة</Label>
-                    <Select value={editingBooking.status} onValueChange={(value) => setEditingBooking({...editingBooking, status: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="قيد الانتظار">قيد الانتظار</SelectItem>
-                        <SelectItem value="قيد التجهيز">قيد التجهيز</SelectItem>
-                        <SelectItem value="جاهز للتسليم">جاهز للتسليم</SelectItem>
-                        <SelectItem value="تم التسليم">تم التسليم</SelectItem>
-                        <SelectItem value="ملغي">ملغي</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="space-y-6">
+                    {/* قسم تقييم العميل */}
+                    <Card className="border-2 border-blue-100 shadow-sm">
+                      <CardHeader className="bg-blue-50 border-b border-blue-100">
+                        <CardTitle className="text-blue-800 flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5" />
+                          تقييم العميل
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center space-x-2 bg-white border-2 border-blue-200 p-4 rounded-lg hover:bg-blue-50 transition-colors">
+                          <Checkbox
+                            id="customer_evaluation_done"
+                            checked={formData.customer_evaluation_done || false}
+                            onCheckedChange={(checked) => setFormData({...formData, customer_evaluation_done: !!checked})}
+                            disabled={!canEditStage("customer_service")}
+                            className="w-5 h-5"
+                          />
+                          <Label htmlFor="customer_evaluation_done" className="text-base font-medium text-gray-800 cursor-pointer">
+                            هل تم تقييم عملية الاستلام؟
+                          </Label>
+                        </div>
+
+                        {formData.customer_evaluation_done && (
+                          <div className="space-y-4 bg-gray-50 p-4 rounded-lg border">
+                            <div>
+                              <Label htmlFor="evaluation_percentage" className="text-base font-medium text-gray-700">
+                                تقييم عملية الاستلام للوحدة (%)
+                              </Label>
+                              <div className="mt-2">
+                                <Input
+                                  id="evaluation_percentage"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={formData.evaluation_percentage || ""}
+                                  onChange={(e) => setFormData({...formData, evaluation_percentage: parseFloat(e.target.value)})}
+                                  disabled={!canEditStage("customer_service")}
+                                  placeholder="أدخل النسبة من 0 إلى 100"
+                                  className="text-lg text-center font-medium"
+                                />
+                              </div>
+                            </div>
+
+                            {formData.evaluation_percentage !== undefined && formData.evaluation_percentage > 0 && (
+                              <div className="bg-white p-4 rounded-lg border shadow-sm">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium text-gray-700">مستوى التقييم:</span>
+                                  <span className={`text-lg font-bold ${
+                                    formData.evaluation_percentage >= 90 ? 'text-green-600' :
+                                    formData.evaluation_percentage >= 80 ? 'text-blue-600' :
+                                    formData.evaluation_percentage >= 70 ? 'text-yellow-600' :
+                                    formData.evaluation_percentage >= 60 ? 'text-orange-600' : 'text-red-600'
+                                  }`}>
+                                    {formData.evaluation_percentage}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                                  <div 
+                                    className={`h-3 rounded-full transition-all duration-500 ${
+                                      formData.evaluation_percentage >= 90 ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                                      formData.evaluation_percentage >= 80 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                                      formData.evaluation_percentage >= 70 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                                      formData.evaluation_percentage >= 60 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : 
+                                      'bg-gradient-to-r from-red-400 to-red-600'
+                                    }`}
+                                    style={{ width: `${formData.evaluation_percentage}%` }}
+                                  />
+                                </div>
+                                <div className="mt-2 text-center">
+                                  <span className={`text-sm font-medium ${
+                                    formData.evaluation_percentage >= 90 ? 'text-green-700' :
+                                    formData.evaluation_percentage >= 80 ? 'text-blue-700' :
+                                    formData.evaluation_percentage >= 70 ? 'text-yellow-700' :
+                                    formData.evaluation_percentage >= 60 ? 'text-orange-700' : 'text-red-700'
+                                  }`}>
+                                    {formData.evaluation_percentage >= 90 ? 'ممتاز جداً' :
+                                     formData.evaluation_percentage >= 80 ? 'ممتاز' :
+                                     formData.evaluation_percentage >= 70 ? 'جيد جداً' :
+                                     formData.evaluation_percentage >= 60 ? 'جيد' : 'يحتاج تحسين'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* قسم إتمام المرحلة */}
+                    <Card className="border-2 border-green-100 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 p-4 rounded-lg hover:from-green-100 hover:to-green-200 transition-all">
+                          <Checkbox
+                            id="customer_service_completed"
+                            checked={formData.customer_service_completed || false}
+                            onCheckedChange={(checked) => setFormData({...formData, customer_service_completed: !!checked})}
+                            disabled={!canEditStage("customer_service")}
+                            className="w-6 h-6"
+                          />
+                          <div className="flex-1">
+                            <Label htmlFor="customer_service_completed" className="text-base font-bold text-green-800 cursor-pointer flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                              تم إنهاء جميع إجراءات راحة العملاء
+                            </Label>
+                            <p className="text-sm text-green-700 mt-1">الحجز سيتم تمييزه كمكتمل بالكامل</p>
+                          </div>
+                        </div>
+
+                        {formData.customer_service_completed && (
+                          <div className="mt-4 p-3 bg-green-600 text-white rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <CheckCircle className="h-5 w-5" />
+                              <span className="font-medium">تم إكمال جميع مراحل التسليم بنجاح</span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-booking_date">تاريخ الحجز</Label>
-                    <Input
-                      id="edit-booking_date"
-                      type="date"
-                      value={editingBooking.booking_date}
-                      onChange={(e) => setEditingBooking({...editingBooking, booking_date: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-handover_date">تاريخ التسليم</Label>
-                    <Input
-                      id="edit-handover_date"
-                      type="date"
-                      value={editingBooking.handover_date}
-                      onChange={(e) => setEditingBooking({...editingBooking, handover_date: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-sale_type">نوع البيع</Label>
-                    <Select value={editingBooking.sale_type} onValueChange={(value) => setEditingBooking({...editingBooking, sale_type: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="بيع">بيع</SelectItem>
-                        <SelectItem value="إيجار">إيجار</SelectItem>
-                        <SelectItem value="رهن">رهن</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-payment_method">طريقة الدفع</Label>
-                    <Select value={editingBooking.payment_method} onValueChange={(value) => setEditingBooking({...editingBooking, payment_method: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="نقدي">نقدي</SelectItem>
-                        <SelectItem value="بنكي">بنكي</SelectItem>
-                        <SelectItem value="تقسيط">تقسيط</SelectItem>
-                        <SelectItem value="شيك">شيك</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-notes">الملاحظات</Label>
-                  <Textarea
-                    id="edit-notes"
-                    value={editingBooking.notes || ''}
-                    onChange={(e) => setEditingBooking({...editingBooking, notes: e.target.value})}
-                    rows={3}
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setEditingBooking(null)}>
+                </TabsContent>
+              </Tabs>
+
+              {!isViewMode && (
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
                     إلغاء
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {loading ? 'جاري التحديث...' : 'تحديث'}
+                    {loading ? "جاري الحفظ..." : selectedBooking ? "تحديث" : "حفظ"}
                   </Button>
                 </div>
-              </form>
-            )}
+              )}
+            </form>
           </DialogContent>
         </Dialog>
       </div>
     </Layout>
   );
-};
-
-export default Delivery;
-
-export default Delivery;
+}
