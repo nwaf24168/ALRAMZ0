@@ -68,6 +68,7 @@ export default function Delivery() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   const [formData, setFormData] = useState<DeliveryBooking>({
     customer_name: "",
@@ -647,7 +648,7 @@ export default function Delivery() {
   };
 
   const canEditStage = (stage: string) => {
-    if (isViewMode) return false;
+    if (isViewMode || user?.permissions?.level === "view") return false;
 
     switch (stage) {
       case "sales":
@@ -741,9 +742,8 @@ export default function Delivery() {
     }
   };
 
-  const isViewMode = user?.permissions?.level === "view";
   const [viewMode, setViewMode] = useState<"table" | "cards">(
-    isMobile || isViewMode ? "cards" : "table"
+    isMobile || (user?.permissions?.level === "view") ? "cards" : "table"
   );
 
   return (
