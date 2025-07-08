@@ -439,6 +439,7 @@ export default function Complaints() {
       maintenanceDeliveryAction: "إجراء الصيانة والتسليم",
       action: "الإجراء المتخذ",
       expectedClosureTime: "الوقت المتوقع لإغلاق الشكوى",
+      createdAt: "تاريخ الإنشاء",
     };
 
     Object.entries(fieldsToCheck).forEach(([field, label]) => {
@@ -469,6 +470,7 @@ export default function Complaints() {
       const updatedComplaint = {
         ...selectedComplaint,
         ...newComplaint,
+        createdAt: selectedComplaint.createdAt, // التأكد من تضمين تاريخ الإنشاء المحدث
         updatedBy: user.username,
         updatedAt: now,
         updates: newUpdates, // إرسال التحديثات الجديدة فقط
@@ -1330,6 +1332,24 @@ export default function Complaints() {
                   handleNewComplaintChange("date", e.target.value)
                 }
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-createdAt">تاريخ الإنشاء الفعلي</Label>
+              <Input
+                id="edit-createdAt"
+                type="date"
+                value={selectedComplaint?.createdAt ? selectedComplaint.createdAt.split('T')[0] : ''}
+                onChange={(e) => {
+                  if (selectedComplaint) {
+                    const newCreatedAt = e.target.value + 'T00:00:00.000Z';
+                    setSelectedComplaint({
+                      ...selectedComplaint,
+                      createdAt: newCreatedAt
+                    });
+                  }
+                }}
               />
             </div>
 
