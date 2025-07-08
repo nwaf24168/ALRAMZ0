@@ -559,6 +559,29 @@ export default function Complaints() {
     return fieldNames[field] || field;
   };
 
+  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي
+  const calculateComplaintDuration = (createdAt: string, date: string) => {
+    try {
+      // استخدام تاريخ الإنشاء إذا كان متوفراً، وإلا استخدام تاريخ الشكوى
+      const startDate = new Date(createdAt || date);
+      const currentDate = new Date();
+      
+      // التحقق من صحة التاريخ
+      if (isNaN(startDate.getTime())) {
+        return 0;
+      }
+      
+      // حساب الفرق بالأيام
+      const timeDifference = currentDate.getTime() - startDate.getTime();
+      const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
+      
+      return Math.max(0, daysDifference);
+    } catch (error) {
+      console.error("خطأ في حساب مدة الشكوى:", error);
+      return 0;
+    }
+  };
+
   // دالة للحصول على لون الأولوية
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -618,6 +641,7 @@ export default function Complaints() {
         'رقم الوحدة': complaint.unitNumber || '',
         'مصدر الشكوى': complaint.source,
         'الحالة': complaint.status,
+        'مدة الشكوى (أيام)': calculateComplaintDuration(complaint.createdAt, complaint.date),
         'الشكوى': complaint.description,
         'إجراء الصيانة والتسليم': complaint.maintenanceDeliveryAction || '',
         'الإجراء': complaint.action || '',
@@ -1126,7 +1150,9 @@ export default function Complaints() {
                         <TableCell className="font-medium whitespace-nowrap">
                           {complaint.requestNumber || complaint.id}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{complaint.duration} يوم</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {calculateComplaintDuration(complaint.createdAt, complaint.date)} يوم
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
@@ -1215,7 +1241,9 @@ export default function Complaints() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">مدة الشكوى</Label>
-                  <p className="text-sm">{selectedComplaint.duration} يوم</p>
+                  <p className="text-sm">
+                    {calculateComplaintDuration(selectedComplaint.createdAt, selectedComplaint.date)} يوم
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">الوقت المتوقع لإغلاق الشكوى</Label>
