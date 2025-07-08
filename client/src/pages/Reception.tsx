@@ -1,39 +1,64 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
-import { DataService } from '@/lib/dataService';
+import React, { useState, useEffect } from "react";
+import Layout from "@/components/layout/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, 
-  Search, 
-  Download, 
-  Upload, 
-  FileText, 
+  Dialog, 
+  DialogContent, 
+  DialogDescription,
+  DialogFooter,
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { DataService } from "@/lib/dataService";
+import { formatDateForDisplay, getCurrentDate, parseExcelDate, formatDateForExcel } from "@/lib/dateUtils";
+import * as XLSX from 'xlsx';
+import { 
   Phone, 
+  Users, 
   MessageSquare, 
+  Search, 
+  Plus, 
+  Upload, 
+  Download,
+  Edit, 
+  Trash2, 
+  Eye, 
+  AlertCircle,
+  UserCheck,
+  FileText,
   Calendar,
   User,
-  Building,
-  Clock,
-  Filter,
-  RefreshCw,
-  Edit,
-  Trash2,
-  Eye
-} from 'lucide-react';
+  Mail
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowRight, CheckCircle } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
-// واجهة بيانات سجل الاستقبال
 interface ReceptionRecord {
-  id?: string;
+  id: string;
   date: string;
   customerName: string;
   phoneNumber: string;
@@ -44,26 +69,23 @@ interface ReceptionRecord {
   customerRequest: string;
   action: string;
   status: string;
-  createdBy: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
+
+const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
+const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة"];
+const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل", "تم التحويل للشكاوى"];
 
 export default function Reception() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<ReceptionRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<ReceptionRecord | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [records, setRecords] = useState<ReceptionRecord[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [transferToComplaints, setTransferToComplaints] = useState(false);
 
   // بيانات النموذج
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [project, setProject] = useState("");
@@ -72,181 +94,52 @@ export default function Reception() {
   const [type, setType] = useState("");
   const [customerRequest, setCustomerRequest] = useState("");
   const [action, setAction] = useState("");
-  const [status, setStatus] = useState("جديد");
+  const [status, setStatus] = useState("");
 
-  // متغيرات الاستيراد
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
+  // تحميل البيانات عند تحميل الصفحة
+  useEffect(() => {
+    loadReceptionRecords();
+  }, []);
 
-  // البيانات المرجعية
-  const contactMethods = [
-    "اتصال هاتفي",
-    "واتساب",
-    "بريد إلكتروني",
-    "زيارة شخصية",
-    "رسالة نصية"
-  ];
-
-  const types = [
-    "استفسار",
-    "شكوى",
-    "طلب خدمة",
-    "متابعة",
-    "حجز موعد",
-    "إلغاء",
-    "تعديل"
-  ];
-
-  const statuses = [
-    "جديد",
-    "قيد المتابعة",
-    "مكتمل",
-    "محول"
-  ];
-
-  const projects = [
-    "مشروع الرمز",
-    "سديم تاون",
-    "المعالي",
-    "تل الرمال",
-    "النخيل",
-    "الواحة",
-    "المروج"
-  ];
-
-  // تحميل السجلات
-  const loadRecords = async () => {
+  const loadReceptionRecords = async () => {
     try {
       setLoading(true);
       const data = await DataService.getReceptionRecords();
-      setRecords(data || []);
+      const formattedRecords = data.map((record: any) => ({
+        id: record.id,
+        date: record.date,
+        customerName: record.customer_name,
+        phoneNumber: record.phone_number,
+        project: record.project,
+        employee: record.employee,
+        contactMethod: record.contact_method,
+        type: record.type,
+        customerRequest: record.customer_request,
+        action: record.action,
+        status: record.status,
+      }));
+      setRecords(formattedRecords);
     } catch (error) {
-      console.error("خطأ في تحميل السجلات:", error);
+      console.error("خطأ في تحميل سجلات الاستقبال:", error);
       toast({
-        variant: "destructive",
         title: "خطأ",
-        description: "فشل في تحميل سجلات الاستقبال"
+        description: "فشل في تحميل سجلات الاستقبال",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // تحميل السجلات عند بداية التحميل
-  useEffect(() => {
-    loadRecords();
-  }, []);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
-  // إعادة تعيين النموذج
-  const resetForm = () => {
-    setDate(new Date().toISOString().split('T')[0]);
-    setCustomerName("");
-    setPhoneNumber("");
-    setProject("");
-    setEmployee("");
-    setContactMethod("");
-    setType("");
-    setCustomerRequest("");
-    setAction("");
-    setStatus("جديد");
-    setEditingRecord(null);
-  };
-
-  // معالجة حفظ السجل
-  const handleSave = async () => {
-    if (!customerName || !phoneNumber || !project || !employee || !contactMethod || !type) {
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة"
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const recordData = {
-        date,
-        customerName,
-        phoneNumber,
-        project,
-        employee,
-        contactMethod,
-        type,
-        customerRequest,
-        action,
-        status,
-        createdBy: user.username,
-        ...(editingRecord && { id: editingRecord.id })
-      };
-
-      if (editingRecord) {
-        await DataService.updateReceptionRecord(editingRecord.id!, recordData);
-        toast({
-          title: "تم التحديث",
-          description: "تم تحديث سجل الاستقبال بنجاح"
-        });
-      } else {
-        await DataService.saveReceptionRecord(recordData);
-        toast({
-          title: "تم الحفظ",
-          description: "تم حفظ سجل الاستقبال بنجاح"
-        });
-      }
-
-      resetForm();
-      setIsDialogOpen(false);
-      loadRecords();
-    } catch (error) {
-      console.error("خطأ في حفظ السجل:", error);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: "فشل في حفظ سجل الاستقبال"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // معالجة تحرير السجل
-  const handleEdit = (record: ReceptionRecord) => {
-    setEditingRecord(record);
-    setDate(record.date);
-    setCustomerName(record.customerName);
-    setPhoneNumber(record.phoneNumber);
-    setProject(record.project);
-    setEmployee(record.employee);
-    setContactMethod(record.contactMethod);
-    setType(record.type);
-    setCustomerRequest(record.customerRequest);
-    setAction(record.action);
-    setStatus(record.status);
-    setIsDialogOpen(true);
-  };
-
-  // معالجة حذف السجل
-  const handleDelete = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا السجل؟")) return;
-
-    try {
-      setLoading(true);
-      await DataService.deleteReceptionRecord(id);
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف سجل الاستقبال بنجاح"
-      });
-      loadRecords();
-    } catch (error) {
-      console.error("خطأ في حذف السجل:", error);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: "فشل في حذف سجل الاستقبال"
-      });
-    } finally {
-      setLoading(false);
+  // تفعيل زر رفع الملف
+  const triggerFileUpload = () => {
+    const fileInput = document.getElementById('excel-file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
 
@@ -292,663 +185,892 @@ export default function Reception() {
     }
   };
 
-  // استيراد البيانات من Excel
-  const importFromExcel = async () => {
-    if (!importFile) {
+
+
+  // معالجة رفع ملف Excel
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
       toast({
-        variant: "destructive",
         title: "خطأ",
-        description: "يرجى اختيار ملف Excel أولاً"
+        description: "يرجى اختيار ملف Excel صالح (.xlsx أو .xls)",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsImporting(true);
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const XLSX = await import('xlsx');
-      const arrayBuffer = await importFile.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      // قراءة الملف
+      const data = await file.arrayBuffer();
+      const workbook = await import('xlsx').then(XLSX => XLSX.read(data, { type: 'array', cellDates: true }));
+
+      // الحصول على أول ورقة عمل
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = await import('xlsx').then(XLSX => XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' }));
 
       if (jsonData.length < 2) {
         toast({
-          variant: "destructive",
           title: "خطأ",
-          description: "الملف فارغ أو لا يحتوي على بيانات صالحة"
+          description: "الملف فارغ أو لا يحتوي على بيانات صالحة",
+          variant: "destructive",
         });
         return;
       }
 
+      // تحويل البيانات إلى سجلات استقبال
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1) as any[][];
 
-      // الأعمدة المتوقعة بنفس ترتيب النموذج والتصدير
-      const expectedHeaders = [
-        'التاريخ', 'اسم العميل', 'رقم الجوال', 'المشروع', 'الموظف المختص', 
-        'طريقة التواصل', 'نوع الطلب', 'طلب العميل', 'الإجراء المتخذ', 'الحالة'
-      ];
+      // إزالة حد 1000 عميل - يمكن الآن معالجة أي عدد من السجلات
+      const batchSize = 100; // تقليل حجم الدفعة لضمان الاستقرار
+      const totalRows = rows.length;
 
-      // التحقق من الأعمدة
-      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
-      if (missingHeaders.length > 0) {
-        toast({
-          variant: "destructive",
-          title: "خطأ في تنسيق الملف",
-          description: `الأعمدة المفقودة: ${missingHeaders.join(', ')}`
-        });
-        return;
+      console.log(`بدء معالجة ${totalRows} سجل من ملف Excel`);
+
+      // تقسيم الصفوف إلى دفعات
+      const batches = [];
+      for (let i = 0; i < totalRows; i += batchSize) {
+        batches.push(rows.slice(i, i + batchSize));
       }
 
       let successCount = 0;
       let errorCount = 0;
-      const recordsToSave: any[] = [];
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        
-        // تخطي الصفوف الفارغة
-        if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
-          continue;
-        }
+      // معالجة كل دفعة
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+          const batch = batches[batchIndex];
+          const startIndex = batchIndex * batchSize;
 
-        try {
-          // معالجة التاريخ
-          let formattedDate = row[0];
-          if (formattedDate) {
-            if (typeof formattedDate === 'number') {
-              const excelDate = new Date((formattedDate - 25569) * 86400 * 1000);
-              formattedDate = excelDate.toISOString().split('T')[0];
-            } else if (typeof formattedDate === 'string') {
-              const parsedDate = new Date(formattedDate);
-              if (!isNaN(parsedDate.getTime())) {
-                formattedDate = parsedDate.toISOString().split('T')[0];
-              } else {
-                formattedDate = new Date().toISOString().split('T')[0];
+          // إظهار تقدم المعالجة
+          toast({
+            title: "جاري المعالجة",
+            description: `معالجة الدفعة ${batchIndex + 1} من ${batches.length} (السجلات ${startIndex + 1}-${Math.min(startIndex + batchSize, totalRows)})`,
+          });
+
+          const batchRecords = [];
+
+          for (let i = 0; i < batch.length; i++) {
+            const row = batch[i];
+            const globalIndex = startIndex + i;
+
+            try {
+              // معالجة التاريخ بعناية أكبر
+              let dateValue = row[0];
+              let formattedDate = new Date().toISOString().split('T')[0];
+
+              if (dateValue) {
+                // إذا كان التاريخ من Excel
+                if (typeof dateValue === 'number') {
+                  // Excel date serial number
+                  const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+                  formattedDate = excelDate.toISOString().split('T')[0];
+                } else if (typeof dateValue === 'string') {
+                  // نص التاريخ
+                  const parsedDate = new Date(dateValue);
+                  if (!isNaN(parsedDate.getTime())) {
+                    formattedDate = parsedDate.toISOString().split('T')[0];
+                  }
+                } else if (dateValue instanceof Date) {
+                  // كائن التاريخ
+                  formattedDate = dateValue.toISOString().split('T')[0];
+                }
               }
-            } else {
-              formattedDate = new Date().toISOString().split('T')[0];
+
+              // تطابق الأعمدة مع التصدير والنموذج بالضبط
+              const recordData = {
+                date: formattedDate,                                    // 0: التاريخ
+                customerName: String(row[1] || '').trim(),             // 1: اسم العميل
+                phoneNumber: String(row[2] || '').trim(),              // 2: رقم الجوال
+                project: String(row[3] || '').trim(),                  // 3: المشروع
+                employee: String(row[4] || user.username).trim(),      // 4: الموظف المختص
+                contactMethod: String(row[5] || 'اتصال هاتفي').trim(), // 5: طريقة التواصل
+                type: String(row[6] || 'استفسار').trim(),              // 6: نوع الطلب
+                customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
+                action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
+                status: String(row[9] || 'جديد').trim(),               // 9: الحالة
+                createdBy: user.username,
+              };
+
+              // التحقق من البيانات الأساسية
+              if (!recordData.customerName || !recordData.phoneNumber) {
+                console.warn(`تخطي السطر ${globalIndex + 1}: بيانات ناقصة`);
+                errorCount++;
+                continue;
+              }
+
+              // التحقق من صحة طريقة التواصل
+              if (!contactMethods.includes(recordData.contactMethod)) {
+                recordData.contactMethod = 'اتصال هاتفي';
+              }
+
+              // التحقق من صحة نوع الطلب
+              if (!types.includes(recordData.type)) {
+                recordData.type = 'استفسار';
+              }
+
+              // التحقق من صحة الحالة
+              if (!statuses.includes(recordData.status)) {
+                recordData.status = 'جديد';
+              }
+
+              batchRecords.push(recordData);
+
+            } catch (error) {
+              console.error(`خطأ في معالجة السطر ${globalIndex + 1}:`, error);
+              errorCount++;
             }
-          } else {
-            formattedDate = new Date().toISOString().split('T')[0];
           }
 
-          // تطابق الأعمدة مع التصدير والنموذج بالضبط
-          const recordData = {
-            date: formattedDate,                                    // 0: التاريخ
-            customerName: String(row[1] || '').trim(),             // 1: اسم العميل
-            phoneNumber: String(row[2] || '').trim(),              // 2: رقم الجوال
-            project: String(row[3] || '').trim(),                  // 3: المشروع
-            employee: String(row[4] || user.username).trim(),      // 4: الموظف المختص
-            contactMethod: String(row[5] || 'اتصال هاتفي').trim(), // 5: طريقة التواصل
-            type: String(row[6] || 'استفسار').trim(),              // 6: نوع الطلب
-            customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
-            action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
-            status: String(row[9] || 'جديد').trim(),               // 9: الحالة
-            createdBy: user.username,
-          };
-
-          // التحقق من البيانات الأساسية
-          if (!recordData.customerName || !recordData.phoneNumber) {
-            console.warn(`تخطي السطر ${i + 1}: بيانات ناقصة`);
-            errorCount++;
-            continue;
+          // حفظ الدفعة كاملة في قاعدة البيانات
+          if (batchRecords.length > 0) {
+            try {
+              await DataService.saveReceptionRecordsBatch(batchRecords);
+              successCount += batchRecords.length;
+              console.log(`تم حفظ ${batchRecords.length} سجل في الدفعة ${batchIndex + 1}`);
+            } catch (error) {
+              console.error(`خطأ في حفظ الدفعة ${batchIndex + 1}:`, error);
+              // محاولة حفظ السجلات واحداً تلو الآخر في حالة فشل الدفعة
+              for (const record of batchRecords) {
+                try {
+                  await DataService.saveReceptionRecord(record);
+                  successCount++;
+                } catch (recordError) {
+                  console.error(`خطأ في حفظ سجل فردي:`, recordError);
+                  errorCount++;
+                }
+              }
+            }
           }
 
-          // التحقق من صحة طريقة التواصل
-          if (!contactMethods.includes(recordData.contactMethod)) {
-            recordData.contactMethod = 'اتصال هاتفي';
+          // إضافة تأخير قصير بين الدفعات لتجنب إرهاق الخادم
+          if (batchIndex < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
-
-          // التحقق من صحة نوع الطلب
-          if (!types.includes(recordData.type)) {
-            recordData.type = 'استفسار';
-          }
-
-          // التحقق من صحة الحالة - قراءة من Excel
-          if (!statuses.includes(recordData.status)) {
-            recordData.status = 'جديد';
-          }
-
-          recordsToSave.push(recordData);
-          successCount++;
-        } catch (error) {
-          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
-          errorCount++;
         }
-      }
 
-      if (recordsToSave.length > 0) {
-        // حفظ جميع السجلات دفعة واحدة
-        await DataService.saveReceptionRecordsBatch(recordsToSave);
-        await loadRecords();
+      // تحديث قائمة السجلات
+      console.log(`إجمالي السجلات المحفوظة: ${successCount}, الأخطاء: ${errorCount}`);
+      await loadReceptionRecords();
 
-        toast({
-          title: "تم الاستيراد",
-          description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` (${errorCount} خطأ)` : ''}`
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "فشل الاستيراد",
-          description: "لم يتم العثور على بيانات صالحة للاستيراد"
-        });
-      }
-
-      setImportFile(null);
-    } catch (error) {
-      console.error("خطأ في رفع الملف:", error);
+      // إظهار نتيجة العملية
       toast({
-        variant: "destructive",
+        title: "تم الاستيراد",
+        description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""} من إجمالي ${totalRows} سجل`,
+      });
+
+    } catch (error) {
+      console.error("خطأ في معالجة ملف Excel:", error);
+      toast({
         title: "خطأ",
-        description: "فشل في استيراد البيانات من ملف Excel"
+        description: "فشل في معالجة ملف Excel",
+        variant: "destructive",
       });
     } finally {
-      setIsImporting(false);
+      setIsLoading(false);
+      // مسح اختيار الملف
+      event.target.value = '';
     }
   };
 
-  // تصفية السجلات
-  const filteredRecords = records.filter(record => {
-    const matchesSearch = 
-      (record.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (record.phoneNumber || '').includes(searchTerm) ||
-      (record.project || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (record.employee || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "" || statusFilter === "all" || record.status === statusFilter;
-    const matchesType = typeFilter === "" || typeFilter === "all" || record.type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
 
-  // حساب الإحصائيات
-  const stats = {
-    total: records.length,
-    new: records.filter(r => r.status === 'جديد').length,
-    inProgress: records.filter(r => r.status === 'قيد المتابعة').length,
-    completed: records.filter(r => r.status === 'مكتمل').length,
-    transferred: records.filter(r => r.status === 'محول').length
+
+  const filteredRecords = records.filter(record =>
+    record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.phoneNumber.includes(searchTerm) ||
+    record.project.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleEditRecord = (record: ReceptionRecord) => {
+    setEditingRecord(record);
+    setDate(record.date);
+    setCustomerName(record.customerName);
+    setPhoneNumber(record.phoneNumber);
+    setProject(record.project);
+    setEmployee(record.employee);
+    setContactMethod(record.contactMethod);
+    setType(record.type);
+    setCustomerRequest(record.customerRequest);
+    setAction(record.action);
+    setStatus(record.status);
+    setIsDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setEditingRecord(null);
+    setDate("");
+    setCustomerName("");
+    setPhoneNumber("");
+    setProject("");
+    setEmployee("");
+    setContactMethod("");
+    setType("");
+    setCustomerRequest("");
+    setAction("");
+    setStatus("");
+    setTransferToComplaints(false);
+  };
+
+  const handleCancelDialog = () => {
+    setIsDialogOpen(false);
+    resetForm();
+  };
+
+  const handleSaveRecord = async () => {
+    if (!date || !customerName || !phoneNumber || !project || !employee || !contactMethod || !type) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const recordData = {
+      date,
+      customerName,
+      phoneNumber,
+      project,
+      employee,
+      contactMethod,
+      type,
+      customerRequest,
+      action,
+      status: status || "جديد",
+      createdBy: user.username,
+      updatedBy: user.username,
+    };
+
+    try {
+      setLoading(true);
+
+      if (editingRecord) {
+        await DataService.updateReceptionRecord(editingRecord.id, recordData);
+        toast({
+          title: "تم بنجاح",
+          description: "تم تحديث السجل بنجاح",
+        });
+      } else {
+          const newRecord = await DataService.saveReceptionRecord(recordData);
+          if (transferToComplaints) {
+            // تحويل سجل الاستقبال إلى شكوى
+            const generateComplaintId = () => {
+              return Math.floor(1000 + Math.random() * 9000).toString();
+            };
+
+            const complaintData = {
+              id: generateComplaintId(),
+              date: date,
+              customerName: customerName,
+              project: project,
+              unitNumber: phoneNumber, // نستخدم رقم الهاتف كرقم الوحدة أو يمكن تركه فارغ
+              source: "الاستقبال",
+              status: "جديدة",
+              description: `تم تحويل الطلب من الاستقبال - نوع الطلب: ${type}\nطلب العميل: ${customerRequest}`,
+              action: action || "",
+              duration: 0,
+              createdBy: user.username,
+              createdAt: new Date().toISOString(),
+              updatedBy: null,
+              updatedAt: null,
+              updates: [],
+            };
+
+            // حفظ الشكوى في قاعدة البيانات
+            await DataService.saveComplaint(complaintData);
+
+             // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+            await DataService.updateReceptionRecord(newRecord.id, {
+              ...newRecord,
+              status: "تم التحويل للشكاوى",
+              action: `${action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
+            });
+
+            toast({
+              title: "تم التحويل بنجاح",
+              description: `تم حفظ الطلب وتحويله إلى شكوى رقم ${complaintData.id}`,
+            });
+          }
+          toast({
+            title: "تم بنجاح",
+            description: "تم إضافة السجل بنجاح",
+          });
+      }
+
+      await loadReceptionRecords();
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("خطأ في حفظ السجل:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ السجل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRecord = async (id: string) => {
+    try {
+      setLoading(true);
+      await DataService.deleteReceptionRecord(id);
+      await loadReceptionRecords();
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف السجل بنجاح",
+      });
+    } catch (error) {
+      console.error("خطأ في حذف السجل:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف السجل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // وظائف التحديد الجماعي
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = filteredRecords.map(record => record.id);
+      setSelectedItems(new Set(allIds));
+      setSelectAll(true);
+    }
+  };
+
+  const handleItemSelect = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === filteredRecords.length);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "لم يتم تحديد أي عناصر للحذف"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `هل أنت متأكد من حذف ${selectedItems.size} سجل؟ لا يمكن التراجع عن هذا الإجراء.`
+    );
+
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const idsToDelete = Array.from(selectedItems);
+      for (const id of idsToDelete) {
+        await DataService.deleteReceptionRecord(id);
+      }
+
+      toast({
+        title: "تم الحذف بنجاح",
+        description: `تم حذف ${selectedItems.size} سجل`
+      });
+
+      setSelectedItems(new Set());
+      setSelectAll(false);
+      await loadReceptionRecords();
+    } catch (error) {
+      console.error("خطأ في الحذف الجماعي:", error);
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ أثناء الحذف الجماعي"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConvertToComplaint = async (record: ReceptionRecord) => {
+    if (!user?.username) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // تحويل سجل الاستقبال إلى شكوى
+      const generateComplaintId = () => {
+        return Math.floor(1000 + Math.random() * 9000).toString();
+      };
+
+      const complaintData = {
+        id: generateComplaintId(),
+        date: record.date,
+        customerName: record.customerName,
+        project: record.project,
+        unitNumber: record.phoneNumber, // نستخدم رقم الهاتف كرقم الوحدة أو يمكن تركه فارغ
+        source: "الاستقبال",
+        status: "جديدة",
+        description: `تم تحويل الطلب من الاستقبال - نوع الطلب: ${record.type}\nطلب العميل: ${record.customerRequest}`,
+        action: record.action || "",
+        duration: 0,
+        createdBy: user.username,
+        createdAt: new Date().toISOString(),
+        updatedBy: null,
+        updatedAt: null,
+        updates: [],
+      };
+
+      // حفظ الشكوى في قاعدة البيانات
+      await DataService.saveComplaint(complaintData);
+
+      // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+      await DataService.updateReceptionRecord(record.id, {
+        ...record,
+        status: "تم التحويل للشكاوى",
+        action: `${record.action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
+      });
+
+      // إعادة تحميل البيانات
+      await loadReceptionRecords();
+
+      toast({
+        title: "تم التحويل بنجاح",
+        description: `تم تحويل الطلب إلى شكوى رقم ${complaintData.id}`,
+      });
+
+    } catch (error) {
+      console.error("خطأ في تحويل الطلب إلى شكوى:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحويل الطلب إلى شكوى",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "مكتمل":
+        return "bg-green-100 text-green-800";
+      case "قيد المعالجة":
+        return "bg-yellow-100 text-yellow-800";
+      case "مؤجل":
+        return "bg-red-100 text-red-800";
+      case "تم التحويل للشكاوى":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-blue-100 text-blue-800";
+    }
+  };
+
+  const getContactMethodIcon = (method: string) => {
+    switch (method) {
+      case "اتصال هاتفي":
+        return <Phone className="h-4 w-4" />;
+      case "بريد إلكتروني":
+        return <Mail className="h-4 w-4" />;
+      case "واتساب":
+        return <MessageSquare className="h-4 w-4" />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* العنوان والإحصائيات */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">اتصالات خدمة العملاء</h1>
-          <p className="text-muted-foreground">إدارة وتتبع اتصالات العملاء</p>
-        </div>
-        <div className="flex gap-4">
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <div className="text-sm text-muted-foreground">إجمالي السجلات</div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{stats.new}</div>
-              <div className="text-sm text-muted-foreground">جديد</div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
-              <div className="text-sm text-muted-foreground">قيد المعالجة</div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-              <div className="text-sm text-muted-foreground">مكتمل</div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.transferred}</div>
-              <div className="text-sm text-muted-foreground">محول</div>
-            </div>
-          </Card>
-        </div>
-      </div>
+    <Layout>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">اتصالات خدمة العملاء</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="excel-file-upload"
+              disabled={isLoading}
+            />
+            <Button 
+              variant="outline" 
+              onClick={triggerFileUpload}
+              disabled={isLoading}
+              className="mobile-button"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isLoading ? "جاري التحميل..." : "رفع ملف Excel"}
+            </Button>
+             <Button onClick={exportToExcel} variant="secondary" className="mobile-button">
+              <Download className="h-4 w-4 mr-2" />
+              تصدير Excel
+            </Button>
 
-      {/* شريط الأدوات */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex gap-4 items-center">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={resetForm}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    إضافة سجل جديد
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingRecord ? 'تحرير سجل الاستقبال' : 'إضافة سجل استقبال جديد'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">التاريخ</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customerName">اسم العميل *</Label>
-                      <Input
-                        id="customerName"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="أدخل اسم العميل"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phoneNumber">رقم الجوال *</Label>
-                      <Input
-                        id="phoneNumber"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="05xxxxxxxx"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="project">المشروع *</Label>
-                      <Select value={project} onValueChange={setProject}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر المشروع" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projects.map((proj) => (
-                            <SelectItem key={proj} value={proj}>
-                              {proj}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="employee">الموظف المختص *</Label>
-                      <Input
-                        id="employee"
-                        value={employee}
-                        onChange={(e) => setEmployee(e.target.value)}
-                        placeholder="اسم الموظف"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contactMethod">طريقة التواصل *</Label>
-                      <Select value={contactMethod} onValueChange={setContactMethod}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر طريقة التواصل" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {contactMethods.map((method) => (
-                            <SelectItem key={method} value={method}>
-                              {method}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="type">نوع الطلب *</Label>
-                      <Select value={type} onValueChange={setType}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر نوع الطلب" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {types.map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {t}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="status">الحالة</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر الحالة" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {statuses.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="customerRequest">طلب العميل</Label>
-                      <Textarea
-                        id="customerRequest"
-                        value={customerRequest}
-                        onChange={(e) => setCustomerRequest(e.target.value)}
-                        placeholder="اكتب تفاصيل طلب العميل..."
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="action">الإجراء المتخذ</Label>
-                      <Textarea
-                        id="action"
-                        value={action}
-                        onChange={(e) => setAction(e.target.value)}
-                        placeholder="اكتب الإجراء المتخذ..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      إلغاء
-                    </Button>
-                    <Button onClick={handleSave} disabled={loading}>
-                      {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
-                      {editingRecord ? 'تحديث' : 'حفظ'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+            {/* أزرار التحديد الجماعي */}
+            {filteredRecords.length > 0 && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={handleSelectAll}
+                  disabled={loading}
+                  className="mobile-button"
+                >
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                  {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </Button>
 
-              <Button variant="outline" onClick={exportToExcel} disabled={records.length === 0}>
-                <Download className="h-4 w-4 mr-2" />
-                تصدير Excel
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                  id="import-file"
-                />
-                <Label htmlFor="import-file" className="cursor-pointer">
-                  <Button variant="outline" asChild>
-                    <span>
-                      <Upload className="h-4 w-4 mr-2" />
-                      اختيار ملف
-                    </span>
-                  </Button>
-                </Label>
-                {importFile && (
-                  <Button onClick={importFromExcel} disabled={isImporting}>
-                    {isImporting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                    استيراد من Excel
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={loading}
+                    className="mobile-button"
+                  >
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    حذف المحدد ({selectedItems.size})
                   </Button>
                 )}
+              </>
+            )}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="mobile-button">
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة عميل جديد
+                </Button>
+              </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingRecord ? "تعديل سجل الاستقبال" : "إضافة سجل استقبال جديد"}</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">التاريخ</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerName">اسم العميل</Label>
+                  <Input
+                    id="customerName"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="اسم العميل"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phoneNumber">رقم الجوال</Label>
+                  <Input
+                    id="phoneNumber"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="رقم الجوال"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="project">المشروع</Label>
+                  <Input
+                    id="project"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                    placeholder="اسم المشروع"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="employee">الموظف</Label>
+                  <Input
+                    id="employee"
+                    value={employee}
+                    onChange={(e) => setEmployee(e.target.value)}
+                    placeholder="اسم الموظف"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contactMethod">طريقة التواصل</Label>
+                  <Select value={contactMethod} onValueChange={(value) => setContactMethod(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر طريقة التواصل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contactMethods.map((method) => (
+                        <SelectItem key={method} value={method}>
+                          {method}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="type">النوع</Label>
+                  <Select value={type} onValueChange={(value) => setType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر نوع الطلب" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {types.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status">الحالة</Label>
+                  <Select value={status} onValueChange={(value) => setStatus(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الحالة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="customerRequest">طلب العميل</Label>
+                  <Textarea
+                    id="customerRequest"
+                    value={customerRequest}
+                    onChange={(e) => setCustomerRequest(e.target.value)}
+                    placeholder="تفاصيل طلب العميل"
+                    rows={3}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="action">الإجراء</Label>
+                  <Textarea
+                    id="action"
+                    value={action}
+                    onChange={(e) => setAction(e.target.value)}
+                    placeholder="الإجراء المتخذ"
+                    rows={3}
+                  />
+                </div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Checkbox 
+                      id="transferToComplaints"
+                      checked={transferToComplaints}
+                      onCheckedChange={(checked) => setTransferToComplaints(checked)}
+                    />
+                    <Label htmlFor="transferToComplaints" className="text-sm font-medium">
+                      تحويل هذا الطلب إلى صفحة الشكاوى
+                    </Label>
+                  </div>
               </div>
-            </div>
-
-            <Button variant="outline" onClick={loadRecords} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              تحديث
-            </Button>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={handleCancelDialog}>
+                  إلغاء
+                </Button>
+                <Button onClick={handleSaveRecord} disabled={loading}>
+                  {transferToComplaints ? "حفظ وتحويل للشكاوى" : "حفظ"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* شريط البحث والفلترة */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* إحصائيات سريعة */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{records.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">قيد المعالجة</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {records.filter(r => r.status === "قيد المعالجة").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">مكتمل</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {records.filter(r => r.status === "مكتمل").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">محول للشكاوى</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between"><CardTitle>سجلات الاستقبال</CardTitle>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="البحث في السجلات..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-8"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="جميع الحالات" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الحالات</SelectItem>
-                {statuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="جميع الأنواع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الأنواع</SelectItem>
-                {types.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* جدول السجلات */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            سجلات الاستقبال ({filteredRecords.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="rounded-md border">
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>التاريخ</TableHead>
-                    <TableHead>العميل</TableHead>
-                    <TableHead>الجوال</TableHead>
+                    <TableHead>اسم العميل</TableHead>
+                    <TableHead>رقم الجوال</TableHead>
                     <TableHead>المشروع</TableHead>
                     <TableHead>الموظف</TableHead>
                     <TableHead>طريقة التواصل</TableHead>
                     <TableHead>النوع</TableHead>
+                    <TableHead>طلب العميل</TableHead>
+                    <TableHead>الإجراء</TableHead>
                     <TableHead>الحالة</TableHead>
-                    <TableHead>الإجراءات</TableHead>
+                    <TableHead className="text-right">العمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {record.date}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {record.customerName}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            {record.phoneNumber}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4 text-muted-foreground" />
-                            {record.project}
-                          </div>
-                        </TableCell>
-                        <TableCell>{record.employee}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {record.contactMethod === 'اتصال هاتفي' ? <Phone className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-                            {record.contactMethod}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{record.type}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              record.status === 'مكتمل' ? 'default' :
-                              record.status === 'قيد المتابعة' ? 'secondary' :
-                              record.status === 'محول' ? 'outline' : 'destructive'
-                            }
-                          >
-                            {record.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRecord(record);
-                                setIsDetailsDialogOpen(true);
-                              }}
+                  {filteredRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.has(record.id)}
+                          onCheckedChange={() => handleItemSelect(record.id)}
+                        />
+                      </TableCell>
+                      <TableCell>{record.date}</TableCell>
+                      <TableCell className="font-medium">{record.customerName}</TableCell>
+                      <TableCell>{record.phoneNumber}</TableCell>
+                      <TableCell>{record.project}</TableCell>
+                      <TableCell>{record.employee}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getContactMethodIcon(record.contactMethod)}
+                          <span className="text-sm">{record.contactMethod}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{record.type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate" title={record.customerRequest}>
+                          {record.customerRequest}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate" title={record.action}>
+                          {record.action}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(record.status)}>
+                          {record.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {record.status !== "تم التحويل للشكاوى" && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleConvertToComplaint(record)}
+                              title="تحويل إلى شكوى"
                             >
-                              <Eye className="h-4 w-4" />
+                              <ArrowRight className="h-4 w-4 text-blue-600" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(record)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => record.id && handleDelete(record.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
-                        لا توجد سجلات للعرض
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* نافذة تفاصيل السجل */}
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>تفاصيل سجل الاستقبال</DialogTitle>
-          </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">التاريخ</Label>
-                  <p className="text-sm">{selectedRecord.date}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">اسم العميل</Label>
-                  <p className="text-sm">{selectedRecord.customerName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">رقم الجوال</Label>
-                  <p className="text-sm">{selectedRecord.phoneNumber}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">المشروع</Label>
-                  <p className="text-sm">{selectedRecord.project}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">الموظف المختص</Label>
-                  <p className="text-sm">{selectedRecord.employee}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">طريقة التواصل</Label>
-                  <p className="text-sm">{selectedRecord.contactMethod}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">نوع الطلب</Label>
-                  <p className="text-sm">{selectedRecord.type}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">الحالة</Label>
-                  <Badge 
-                    variant={
-                      selectedRecord.status === 'مكتمل' ? 'default' :
-                      selectedRecord.status === 'قيد المتابعة' ? 'secondary' :
-                      selectedRecord.status === 'محول' ? 'outline' : 'destructive'
-                    }
-                  >
-                    {selectedRecord.status}
-                  </Badge>
-                </div>
-              </div>
-              
-              {selectedRecord.customerRequest && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">طلب العميل</Label>
-                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">{selectedRecord.customerRequest}</p>
+              {filteredRecords.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  لا توجد سجلات تطابق البحث
                 </div>
               )}
-              
-              {selectedRecord.action && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">الإجراء المتخذ</Label>
-                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">{selectedRecord.action}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">تم الإنشاء بواسطة</Label>
-                  <p className="text-sm">{selectedRecord.createdBy}</p>
-                </div>
-                {selectedRecord.createdAt && (
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">تاريخ الإنشاء</Label>
-                    <p className="text-sm">{new Date(selectedRecord.createdAt).toLocaleString('ar-SA')}</p>
-                  </div>
-                )}
-              </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   );
 }
