@@ -149,6 +149,7 @@ export default function Complaints() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const [newComplaint, setNewComplaint] = useState<
     Omit<
@@ -284,6 +285,15 @@ export default function Complaints() {
         DataService.removeRealtimeSubscription(channel);
       }
     };
+  }, []);
+
+  // تحديث الوقت الحالي كل دقيقة لحساب المدة بشكل مباشر
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // تحديث كل دقيقة (60 ثانية)
+
+    return () => clearInterval(timer);
   }, []);
 
   const filteredComplaints = complaints.filter((complaint) => {
@@ -559,20 +569,19 @@ export default function Complaints() {
     return fieldNames[field] || field;
   };
 
-  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي
+  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي (مباشرة)
   const calculateComplaintDuration = (createdAt: string, date: string) => {
     try {
       // استخدام تاريخ الإنشاء إذا كان متوفراً، وإلا استخدام تاريخ الشكوى
       const startDate = new Date(createdAt || date);
-      const currentDate = new Date();
       
       // التحقق من صحة التاريخ
       if (isNaN(startDate.getTime())) {
         return 0;
       }
       
-      // حساب الفرق بالأيام
-      const timeDifference = currentDate.getTime() - startDate.getTime();
+      // حساب الفرق بالأيام باستخدام الوقت الحالي المحدث
+      const timeDifference = currentTime.getTime() - startDate.getTime();
       const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
       
       return Math.max(0, daysDifference);
