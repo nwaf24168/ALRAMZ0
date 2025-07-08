@@ -1435,11 +1435,11 @@ export class DataService {
 
   // دالة مساعدة لحساب حالة الحجز
   private static calculateBookingStatus(booking: any): string {
-    if (booking.status_customer_filled) {
+    if (booking.customer_service_completed) {
       return "مكتمل";
-    } else if (booking.status_projects_filled) {
+    } else if (booking.projects_completed) {
       return "في راحة العملاء";
-    } else if (booking.status_sales_filled) {
+    } else if (booking.sales_completed) {
       return "في إدارة المشاريع";
     } else {
       return "في المبيعات";
