@@ -59,8 +59,8 @@ export default function Reception() {
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState<ReceptionRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   // بيانات النموذج
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -453,10 +453,10 @@ export default function Reception() {
   // تصفية السجلات
   const filteredRecords = records.filter(record => {
     const matchesSearch = 
-      record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.phoneNumber.includes(searchTerm) ||
-      record.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.employee.toLowerCase().includes(searchTerm.toLowerCase());
+      (record.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (record.phoneNumber || '').includes(searchTerm) ||
+      (record.project || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (record.employee || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "" || statusFilter === "all" || record.status === statusFilter;
     const matchesType = typeFilter === "" || typeFilter === "all" || record.type === typeFilter;
