@@ -458,8 +458,8 @@ export default function Reception() {
       record.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.employee.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "" || record.status === statusFilter;
-    const matchesType = typeFilter === "" || record.type === typeFilter;
+    const matchesStatus = statusFilter === "" || statusFilter === "all" || record.status === statusFilter;
+    const matchesType = typeFilter === "" || typeFilter === "all" || record.type === typeFilter;
     
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -721,7 +721,7 @@ export default function Reception() {
                 <SelectValue placeholder="جميع الحالات" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع الحالات</SelectItem>
+                <SelectItem value="all">جميع الحالات</SelectItem>
                 {statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
@@ -734,7 +734,7 @@ export default function Reception() {
                 <SelectValue placeholder="جميع الأنواع" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع الأنواع</SelectItem>
+                <SelectItem value="all">جميع الأنواع</SelectItem>
                 {types.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
