@@ -148,9 +148,8 @@ export default function Reception() {
     try {
       const XLSX = await import('xlsx');
 
-      // تحضير البيانات للتصدير
-      const exportData = records.map((record, index) => ({
-        'ت': index + 1,
+      // تحضير البيانات للتصدير بنفس ترتيب الحقول في النموذج
+      const exportData = records.map((record) => ({
         'التاريخ': record.date,
         'اسم العميل': record.customerName,
         'رقم الجوال': record.phoneNumber,
@@ -160,9 +159,7 @@ export default function Reception() {
         'نوع الطلب': record.type,
         'طلب العميل': record.customerRequest,
         'الإجراء المتخذ': record.action,
-        'الحالة': record.status,
-        'المنشئ': record.createdBy,
-        'تاريخ الإنشاء': record.createdAt ? new Date(record.createdAt).toISOString().split('T')[0] : ''
+        'الحالة': record.status
       }));
 
       // إنشاء ورقة العمل
@@ -238,6 +235,7 @@ export default function Reception() {
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1) as any[][];
 
+      // الأعمدة المتوقعة بنفس ترتيب النموذج والتصدير
       const expectedHeaders = [
         'التاريخ', 'اسم العميل', 'رقم الجوال', 'المشروع', 'الموظف المختص', 
         'طريقة التواصل', 'نوع الطلب', 'طلب العميل', 'الإجراء المتخذ', 'الحالة'
@@ -272,24 +270,41 @@ export default function Reception() {
             }
           }
 
+          // تطابق الأعمدة مع التصدير والنموذج بالضبط
           const recordData = {
-            date: formattedDate,
-            customerName: row[1] || `عميل ${i + 1}`,
-            phoneNumber: row[2] || "",
-            project: row[3] || "",
-            employee: row[4] || user.username,
-            contactMethod: row[5] || "اتصال هاتفي",
-            type: row[6] || "استفسار",
-            customerRequest: row[7] || "",
-            action: row[8] || "",
-            status: row[9] || "جديد",
+            date: formattedDate,                                    // 0: التاريخ
+            customerName: String(row[1] || '').trim(),             // 1: اسم العميل
+            phoneNumber: String(row[2] || '').trim(),              // 2: رقم الجوال
+            project: String(row[3] || '').trim(),                  // 3: المشروع
+            employee: String(row[4] || user.username).trim(),      // 4: الموظف المختص
+            contactMethod: String(row[5] || 'اتصال هاتفي').trim(), // 5: طريقة التواصل
+            type: String(row[6] || 'استفسار').trim(),              // 6: نوع الطلب
+            customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
+            action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
+            status: String(row[9] || 'جديد').trim(),               // 9: الحالة
             createdBy: user.username,
           };
 
           // التحقق من البيانات الأساسية
           if (!recordData.customerName || !recordData.phoneNumber) {
+            console.warn(`تخطي السطر ${i + 1}: بيانات ناقصة`);
             errorCount++;
             continue;
+          }
+
+          // التحقق من صحة طريقة التواصل
+          if (!contactMethods.includes(recordData.contactMethod)) {
+            recordData.contactMethod = 'اتصال هاتفي';
+          }
+
+          // التحقق من صحة نوع الطلب
+          if (!types.includes(recordData.type)) {
+            recordData.type = 'استفسار';
+          }
+
+          // التحقق من صحة الحالة
+          if (!statuses.includes(recordData.status)) {
+            recordData.status = 'جديد';
           }
 
           // حفظ السجل في قاعدة البيانات
