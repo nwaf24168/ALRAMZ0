@@ -876,33 +876,84 @@ export class DataService {
 
   // دالة لحفظ عدة سجلات استقبال دفعة واحدة (تحسين الأداء)
   static async saveReceptionRecordsBatch(records: any[]): Promise<any[]> {
-    const recordsData = records.map(record => ({
-      date: record.date,
-      customer_name: record.customerName,
-      phone_number: record.phoneNumber,
-      project: record.project,
-      employee: record.employee,
-      contact_method: record.contactMethod,
-      type: record.type,
-      customer_request: record.customerRequest,
-      action: record.action,
-      status: record.status || 'جديد',
-      created_by: record.createdBy,
-    }));
+    // إذا كان عدد السجلات كبير جداً، نقسمها إلى دفعات أصغر
+    const MAX_BATCH_SIZE = 50; // حد أقصى للدفعة الواحدة
+    
+    if (records.length <= MAX_BATCH_SIZE) {
+      // إذا كان العدد صغير، نحفظ مرة واحدة
+      const recordsData = records.map(record => ({
+        date: record.date,
+        customer_name: record.customerName,
+        phone_number: record.phoneNumber,
+        project: record.project,
+        employee: record.employee,
+        contact_method: record.contactMethod,
+        type: record.type,
+        customer_request: record.customerRequest,
+        action: record.action,
+        status: record.status || 'جديد',
+        created_by: record.createdBy,
+      }));
 
-    const { data, error } = await supabase
-      .from("reception_records")
-      .insert(recordsData)
-      .select();
+      const { data, error } = await supabase
+        .from("reception_records")
+        .insert(recordsData)
+        .select();
 
-    if (error) {
-      console.error("خطأ Supabase في حفظ سجلات الاستقبال بالدفعة:", error);
-      throw new Error(
-        `خطأ في حفظ سجلات الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
-      );
+      if (error) {
+        console.error("خطأ Supabase في حفظ سجلات الاستقبال بالدفعة:", error);
+        throw new Error(
+          `خطأ في حفظ سجلات الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
+        );
+      }
+
+      return data || [];
+    } else {
+      // إذا كان العدد كبير، نقسم إلى دفعات أصغر
+      const allSavedData = [];
+      
+      for (let i = 0; i < records.length; i += MAX_BATCH_SIZE) {
+        const batch = records.slice(i, i + MAX_BATCH_SIZE);
+        console.log(`حفظ الدفعة الفرعية: ${i + 1} إلى ${Math.min(i + MAX_BATCH_SIZE, records.length)}`);
+        
+        const recordsData = batch.map(record => ({
+          date: record.date,
+          customer_name: record.customerName,
+          phone_number: record.phoneNumber,
+          project: record.project,
+          employee: record.employee,
+          contact_method: record.contactMethod,
+          type: record.type,
+          customer_request: record.customerRequest,
+          action: record.action,
+          status: record.status || 'جديد',
+          created_by: record.createdBy,
+        }));
+
+        const { data, error } = await supabase
+          .from("reception_records")
+          .insert(recordsData)
+          .select();
+
+        if (error) {
+          console.error(`خطأ Supabase في حفظ الدفعة الفرعية ${i + 1}:`, error);
+          throw new Error(
+            `خطأ في حفظ الدفعة الفرعية: ${error.message || error.details || "خطأ غير معروف"}`,
+          );
+        }
+
+        if (data) {
+          allSavedData.push(...data);
+        }
+
+        // تأخير قصير بين الدفعات
+        if (i + MAX_BATCH_SIZE < records.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      return allSavedData;
     }
-
-    return data || [];
   }
 
   static async getReceptionRecords(): Promise<any[]> {

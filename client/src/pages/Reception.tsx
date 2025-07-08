@@ -235,9 +235,11 @@ export default function Reception() {
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1) as any[][];
 
-      // تحديد حجم الدفعة
-      const batchSize = 500;
+      // إزالة حد 1000 عميل - يمكن الآن معالجة أي عدد من السجلات
+      const batchSize = 100; // تقليل حجم الدفعة لضمان الاستقرار
       const totalRows = rows.length;
+
+      console.log(`بدء معالجة ${totalRows} سجل من ملف Excel`);
 
       // تقسيم الصفوف إلى دفعات
       const batches = [];
@@ -338,6 +340,7 @@ export default function Reception() {
             try {
               await DataService.saveReceptionRecordsBatch(batchRecords);
               successCount += batchRecords.length;
+              console.log(`تم حفظ ${batchRecords.length} سجل في الدفعة ${batchIndex + 1}`);
             } catch (error) {
               console.error(`خطأ في حفظ الدفعة ${batchIndex + 1}:`, error);
               // محاولة حفظ السجلات واحداً تلو الآخر في حالة فشل الدفعة
@@ -355,17 +358,18 @@ export default function Reception() {
 
           // إضافة تأخير قصير بين الدفعات لتجنب إرهاق الخادم
           if (batchIndex < batches.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
 
       // تحديث قائمة السجلات
+      console.log(`إجمالي السجلات المحفوظة: ${successCount}, الأخطاء: ${errorCount}`);
       await loadReceptionRecords();
 
       // إظهار نتيجة العملية
       toast({
         title: "تم الاستيراد",
-        description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""}`,
+        description: `تم استيراد ${successCount} سجل بنجاح${errorCount > 0 ? ` مع ${errorCount} خطأ` : ""} من إجمالي ${totalRows} سجل`,
       });
 
     } catch (error) {
