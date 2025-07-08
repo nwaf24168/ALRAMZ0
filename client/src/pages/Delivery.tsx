@@ -347,29 +347,70 @@ export default function Delivery() {
         }
 
         try {
+          // تنظيف وتحضير البيانات مع معالجة القيم الفارغة
+          const cleanSaleType = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            if (trimmed === 'بيع على الخارطة' || trimmed === 'جاهز') {
+              return trimmed;
+            }
+            // إذا كانت القيمة غير صحيحة، اتركها فارغة
+            return '';
+          };
+
+          const cleanPaymentMethod = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            const validMethods = ['نقد', 'بنك', 'تقسيط', 'شيك'];
+            return validMethods.includes(trimmed) ? trimmed : '';
+          };
+
+          const cleanDate = (value: any): string | undefined => {
+            if (!value) return undefined;
+            try {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) return undefined;
+              return date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
+
+          const cleanNumber = (value: any): number => {
+            if (!value) return 0;
+            const parsed = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+            return isNaN(parsed) ? 0 : parsed;
+          };
+
+          const cleanBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const str = value.toString().trim().toLowerCase();
+            return str === 'نعم' || str === 'true' || str === '1';
+          };
+
           const bookingData: DeliveryBooking = {
-            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
-            customer_name: row[1] || '',
-            customer_phone: row[2] || '',
-            project: row[3] || '',
-            building: row[4] || '',
-            unit: row[5] || '',
-            payment_method: row[6] || '',
-            sale_type: row[7] || '',
-            unit_value: parseFloat(row[8]) || 0,
-            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
-            projects_completed: row[10] === 'نعم',
-            sales_employee: row[11] || user.username,
-            sales_completed: row[12] === 'نعم',
-            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
-            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
-            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
-            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
-            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
-            project_notes: row[18] || '',
-            customer_evaluation_done: row[19] === 'نعم',
-            evaluation_percentage: parseFloat(row[20]) || 0,
-            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
+            booking_date: cleanDate(row[0]),
+            customer_name: row[1] ? row[1].toString().trim() : '',
+            customer_phone: row[2] ? row[2].toString().trim() : '',
+            project: row[3] ? row[3].toString().trim() : '',
+            building: row[4] ? row[4].toString().trim() : '',
+            unit: row[5] ? row[5].toString().trim() : '',
+            payment_method: cleanPaymentMethod(row[6]),
+            sale_type: cleanSaleType(row[7]),
+            unit_value: cleanNumber(row[8]),
+            handover_date: cleanDate(row[9]),
+            sales_employee: row[11] ? row[11].toString().trim() : user.username,
+            sales_completed: cleanBoolean(row[12]),
+            construction_completion_date: cleanDate(row[13]),
+            final_handover_date: cleanDate(row[14]),
+            electricity_meter_transfer_date: cleanDate(row[15]),
+            water_meter_transfer_date: cleanDate(row[16]),
+            customer_delivery_date: cleanDate(row[17]),
+            project_notes: row[18] ? row[18].toString().trim() : '',
+            customer_evaluation_done: cleanBoolean(row[19]),
+            evaluation_percentage: cleanNumber(row[20]),
+            projects_completed: cleanBoolean(row[10]),
+            customer_service_completed: cleanBoolean(row[19]) && cleanNumber(row[20]) > 0,
             created_by: user.username
           };
 
@@ -484,29 +525,70 @@ export default function Delivery() {
         }
 
         try {
+          // تنظيف وتحضير البيانات مع معالجة القيم الفارغة
+          const cleanSaleType = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            if (trimmed === 'بيع على الخارطة' || trimmed === 'جاهز') {
+              return trimmed;
+            }
+            // إذا كانت القيمة غير صحيحة، اتركها فارغة
+            return '';
+          };
+
+          const cleanPaymentMethod = (value: any): string => {
+            if (!value || value.toString().trim() === '') return '';
+            const trimmed = value.toString().trim();
+            const validMethods = ['نقد', 'بنك', 'تقسيط', 'شيك'];
+            return validMethods.includes(trimmed) ? trimmed : '';
+          };
+
+          const cleanDate = (value: any): string | undefined => {
+            if (!value) return undefined;
+            try {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) return undefined;
+              return date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
+
+          const cleanNumber = (value: any): number => {
+            if (!value) return 0;
+            const parsed = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+            return isNaN(parsed) ? 0 : parsed;
+          };
+
+          const cleanBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const str = value.toString().trim().toLowerCase();
+            return str === 'نعم' || str === 'true' || str === '1';
+          };
+
           const bookingData: DeliveryBooking = {
-            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
-            customer_name: row[1] || '',
-            customer_phone: row[2] || '',
-            project: row[3] || '',
-            building: row[4] || '',
-            unit: row[5] || '',
-            payment_method: row[6] || '',
-            sale_type: row[7] || '',
-            unit_value: parseFloat(row[8]) || 0,
-            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
-            projects_completed: row[10] === 'نعم',
-            sales_employee: row[11] || user.username,
-            sales_completed: row[12] === 'نعم',
-            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
-            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
-            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
-            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
-            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
-            project_notes: row[18] || '',
-            customer_evaluation_done: row[19] === 'نعم',
-            evaluation_percentage: parseFloat(row[20]) || 0,
-            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
+            booking_date: cleanDate(row[0]),
+            customer_name: row[1] ? row[1].toString().trim() : '',
+            customer_phone: row[2] ? row[2].toString().trim() : '',
+            project: row[3] ? row[3].toString().trim() : '',
+            building: row[4] ? row[4].toString().trim() : '',
+            unit: row[5] ? row[5].toString().trim() : '',
+            payment_method: cleanPaymentMethod(row[6]),
+            sale_type: cleanSaleType(row[7]),
+            unit_value: cleanNumber(row[8]),
+            handover_date: cleanDate(row[9]),
+            sales_employee: row[11] ? row[11].toString().trim() : user.username,
+            sales_completed: cleanBoolean(row[12]),
+            construction_completion_date: cleanDate(row[13]),
+            final_handover_date: cleanDate(row[14]),
+            electricity_meter_transfer_date: cleanDate(row[15]),
+            water_meter_transfer_date: cleanDate(row[16]),
+            customer_delivery_date: cleanDate(row[17]),
+            project_notes: row[18] ? row[18].toString().trim() : '',
+            customer_evaluation_done: cleanBoolean(row[19]),
+            evaluation_percentage: cleanNumber(row[20]),
+            projects_completed: cleanBoolean(row[10]),
+            customer_service_completed: cleanBoolean(row[19]) && cleanNumber(row[20]) > 0,
             created_by: user.username
           };
 
@@ -1069,7 +1151,7 @@ export default function Delivery() {
                       <Label htmlFor="payment_method">طريقة الدفع</Label>
                       <Select
                         value={formData.payment_method || ""}
-                        onValueChange={(value) => setFormData({...formData, payment_method: value})}
+                        onChange={(value) => setFormData({...formData, payment_method: value})}
                         disabled={!canEditStage("sales")}
                       >
                         <SelectTrigger>
