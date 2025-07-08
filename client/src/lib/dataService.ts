@@ -1357,9 +1357,32 @@ export class DataService {
       // تحديد الحالة بناءً على المراحل المكتملة
       const status = this.calculateBookingStatus(bookingData);
 
+      // تحويل أسماء الحقول لتطابق قاعدة البيانات
       const dataToInsert = {
-        ...bookingData,
+        booking_date: bookingData.booking_date,
+        customer_name: bookingData.customer_name,
+        customer_phone: bookingData.customer_phone,
+        project: bookingData.project,
+        building: bookingData.building,
+        unit: bookingData.unit,
+        payment_method: bookingData.payment_method,
+        sale_type: bookingData.sale_type || null,
+        unit_value: bookingData.unit_value || 0,
+        handover_date: bookingData.handover_date,
+        sales_employee: bookingData.sales_employee,
+        sales_completed: bookingData.sales_completed || false,
+        construction_completion_date: bookingData.construction_completion_date,
+        final_handover_date: bookingData.final_handover_date,
+        electricity_meter_transfer_date: bookingData.electricity_meter_transfer_date,
+        water_meter_transfer_date: bookingData.water_meter_transfer_date,
+        customer_delivery_date: bookingData.customer_delivery_date,
+        project_notes: bookingData.project_notes,
+        projects_completed: bookingData.projects_completed || false,
+        customer_evaluation_done: bookingData.customer_evaluation_done || false,
+        evaluation_percentage: bookingData.evaluation_percentage || 0,
+        customer_service_completed: bookingData.customer_service_completed || false,
         status,
+        created_by: bookingData.created_by,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

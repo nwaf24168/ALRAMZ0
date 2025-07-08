@@ -234,9 +234,8 @@ export default function Delivery() {
     try {
       const XLSX = await import('xlsx');
 
-      // تحضير البيانات للتصدير
+      // تحضير البيانات للتصدير حسب الترتيب المطلوب
       const exportData = bookings.map((booking, index) => ({
-        'ت': index + 1,
         'تاريخ الحجز': booking.booking_date || '',
         'اسم العميل': booking.customer_name || '',
         'رقم العميل': booking.customer_phone || '',
@@ -244,24 +243,16 @@ export default function Delivery() {
         'العمارة': booking.building || '',
         'الوحدة': booking.unit || '',
         'طريقة الدفع': booking.payment_method || '',
-        'نوع البيع': booking.sale_type || '',
+        'بيع على الخارطه / جاهز': booking.sale_type || '',
         'قيمة الوحدة': booking.unit_value || 0,
-        'تاريخ الإفراغ': booking.handover_date || '',
-        'موظف المبيعات': booking.sales_employee || '',
-        'مكتملة - المبيعات': booking.sales_completed ? 'نعم' : 'لا',
-        'تاريخ انتهاء البناء': booking.construction_completion_date || '',
-        'تاريخ الاستلام النهائي': booking.final_handover_date || '',
-        'تاريخ نقل عداد الكهرباء': booking.electricity_meter_transfer_date || '',
-        'تاريخ نقل عداد الماء': booking.water_meter_transfer_date || '',
+        'تاريخ الافراغ': booking.handover_date || '',
+        'هل المشروع جاهز للتسليم ؟': booking.projects_completed ? 'نعم' : 'لا',
+        'اسم موظف المبيعات': booking.sales_employee || '',
+        'جاهزية الافارغ ( نعم او لا)': booking.sales_completed ? 'نعم' : 'لا',
         'تاريخ التسليم للعميل': booking.customer_delivery_date || '',
-        'ملاحظات المشروع': booking.project_notes || '',
-        'مكتملة - المشاريع': booking.projects_completed ? 'نعم' : 'لا',
-        'تم التقييم': booking.customer_evaluation_done ? 'نعم' : 'لا',
-        'نسبة التقييم': booking.evaluation_percentage || 0,
-        'مكتملة - راحة العملاء': booking.customer_service_completed ? 'نعم' : 'لا',
-        'الحالة': getBookingStatus(booking),
-        'تاريخ الإنشاء': booking.created_at ? new Date(booking.created_at).toISOString().split('T')[0] : '',
-        'المنشئ': booking.created_by || ''
+        'ملاحظات': booking.project_notes || '',
+        'هل تم تقييم عملية الاستلام (نعم او لا)': booking.customer_evaluation_done ? 'نعم' : 'لا',
+        'تقيييم عملية الاستلام للوحدة': booking.evaluation_percentage || 0
       }));
 
       // إنشاء ورقة العمل
@@ -333,7 +324,7 @@ export default function Delivery() {
         return;
       }
 
-      // معالجة البيانات
+      // معالجة البيانات حسب الترتيب المطلوب
       let successCount = 0;
       let errorCount = 0;
 
@@ -347,29 +338,77 @@ export default function Delivery() {
         }
 
         try {
+          // تحويل التواريخ بأمان
+          const parseDate = (dateValue: any): string | undefined => {
+            if (!dateValue) return undefined;
+            try {
+              const date = new Date(dateValue);
+              return isNaN(date.getTime()) ? undefined : date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
+
+          // تحويل نوع البيع
+          const convertSaleType = (value: any): string => {
+            if (!value) return '';
+            const strValue = String(value).trim();
+            if (strValue.includes('خارطة') || strValue.includes('خريطة')) {
+              return 'بيع على الخارطة';
+            } else if (strValue.includes('جاهز')) {
+              return 'جاهز';
+            }
+            return '';
+          };
+
+          // تحويل القيم المنطقية
+          const parseBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const strValue = String(value).trim().toLowerCase();
+            return strValue === 'نعم' || strValue === 'yes' || strValue === 'true';
+          };
+
           const bookingData: DeliveryBooking = {
-            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
+            // الأعمدة حسب الترتيب المطلوب:
+            // 0: تاريخ الحجز
+            booking_date: parseDate(row[0]),
+            // 1: اسم العميل
             customer_name: row[1] || '',
+            // 2: رقم العميل
             customer_phone: row[2] || '',
+            // 3: المشروع
             project: row[3] || '',
+            // 4: العمارة
             building: row[4] || '',
+            // 5: الوحدة
             unit: row[5] || '',
+            // 6: طريقة الدفع
             payment_method: row[6] || '',
-            sale_type: row[7] || '',
+            // 7: بيع على الخارطة / جاهز
+            sale_type: convertSaleType(row[7]),
+            // 8: قيمة الوحدة
             unit_value: parseFloat(row[8]) || 0,
-            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
-            projects_completed: row[10] === 'نعم',
+            // 9: تاريخ الإفراغ
+            handover_date: parseDate(row[9]),
+            // 10: هل المشروع جاهز للتسليم؟
+            projects_completed: parseBoolean(row[10]),
+            // 11: اسم موظف المبيعات
             sales_employee: row[11] || user.username,
-            sales_completed: row[12] === 'نعم',
-            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
-            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
-            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
-            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
-            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
-            project_notes: row[18] || '',
-            customer_evaluation_done: row[19] === 'نعم',
-            evaluation_percentage: parseFloat(row[20]) || 0,
-            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
+            // 12: جاهزية الإفراغ (نعم او لا)
+            sales_completed: parseBoolean(row[12]),
+            // 13: تاريخ التسليم للعميل
+            customer_delivery_date: parseDate(row[13]),
+            // 14: ملاحظات
+            project_notes: row[14] || '',
+            // 15: هل تم تقييم عملية الاستلام (نعم او لا)
+            customer_evaluation_done: parseBoolean(row[15]),
+            // 16: تقييم عملية الاستلام للوحدة
+            evaluation_percentage: parseFloat(row[16]) || 0,
+            
+            // تحديد إكمال مرحلة راحة العملاء
+            customer_service_completed: parseBoolean(row[15]) && parseFloat(row[16]) > 0,
+            
+            // بيانات النظام
             created_by: user.username
           };
 
@@ -470,7 +509,7 @@ export default function Delivery() {
         }
       }
 
-      // معالجة البيانات الجديدة
+      // معالجة البيانات الجديدة حسب الترتيب المطلوب
       let successCount = 0;
       let errorCount = 0;
 
@@ -484,29 +523,77 @@ export default function Delivery() {
         }
 
         try {
+          // تحويل التواريخ بأمان
+          const parseDate = (dateValue: any): string | undefined => {
+            if (!dateValue) return undefined;
+            try {
+              const date = new Date(dateValue);
+              return isNaN(date.getTime()) ? undefined : date.toISOString().split('T')[0];
+            } catch {
+              return undefined;
+            }
+          };
+
+          // تحويل نوع البيع
+          const convertSaleType = (value: any): string => {
+            if (!value) return '';
+            const strValue = String(value).trim();
+            if (strValue.includes('خارطة') || strValue.includes('خريطة')) {
+              return 'بيع على الخارطة';
+            } else if (strValue.includes('جاهز')) {
+              return 'جاهز';
+            }
+            return '';
+          };
+
+          // تحويل القيم المنطقية
+          const parseBoolean = (value: any): boolean => {
+            if (!value) return false;
+            const strValue = String(value).trim().toLowerCase();
+            return strValue === 'نعم' || strValue === 'yes' || strValue === 'true';
+          };
+
           const bookingData: DeliveryBooking = {
-            booking_date: row[0] ? new Date(row[0]).toISOString().split('T')[0] : undefined,
+            // الأعمدة حسب الترتيب المطلوب:
+            // 0: تاريخ الحجز
+            booking_date: parseDate(row[0]),
+            // 1: اسم العميل
             customer_name: row[1] || '',
+            // 2: رقم العميل
             customer_phone: row[2] || '',
+            // 3: المشروع
             project: row[3] || '',
+            // 4: العمارة
             building: row[4] || '',
+            // 5: الوحدة
             unit: row[5] || '',
+            // 6: طريقة الدفع
             payment_method: row[6] || '',
-            sale_type: row[7] || '',
+            // 7: بيع على الخارطة / جاهز
+            sale_type: convertSaleType(row[7]),
+            // 8: قيمة الوحدة
             unit_value: parseFloat(row[8]) || 0,
-            handover_date: row[9] ? new Date(row[9]).toISOString().split('T')[0] : undefined,
-            projects_completed: row[10] === 'نعم',
+            // 9: تاريخ الإفراغ
+            handover_date: parseDate(row[9]),
+            // 10: هل المشروع جاهز للتسليم؟
+            projects_completed: parseBoolean(row[10]),
+            // 11: اسم موظف المبيعات
             sales_employee: row[11] || user.username,
-            sales_completed: row[12] === 'نعم',
-            construction_completion_date: row[13] ? new Date(row[13]).toISOString().split('T')[0] : undefined,
-            final_handover_date: row[14] ? new Date(row[14]).toISOString().split('T')[0] : undefined,
-            electricity_meter_transfer_date: row[15] ? new Date(row[15]).toISOString().split('T')[0] : undefined,
-            water_meter_transfer_date: row[16] ? new Date(row[16]).toISOString().split('T')[0] : undefined,
-            customer_delivery_date: row[17] ? new Date(row[17]).toISOString().split('T')[0] : undefined,
-            project_notes: row[18] || '',
-            customer_evaluation_done: row[19] === 'نعم',
-            evaluation_percentage: parseFloat(row[20]) || 0,
-            customer_service_completed: row[19] === 'نعم' && row[20] > 0,
+            // 12: جاهزية الإفراغ (نعم او لا)
+            sales_completed: parseBoolean(row[12]),
+            // 13: تاريخ التسليم للعميل
+            customer_delivery_date: parseDate(row[13]),
+            // 14: ملاحظات
+            project_notes: row[14] || '',
+            // 15: هل تم تقييم عملية الاستلام (نعم او لا)
+            customer_evaluation_done: parseBoolean(row[15]),
+            // 16: تقييم عملية الاستلام للوحدة
+            evaluation_percentage: parseFloat(row[16]) || 0,
+            
+            // تحديد إكمال مرحلة راحة العملاء
+            customer_service_completed: parseBoolean(row[15]) && parseFloat(row[16]) > 0,
+            
+            // بيانات النظام
             created_by: user.username
           };
 
