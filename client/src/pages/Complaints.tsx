@@ -287,11 +287,11 @@ export default function Complaints() {
     };
   }, []);
 
-  // تحديث الوقت الحالي كل دقيقة لحساب المدة بشكل مباشر
+  // تحديث الوقت الحالي كل ساعة لحساب المدة بشكل مباشر
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // تحديث كل دقيقة (60 ثانية)
+    }, 3600000); // تحديث كل ساعة (3600000 ميلي ثانية)
 
     return () => clearInterval(timer);
   }, []);
@@ -572,16 +572,23 @@ export default function Complaints() {
   // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي (مباشرة)
   const calculateComplaintDuration = (createdAt: string, date: string) => {
     try {
-      // استخدام تاريخ الإنشاء إذا كان متوفراً، وإلا استخدام تاريخ الشكوى
-      const startDate = new Date(createdAt || date);
+      // استخدام تاريخ الشكوى الظاهر في الجدول (العمود الثاني)
+      const startDate = new Date(date);
       
       // التحقق من صحة التاريخ
       if (isNaN(startDate.getTime())) {
         return 0;
       }
       
-      // حساب الفرق بالأيام باستخدام الوقت الحالي المحدث
-      const timeDifference = currentTime.getTime() - startDate.getTime();
+      // إنشاء تاريخ اليوم الحالي بدون وقت (فقط التاريخ)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // تعيين وقت البداية إلى بداية اليوم
+      startDate.setHours(0, 0, 0, 0);
+      
+      // حساب الفرق بالأيام
+      const timeDifference = today.getTime() - startDate.getTime();
       const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
       
       return Math.max(0, daysDifference);
