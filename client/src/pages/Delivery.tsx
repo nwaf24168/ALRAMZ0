@@ -172,6 +172,8 @@ export default function Delivery() {
   };
 
   const resetForm = () => {
+    const today = new Date().toISOString().split('T')[0];
+    
     setFormData({
       customer_name: "",
       customer_phone: "",
@@ -181,6 +183,8 @@ export default function Delivery() {
       payment_method: "",
       sale_type: "",
       unit_value: 0,
+      booking_date: today,
+      handover_date: today,
       sales_employee: user?.username || "",
       sales_completed: false,
       projects_completed: false,
