@@ -1,2 +1,1 @@
 Analysis: The code changes focus on refining the data cleaning and preparation process during Excel import, specifically addressing issues with empty or invalid values in the 'sale_type' and 'payment_method' fields. It also updates the data assignment to handle undefined values appropriately and applies these changes to both standard and full Excel import functions.
-```
