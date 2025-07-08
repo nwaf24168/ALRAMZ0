@@ -48,7 +48,7 @@ const Delivery = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [currentUser] = useState('مستخدم النظام');
 
-  const { addNotification } = useNotification();
+  const { showNotification } = useNotification();
 
   // نموذج الحجز الجديد
   const [newBooking, setNewBooking] = useState({
@@ -72,11 +72,7 @@ const Delivery = () => {
       setBookings(data);
     } catch (error) {
       console.error('خطأ في تحميل حجوزات التسليم:', error);
-      addNotification({
-        title: 'خطأ في تحميل البيانات',
-        message: 'حدث خطأ أثناء تحميل البيانات',
-        type: 'error'
-      });
+      showNotification('خطأ في تحميل البيانات', 'error');
     } finally {
       setLoading(false);
     }
@@ -123,18 +119,10 @@ const Delivery = () => {
         notes: ''
       });
 
-      addNotification({
-        title: 'تم إنشاء الحجز بنجاح',
-        message: 'تم إنشاء الحجز الجديد بنجاح',
-        type: 'success'
-      });
+      showNotification('تم إنشاء الحجز بنجاح', 'success');
     } catch (error) {
       console.error('خطأ في إنشاء حجز التسليم:', error);
-      addNotification({
-        title: 'خطأ في إنشاء الحجز',
-        message: 'حدث خطأ أثناء إنشاء الحجز',
-        type: 'error'
-      });
+      showNotification('خطأ في إنشاء الحجز', 'error');
     } finally {
       setLoading(false);
     }
@@ -165,18 +153,10 @@ const Delivery = () => {
 
       await loadBookings();
       setEditingBooking(null);
-      addNotification({
-        title: 'تم تحديث الحجز بنجاح',
-        message: 'تم تحديث الحجز بنجاح',
-        type: 'success'
-      });
+      showNotification('تم تحديث الحجز بنجاح', 'success');
     } catch (error) {
       console.error('خطأ في تحديث الحجز:', error);
-      addNotification({
-        title: 'خطأ في تحديث الحجز',
-        message: 'حدث خطأ أثناء تحديث الحجز',
-        type: 'error'
-      });
+      showNotification('خطأ في تحديث الحجز', 'error');
     } finally {
       setLoading(false);
     }
@@ -190,18 +170,10 @@ const Delivery = () => {
       setLoading(true);
       await DataService.deleteDeliveryBooking(id);
       await loadBookings();
-      addNotification({
-        title: 'تم حذف الحجز بنجاح',
-        message: 'تم حذف الحجز بنجاح',
-        type: 'success'
-      });
+      showNotification('تم حذف الحجز بنجاح', 'success');
     } catch (error) {
       console.error('خطأ في حذف الحجز:', error);
-      addNotification({
-        title: 'خطأ في حذف الحجز',
-        message: 'حدث خطأ أثناء حذف الحجز',
-        type: 'error'
-      });
+      showNotification('خطأ في حذف الحجز', 'error');
     } finally {
       setLoading(false);
     }
@@ -223,11 +195,7 @@ const Delivery = () => {
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
       if (jsonData.length < 2) {
-        addNotification({
-          title: 'الملف فارغ أو لا يحتوي على بيانات كافية',
-          message: 'يرجى التأكد من وجود بيانات في الملف',
-          type: 'error'
-        });
+        showNotification('الملف فارغ أو لا يحتوي على بيانات كافية', 'error');
         return;
       }
 
@@ -376,19 +344,14 @@ const Delivery = () => {
       await loadBookings();
       setImportProgress(100);
 
-      addNotification({
-        title: `تم رفع ${successCount} حجز بنجاح${errorCount > 0 ? ` (${errorCount} خطأ)` : ''}`,
-        message: `تم معالجة ${successCount + errorCount} سجل`,
-        type: successCount > 0 ? 'success' : 'error'
-      });
+      showNotification(
+        `تم رفع ${successCount} حجز بنجاح${errorCount > 0 ? ` (${errorCount} خطأ)` : ''}`,
+        successCount > 0 ? 'success' : 'error'
+      );
 
     } catch (error) {
       console.error('خطأ في رفع الملف:', error);
-      addNotification({
-        title: 'خطأ في رفع الملف',
-        message: 'حدث خطأ أثناء رفع الملف',
-        type: 'error'
-      });
+      showNotification('خطأ في رفع الملف', 'error');
     } finally {
       setIsImporting(false);
       setImportProgress(0);
@@ -421,18 +384,10 @@ const Delivery = () => {
       XLSX.utils.book_append_sheet(wb, ws, 'حجوزات التسليم');
       XLSX.writeFile(wb, `حجوزات_التسليم_${new Date().toLocaleDateString('ar-SA')}.xlsx`);
 
-      addNotification({
-        title: 'تم تصدير البيانات بنجاح',
-        message: 'تم تصدير البيانات إلى ملف Excel',
-        type: 'success'
-      });
+      showNotification('تم تصدير البيانات بنجاح', 'success');
     } catch (error) {
       console.error('خطأ في تصدير البيانات:', error);
-      addNotification({
-        title: 'خطأ في تصدير البيانات',
-        message: 'حدث خطأ أثناء تصدير البيانات',
-        type: 'error'
-      });
+      showNotification('خطأ في تصدير البيانات', 'error');
     }
   };
 
@@ -921,5 +876,7 @@ const Delivery = () => {
     </Layout>
   );
 };
+
+export default Delivery;
 
 export default Delivery;
