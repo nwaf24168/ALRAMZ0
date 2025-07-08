@@ -430,6 +430,7 @@ export default function Complaints() {
     // تتبع التغييرات في كل الحقول
     const fieldsToCheck = {
       priority: "الأولوية",
+      date: "التاريخ",
       customerName: "اسم العميل",
       project: "المشروع",
       unitNumber: "رقم الوحدة",
@@ -569,14 +570,16 @@ export default function Complaints() {
     return fieldNames[field] || field;
   };
 
-  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي (مباشرة)
+  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي
   const calculateComplaintDuration = (createdAt: string, date: string) => {
     try {
-      // استخدام تاريخ الشكوى الظاهر في الجدول (العمود الثاني)
-      const startDate = new Date(date);
+      // استخدام تاريخ الإنشاء أولاً، ثم التاريخ المعروض كبديل
+      const dateToUse = createdAt || date;
+      const startDate = new Date(dateToUse);
       
       // التحقق من صحة التاريخ
       if (isNaN(startDate.getTime())) {
+        console.warn("تاريخ غير صحيح:", dateToUse);
         return 0;
       }
       
