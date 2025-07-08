@@ -173,7 +173,7 @@ export default function Delivery() {
 
   const resetForm = () => {
     const today = new Date().toISOString().split('T')[0];
-    
+
     setFormData({
       customer_name: "",
       customer_phone: "",
@@ -356,17 +356,16 @@ export default function Delivery() {
 
           // تحويل نوع البيع
           const convertSaleType = (value: any): string => {
-            if (!value) return '';
+            if (!value) return null; // إرجاع null بدلاً من string فارغ
             const strValue = String(value).trim();
             if (strValue.includes('خارطة') || strValue.includes('خريطة')) {
               return 'بيع على الخارطة';
             } else if (strValue.includes('جاهز')) {
               return 'جاهز';
             }
-            return '';
+            return null; // إرجاع null للقيم غير المتطابقة
           };
 
-          // تحويل القيم المنطقية
           const parseBoolean = (value: any): boolean => {
             if (!value) return false;
             const strValue = String(value).trim().toLowerCase();
@@ -374,7 +373,7 @@ export default function Delivery() {
           };
 
           const bookingData: DeliveryBooking = {
-            // الأعمدة حسب الترتيب المطلوب:
+            // الأعمدة حسب الترتيب المطلوب بالضبط:
             // 0: تاريخ الحجز
             booking_date: parseDate(row[0]),
             // 1: اسم العميل
@@ -401,18 +400,26 @@ export default function Delivery() {
             sales_employee: row[11] || user.username,
             // 12: جاهزية الإفراغ (نعم او لا)
             sales_completed: parseBoolean(row[12]),
-            // 13: تاريخ التسليم للعميل
-            customer_delivery_date: parseDate(row[13]),
-            // 14: ملاحظات
-            project_notes: row[14] || '',
-            // 15: هل تم تقييم عملية الاستلام (نعم او لا)
-            customer_evaluation_done: parseBoolean(row[15]),
-            // 16: تقييم عملية الاستلام للوحدة
-            evaluation_percentage: parseFloat(row[16]) || 0,
-            
+            // 13: تاريخ انتهاء اعمال البناء للوحدة من قبل المقاول
+            construction_completion_date: parseDate(row[13]),
+            // 14: تاريخ الاستلام النهائي للوحدة
+            final_handover_date: parseDate(row[14]),
+            // 15: تاريخ نقل عدادا الكهرباء
+            electricity_meter_transfer_date: parseDate(row[15]),
+            // 16: تاريخ نقل عدادا الماء
+            water_meter_transfer_date: parseDate(row[16]),
+            // 17: تاريخ التسليم للعميل
+            customer_delivery_date: parseDate(row[17]),
+            // 18: ملاحظات
+            project_notes: row[18] || '',
+            // 19: هل تم تقييم عملية الاستلام (نعم او لا)
+            customer_evaluation_done: parseBoolean(row[19]),
+            // 20: تقييم عملية الاستلام للوحدة
+            evaluation_percentage: parseFloat(row[20]) || 0,
+
             // تحديد إكمال مرحلة راحة العملاء
-            customer_service_completed: parseBoolean(row[15]) && parseFloat(row[16]) > 0,
-            
+            customer_service_completed: parseBoolean(row[19]) && parseFloat(row[20]) > 0,
+
             // بيانات النظام
             created_by: user.username
           };
@@ -541,17 +548,16 @@ export default function Delivery() {
 
           // تحويل نوع البيع
           const convertSaleType = (value: any): string => {
-            if (!value) return '';
+            if (!value) return null; // إرجاع null بدلاً من string فارغ
             const strValue = String(value).trim();
             if (strValue.includes('خارطة') || strValue.includes('خريطة')) {
               return 'بيع على الخارطة';
             } else if (strValue.includes('جاهز')) {
               return 'جاهز';
             }
-            return '';
+            return null; // إرجاع null للقيم غير المتطابقة
           };
 
-          // تحويل القيم المنطقية
           const parseBoolean = (value: any): boolean => {
             if (!value) return false;
             const strValue = String(value).trim().toLowerCase();
@@ -559,7 +565,7 @@ export default function Delivery() {
           };
 
           const bookingData: DeliveryBooking = {
-            // الأعمدة حسب الترتيب المطلوب:
+            // الأعمدة حسب الترتيب المطلوب بالضبط:
             // 0: تاريخ الحجز
             booking_date: parseDate(row[0]),
             // 1: اسم العميل
@@ -586,18 +592,26 @@ export default function Delivery() {
             sales_employee: row[11] || user.username,
             // 12: جاهزية الإفراغ (نعم او لا)
             sales_completed: parseBoolean(row[12]),
-            // 13: تاريخ التسليم للعميل
-            customer_delivery_date: parseDate(row[13]),
-            // 14: ملاحظات
-            project_notes: row[14] || '',
-            // 15: هل تم تقييم عملية الاستلام (نعم او لا)
-            customer_evaluation_done: parseBoolean(row[15]),
-            // 16: تقييم عملية الاستلام للوحدة
-            evaluation_percentage: parseFloat(row[16]) || 0,
-            
+            // 13: تاريخ انتهاء اعمال البناء للوحدة من قبل المقاول
+            construction_completion_date: parseDate(row[13]),
+            // 14: تاريخ الاستلام النهائي للوحدة
+            final_handover_date: parseDate(row[14]),
+            // 15: تاريخ نقل عدادا الكهرباء
+            electricity_meter_transfer_date: parseDate(row[15]),
+            // 16: تاريخ نقل عدادا الماء
+            water_meter_transfer_date: parseDate(row[16]),
+            // 17: تاريخ التسليم للعميل
+            customer_delivery_date: parseDate(row[17]),
+            // 18: ملاحظات
+            project_notes: row[18] || '',
+            // 19: هل تم تقييم عملية الاستلام (نعم او لا)
+            customer_evaluation_done: parseBoolean(row[19]),
+            // 20: تقييم عملية الاستلام للوحدة
+            evaluation_percentage: parseFloat(row[20]) || 0,
+
             // تحديد إكمال مرحلة راحة العملاء
-            customer_service_completed: parseBoolean(row[15]) && parseFloat(row[16]) > 0,
-            
+            customer_service_completed: parseBoolean(row[19]) && parseFloat(row[20]) > 0,
+
             // بيانات النظام
             created_by: user.username
           };
@@ -875,6 +889,7 @@ export default function Delivery() {
                 </div>
                 <Calendar className="h-8 w-8 text-orange-600" />
               </div>
+            ```text
             </CardContent>
           </Card>
 
