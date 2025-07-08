@@ -430,7 +430,6 @@ export default function Complaints() {
     // تتبع التغييرات في كل الحقول
     const fieldsToCheck = {
       priority: "الأولوية",
-      date: "التاريخ",
       customerName: "اسم العميل",
       project: "المشروع",
       unitNumber: "رقم الوحدة",
@@ -440,6 +439,7 @@ export default function Complaints() {
       maintenanceDeliveryAction: "إجراء الصيانة والتسليم",
       action: "الإجراء المتخذ",
       expectedClosureTime: "الوقت المتوقع لإغلاق الشكوى",
+      createdAt: "تاريخ الإنشاء",
     };
 
     Object.entries(fieldsToCheck).forEach(([field, label]) => {
@@ -470,6 +470,7 @@ export default function Complaints() {
       const updatedComplaint = {
         ...selectedComplaint,
         ...newComplaint,
+        createdAt: selectedComplaint.createdAt, // التأكد من تضمين تاريخ الإنشاء المحدث
         updatedBy: user.username,
         updatedAt: now,
         updates: newUpdates, // إرسال التحديثات الجديدة فقط
@@ -570,16 +571,14 @@ export default function Complaints() {
     return fieldNames[field] || field;
   };
 
-  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي
+  // دالة لحساب مدة الشكوى من تاريخ الإنشاء إلى اليوم الحالي (مباشرة)
   const calculateComplaintDuration = (createdAt: string, date: string) => {
     try {
-      // استخدام تاريخ الإنشاء أولاً، ثم التاريخ المعروض كبديل
-      const dateToUse = createdAt || date;
-      const startDate = new Date(dateToUse);
+      // استخدام تاريخ الشكوى الظاهر في الجدول (العمود الثاني)
+      const startDate = new Date(date);
       
       // التحقق من صحة التاريخ
       if (isNaN(startDate.getTime())) {
-        console.warn("تاريخ غير صحيح:", dateToUse);
         return 0;
       }
       
@@ -1333,6 +1332,24 @@ export default function Complaints() {
                   handleNewComplaintChange("date", e.target.value)
                 }
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-createdAt">تاريخ الإنشاء الفعلي</Label>
+              <Input
+                id="edit-createdAt"
+                type="date"
+                value={selectedComplaint?.createdAt ? selectedComplaint.createdAt.split('T')[0] : ''}
+                onChange={(e) => {
+                  if (selectedComplaint) {
+                    const newCreatedAt = e.target.value + 'T00:00:00.000Z';
+                    setSelectedComplaint({
+                      ...selectedComplaint,
+                      createdAt: newCreatedAt
+                    });
+                  }
+                }}
               />
             </div>
 
