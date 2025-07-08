@@ -430,6 +430,7 @@ export default function Complaints() {
     // تتبع التغييرات في كل الحقول
     const fieldsToCheck = {
       priority: "الأولوية",
+      date: "التاريخ",
       customerName: "اسم العميل",
       project: "المشروع",
       unitNumber: "رقم الوحدة",
@@ -439,17 +440,27 @@ export default function Complaints() {
       maintenanceDeliveryAction: "إجراء الصيانة والتسليم",
       action: "الإجراء المتخذ",
       expectedClosureTime: "الوقت المتوقع لإغلاق الشكوى",
-      createdAt: "تاريخ الإنشاء",
     };
 
     Object.entries(fieldsToCheck).forEach(([field, label]) => {
       const oldValue = (selectedComplaint as any)[field];
       const newValue = (newComplaint as any)[field];
-      if (oldValue !== newValue) {
+
+      // معالجة خاصة للتاريخ المحدث من selectedComplaint
+      let actualNewValue = newValue;
+      if (field === 'date' && selectedComplaint.createdAt) {
+        // استخدام التاريخ المحدث من selectedComplaint إذا كان متوفراً
+        const updatedCreatedAt = selectedComplaint.createdAt.split('T')[0];
+        if (updatedCreatedAt !== newValue) {
+          actualNewValue = updatedCreatedAt;
+        }
+      }
+
+      if (oldValue !== actualNewValue) {
         newUpdates.push({
           field,
           oldValue: oldValue || "",
-          newValue: newValue || "",
+          newValue: actualNewValue || "",
           updatedBy: user.username,
           updatedAt: now,
         });
@@ -576,23 +587,23 @@ export default function Complaints() {
     try {
       // استخدام تاريخ الشكوى الظاهر في الجدول (العمود الثاني)
       const startDate = new Date(date);
-      
+
       // التحقق من صحة التاريخ
       if (isNaN(startDate.getTime())) {
         return 0;
       }
-      
+
       // إنشاء تاريخ اليوم الحالي بدون وقت (فقط التاريخ)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // تعيين وقت البداية إلى بداية اليوم
       startDate.setHours(0, 0, 0, 0);
-      
+
       // حساب الفرق بالأيام
       const timeDifference = today.getTime() - startDate.getTime();
       const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
-      
+
       return Math.max(0, daysDifference);
     } catch (error) {
       console.error("خطأ في حساب مدة الشكوى:", error);
@@ -747,7 +758,7 @@ export default function Complaints() {
           // معالجة التاريخ
           let dateValue = row[2]; // عمود التاريخ
           let formattedDate = new Date().toISOString().split('T')[0];
-          
+
           if (dateValue) {
             if (typeof dateValue === 'number') {
               // Excel date serial number
@@ -963,7 +974,7 @@ export default function Complaints() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedClosureTime">الوقت المتوقع لإغلاق الشكوى</Label>
+<Label htmlFor="expectedClosureTime">الوقت المتوقع لإغلاق الشكوى</Label>
                   <Input
                     id="expectedClosureTime"
                     value={newComplaint.expectedClosureTime}
