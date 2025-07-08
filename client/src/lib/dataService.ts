@@ -843,22 +843,26 @@ export class DataService {
   }
 
   // إدارة سجلات الاستقبال
-  static async saveReceptionRecord(record: any): Promise<void> {
-    const { error } = await supabase
+  static async saveReceptionRecord(record: any): Promise<any> {
+    const recordData = {
+      date: record.date,
+      customer_name: record.customerName,
+      phone_number: record.phoneNumber,
+      project: record.project,
+      employee: record.employee,
+      contact_method: record.contactMethod,
+      type: record.type,
+      customer_request: record.customerRequest,
+      action: record.action,
+      status: record.status || 'جديد',
+      created_by: record.createdBy,
+    };
+
+    const { data, error } = await supabase
       .from("reception_records")
-      .insert({
-        date: record.date,
-        customer_name: record.customerName,
-        phone_number: record.phoneNumber,
-        project: record.project,
-        employee: record.employee,
-        contact_method: record.contactMethod,
-        type: record.type,
-        customer_request: record.customerRequest,
-        action: record.action,
-        status: record.status || 'جديد',
-        created_by: record.createdBy,
-      });
+      .insert(recordData)
+      .select()
+      .single();
 
     if (error) {
       console.error("خطأ Supabase في حفظ سجل الاستقبال:", error);
@@ -866,6 +870,39 @@ export class DataService {
         `خطأ في حفظ سجل الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
       );
     }
+
+    return data;
+  }
+
+  // دالة لحفظ عدة سجلات استقبال دفعة واحدة (تحسين الأداء)
+  static async saveReceptionRecordsBatch(records: any[]): Promise<any[]> {
+    const recordsData = records.map(record => ({
+      date: record.date,
+      customer_name: record.customerName,
+      phone_number: record.phoneNumber,
+      project: record.project,
+      employee: record.employee,
+      contact_method: record.contactMethod,
+      type: record.type,
+      customer_request: record.customerRequest,
+      action: record.action,
+      status: record.status || 'جديد',
+      created_by: record.createdBy,
+    }));
+
+    const { data, error } = await supabase
+      .from("reception_records")
+      .insert(recordsData)
+      .select();
+
+    if (error) {
+      console.error("خطأ Supabase في حفظ سجلات الاستقبال بالدفعة:", error);
+      throw new Error(
+        `خطأ في حفظ سجلات الاستقبال: ${error.message || error.details || "خطأ غير معروف"}`,
+      );
+    }
+
+    return data || [];
   }
 
   static async getReceptionRecords(): Promise<any[]> {

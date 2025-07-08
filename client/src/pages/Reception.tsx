@@ -185,7 +185,7 @@ export default function Reception() {
     }
   };
 
-  
+
 
   // معالجة رفع ملف Excel
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,87 +235,129 @@ export default function Reception() {
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1) as any[][];
 
-      // الأعمدة المتوقعة بنفس ترتيب النموذج والتصدير
-      const expectedHeaders = [
-        'التاريخ', 'اسم العميل', 'رقم الجوال', 'المشروع', 'الموظف المختص', 
-        'طريقة التواصل', 'نوع الطلب', 'طلب العميل', 'الإجراء المتخذ', 'الحالة'
-      ];
+      // تحديد حجم الدفعة
+      const batchSize = 500;
+      const totalRows = rows.length;
+
+      // تقسيم الصفوف إلى دفعات
+      const batches = [];
+      for (let i = 0; i < totalRows; i += batchSize) {
+        batches.push(rows.slice(i, i + batchSize));
+      }
 
       let successCount = 0;
       let errorCount = 0;
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+      // معالجة كل دفعة
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+          const batch = batches[batchIndex];
+          const startIndex = batchIndex * batchSize;
 
-        try {
-          // معالجة التاريخ بعناية أكبر
-          let dateValue = row[0];
-          let formattedDate = new Date().toISOString().split('T')[0];
-          
-          if (dateValue) {
-            // إذا كان التاريخ من Excel
-            if (typeof dateValue === 'number') {
-              // Excel date serial number
-              const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
-              formattedDate = excelDate.toISOString().split('T')[0];
-            } else if (typeof dateValue === 'string') {
-              // نص التاريخ
-              const parsedDate = new Date(dateValue);
-              if (!isNaN(parsedDate.getTime())) {
-                formattedDate = parsedDate.toISOString().split('T')[0];
+          // إظهار تقدم المعالجة
+          toast({
+            title: "جاري المعالجة",
+            description: `معالجة الدفعة ${batchIndex + 1} من ${batches.length} (السجلات ${startIndex + 1}-${Math.min(startIndex + batchSize, totalRows)})`,
+          });
+
+          const batchRecords = [];
+
+          for (let i = 0; i < batch.length; i++) {
+            const row = batch[i];
+            const globalIndex = startIndex + i;
+
+            try {
+              // معالجة التاريخ بعناية أكبر
+              let dateValue = row[0];
+              let formattedDate = new Date().toISOString().split('T')[0];
+
+              if (dateValue) {
+                // إذا كان التاريخ من Excel
+                if (typeof dateValue === 'number') {
+                  // Excel date serial number
+                  const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+                  formattedDate = excelDate.toISOString().split('T')[0];
+                } else if (typeof dateValue === 'string') {
+                  // نص التاريخ
+                  const parsedDate = new Date(dateValue);
+                  if (!isNaN(parsedDate.getTime())) {
+                    formattedDate = parsedDate.toISOString().split('T')[0];
+                  }
+                } else if (dateValue instanceof Date) {
+                  // كائن التاريخ
+                  formattedDate = dateValue.toISOString().split('T')[0];
+                }
               }
-            } else if (dateValue instanceof Date) {
-              // كائن التاريخ
-              formattedDate = dateValue.toISOString().split('T')[0];
+
+              // تطابق الأعمدة مع التصدير والنموذج بالضبط
+              const recordData = {
+                date: formattedDate,                                    // 0: التاريخ
+                customerName: String(row[1] || '').trim(),             // 1: اسم العميل
+                phoneNumber: String(row[2] || '').trim(),              // 2: رقم الجوال
+                project: String(row[3] || '').trim(),                  // 3: المشروع
+                employee: String(row[4] || user.username).trim(),      // 4: الموظف المختص
+                contactMethod: String(row[5] || 'اتصال هاتفي').trim(), // 5: طريقة التواصل
+                type: String(row[6] || 'استفسار').trim(),              // 6: نوع الطلب
+                customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
+                action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
+                status: String(row[9] || 'جديد').trim(),               // 9: الحالة
+                createdBy: user.username,
+              };
+
+              // التحقق من البيانات الأساسية
+              if (!recordData.customerName || !recordData.phoneNumber) {
+                console.warn(`تخطي السطر ${globalIndex + 1}: بيانات ناقصة`);
+                errorCount++;
+                continue;
+              }
+
+              // التحقق من صحة طريقة التواصل
+              if (!contactMethods.includes(recordData.contactMethod)) {
+                recordData.contactMethod = 'اتصال هاتفي';
+              }
+
+              // التحقق من صحة نوع الطلب
+              if (!types.includes(recordData.type)) {
+                recordData.type = 'استفسار';
+              }
+
+              // التحقق من صحة الحالة
+              if (!statuses.includes(recordData.status)) {
+                recordData.status = 'جديد';
+              }
+
+              batchRecords.push(recordData);
+
+            } catch (error) {
+              console.error(`خطأ في معالجة السطر ${globalIndex + 1}:`, error);
+              errorCount++;
             }
           }
 
-          // تطابق الأعمدة مع التصدير والنموذج بالضبط
-          const recordData = {
-            date: formattedDate,                                    // 0: التاريخ
-            customerName: String(row[1] || '').trim(),             // 1: اسم العميل
-            phoneNumber: String(row[2] || '').trim(),              // 2: رقم الجوال
-            project: String(row[3] || '').trim(),                  // 3: المشروع
-            employee: String(row[4] || user.username).trim(),      // 4: الموظف المختص
-            contactMethod: String(row[5] || 'اتصال هاتفي').trim(), // 5: طريقة التواصل
-            type: String(row[6] || 'استفسار').trim(),              // 6: نوع الطلب
-            customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
-            action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
-            status: String(row[9] || 'جديد').trim(),               // 9: الحالة
-            createdBy: user.username,
-          };
-
-          // التحقق من البيانات الأساسية
-          if (!recordData.customerName || !recordData.phoneNumber) {
-            console.warn(`تخطي السطر ${i + 1}: بيانات ناقصة`);
-            errorCount++;
-            continue;
+          // حفظ الدفعة كاملة في قاعدة البيانات
+          if (batchRecords.length > 0) {
+            try {
+              await DataService.saveReceptionRecordsBatch(batchRecords);
+              successCount += batchRecords.length;
+            } catch (error) {
+              console.error(`خطأ في حفظ الدفعة ${batchIndex + 1}:`, error);
+              // محاولة حفظ السجلات واحداً تلو الآخر في حالة فشل الدفعة
+              for (const record of batchRecords) {
+                try {
+                  await DataService.saveReceptionRecord(record);
+                  successCount++;
+                } catch (recordError) {
+                  console.error(`خطأ في حفظ سجل فردي:`, recordError);
+                  errorCount++;
+                }
+              }
+            }
           }
 
-          // التحقق من صحة طريقة التواصل
-          if (!contactMethods.includes(recordData.contactMethod)) {
-            recordData.contactMethod = 'اتصال هاتفي';
+          // إضافة تأخير قصير بين الدفعات لتجنب إرهاق الخادم
+          if (batchIndex < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200));
           }
-
-          // التحقق من صحة نوع الطلب
-          if (!types.includes(recordData.type)) {
-            recordData.type = 'استفسار';
-          }
-
-          // التحقق من صحة الحالة
-          if (!statuses.includes(recordData.status)) {
-            recordData.status = 'جديد';
-          }
-
-          // حفظ السجل في قاعدة البيانات
-          await DataService.saveReceptionRecord(recordData);
-          successCount++;
-
-        } catch (error) {
-          console.error(`خطأ في معالجة السطر ${i + 1}:`, error);
-          errorCount++;
         }
-      }
 
       // تحديث قائمة السجلات
       await loadReceptionRecords();
@@ -340,7 +382,7 @@ export default function Reception() {
     }
   };
 
-  
+
 
   const filteredRecords = records.filter(record =>
     record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -713,7 +755,7 @@ export default function Reception() {
                   <CheckCircle className="ml-2 h-4 w-4" />
                   {selectAll ? "إلغاء تحديد الكل" : "تحديد الكل"}
                 </Button>
-                
+
                 {selectedItems.size > 0 && (
                   <Button 
                     variant="destructive"
@@ -917,8 +959,7 @@ export default function Reception() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>سجلات الاستقبال</CardTitle>
+            <div className="flex items-center justify-between"><CardTitle>سجلات الاستقبال</CardTitle>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
