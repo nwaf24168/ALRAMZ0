@@ -272,24 +272,36 @@ const Delivery = () => {
                 case 'sale_type':
                 case 'saletype':
                   const saleTypeValue = cellValue.toString().trim();
-                  // التحقق من القيم المسموحة
-                  if (['بيع', 'إيجار', 'رهن'].includes(saleTypeValue)) {
-                    bookingData.sale_type = saleTypeValue;
-                  } else {
-                    // استخدام قيمة افتراضية إذا كانت القيمة غير صحيحة
+                  // تطبيع القيم المختلفة
+                  if (saleTypeValue.includes('بيع') || saleTypeValue.includes('البيع') || saleTypeValue.toLowerCase().includes('sale')) {
                     bookingData.sale_type = 'بيع';
+                  } else if (saleTypeValue.includes('إيجار') || saleTypeValue.includes('ايجار') || saleTypeValue.toLowerCase().includes('rent')) {
+                    bookingData.sale_type = 'إيجار';
+                  } else if (saleTypeValue.includes('رهن') || saleTypeValue.toLowerCase().includes('mortgage')) {
+                    bookingData.sale_type = 'رهن';
+                  } else {
+                    // استخدام قيمة افتراضية
+                    bookingData.sale_type = 'بيع';
+                    console.warn(`قيمة نوع البيع غير معروفة: ${saleTypeValue}, استخدام القيمة الافتراضية: بيع`);
                   }
                   break;
                 case 'طريقة الدفع':
                 case 'payment_method':
                 case 'paymentmethod':
                   const paymentMethodValue = cellValue.toString().trim();
-                  // التحقق من القيم المسموحة
-                  if (['نقدي', 'بنكي', 'تقسيط', 'شيك'].includes(paymentMethodValue)) {
-                    bookingData.payment_method = paymentMethodValue;
-                  } else {
-                    // استخدام قيمة افتراضية إذا كانت القيمة غير صحيحة
+                  // تطبيع القيم المختلفة
+                  if (paymentMethodValue.includes('نقد') || paymentMethodValue.includes('كاش') || paymentMethodValue.toLowerCase().includes('cash')) {
                     bookingData.payment_method = 'نقدي';
+                  } else if (paymentMethodValue.includes('بنك') || paymentMethodValue.includes('تحويل') || paymentMethodValue.toLowerCase().includes('bank')) {
+                    bookingData.payment_method = 'بنكي';
+                  } else if (paymentMethodValue.includes('تقسيط') || paymentMethodValue.includes('اقساط') || paymentMethodValue.toLowerCase().includes('installment')) {
+                    bookingData.payment_method = 'تقسيط';
+                  } else if (paymentMethodValue.includes('شيك') || paymentMethodValue.toLowerCase().includes('cheque')) {
+                    bookingData.payment_method = 'شيك';
+                  } else {
+                    // استخدام قيمة افتراضية
+                    bookingData.payment_method = 'نقدي';
+                    console.warn(`قيمة طريقة الدفع غير معروفة: ${paymentMethodValue}, استخدام القيمة الافتراضية: نقدي`);
                   }
                   break;
                 case 'ملاحظات':
@@ -386,8 +398,8 @@ const Delivery = () => {
       booking.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.unit.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !statusFilter || booking.status === statusFilter;
-    const matchesProject = !projectFilter || booking.project === projectFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || booking.status === statusFilter;
+    const matchesProject = !projectFilter || projectFilter === 'all' || booking.project === projectFilter;
     
     return matchesSearch && matchesStatus && matchesProject;
   });
@@ -629,7 +641,7 @@ const Delivery = () => {
                   <SelectValue placeholder="تصفية حسب الحالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الحالات</SelectItem>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
                   {uniqueStatuses.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -640,7 +652,7 @@ const Delivery = () => {
                   <SelectValue placeholder="تصفية حسب المشروع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع المشاريع</SelectItem>
+                  <SelectItem value="all">جميع المشاريع</SelectItem>
                   {uniqueProjects.map(project => (
                     <SelectItem key={project} value={project}>{project}</SelectItem>
                   ))}
@@ -864,5 +876,7 @@ const Delivery = () => {
     </Layout>
   );
 };
+
+export default Delivery;
 
 export default Delivery;
