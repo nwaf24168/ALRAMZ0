@@ -872,7 +872,7 @@ export class DataService {
       type: record.type,
       customer_request: record.customerRequest,
       action: record.action,
-      status: record.status || 'قائمة',
+      status: record.status || 'جديد',
       created_by: record.createdBy,
       creator_name: record.creatorName,
     };
@@ -910,7 +910,7 @@ export class DataService {
         type: record.type,
         customer_request: record.customerRequest,
         action: record.action,
-        status: record.status || 'قائمة',
+        status: record.status || 'جديد',
         created_by: record.createdBy,
         creator_name: record.creatorName,
       }));
@@ -946,7 +946,7 @@ export class DataService {
           type: record.type,
           customer_request: record.customerRequest,
           action: record.action,
-          status: record.status || 'قائمة',
+          status: record.status || 'جديد',
           created_by: record.createdBy,
           creator_name: record.creatorName,
         }));
@@ -994,29 +994,22 @@ export class DataService {
   }
 
   static async updateReceptionRecord(id: string, recordData: any): Promise<void> {
-    const updateData: any = {
-      date: recordData.date,
-      customer_name: recordData.customerName,
-      phone_number: recordData.phoneNumber,
-      project: recordData.project,
-      employee: recordData.employee,
-      contact_method: recordData.contactMethod,
-      type: recordData.type,
-      customer_request: recordData.customerRequest,
-      action: recordData.action,
-      status: recordData.status,
-      updated_by: recordData.updatedBy,
-      updated_at: new Date().toISOString()
-    };
-
-    // إضافة creator_name فقط إذا كان موجوداً في البيانات
-    if (recordData.creatorName) {
-      updateData.creator_name = recordData.creatorName;
-    }
-
     const { error } = await supabase
       .from("reception_records")
-      .update(updateData)
+      .update({
+        date: recordData.date,
+        customer_name: recordData.customerName,
+        phone_number: recordData.phoneNumber,
+        project: recordData.project,
+        employee: recordData.employee,
+        contact_method: recordData.contactMethod,
+        type: recordData.type,
+        customer_request: recordData.customerRequest,
+        action: recordData.action,
+        status: recordData.status,
+        updated_by: recordData.updatedBy,
+        creator_name: recordData.creatorName,
+      })
       .eq("id", id);
 
     if (error) {
@@ -1865,7 +1858,8 @@ export class DataService {
         .from('csat_whatsapp')
         .select('*')
         .eq('period', period)
-        .order('created_at', { ascending: false })        .limit(limit);
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (error) {
         console.error('خطأ Supabase في جلب تاريخ CSAT:', error);
