@@ -54,7 +54,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 interface ReceptionRecord {
@@ -76,20 +76,8 @@ const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "�
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة", "اهتمام"];
 const statuses = [
   "جديد",
-  "قيد المراجعة", 
-  "قيد المعالجة",
-  "في انتظار الرد",
-  "تم التواصل",
-  "تم الحل جزئياً",
-  "مكتمل",
-  "مؤجل",
-  "مرفوض",
-  "ملغي",
-  "تم التحويل للشكاوى",
-  "تم التحويل للصيانة",
-  "تم التحويل للمبيعات",
-  "يتطلب متابعة",
-  "مغلق"
+  "قيد المعالجة", 
+  "مكتمل"
 ];
 
 export default function Reception() {
@@ -653,71 +641,7 @@ export default function Reception() {
     setIsDetailsDialogOpen(true);
   };
 
-  const handleConvertToComplaint = async (record: ReceptionRecord) => {
-    if (!user?.username) {
-      toast({
-        title: "خطأ",
-        description: "يجب تسجيل الدخول أولاً",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    try {
-      setLoading(true);
-
-      // تحويل سجل الاستقبال إلى شكوى
-      const generateComplaintId = () => {
-        return Math.floor(1000 + Math.random() * 9000).toString();
-      };
-
-      const complaintData = {
-        id: generateComplaintId(),
-        date: record.date,
-        customerName: record.customerName,
-        project: record.project,
-        unitNumber: record.phoneNumber, // نستخدم رقم الهاتف كرقم الوحدة أو يمكن تركه فارغ
-        source: "الاستقبال",
-        status: "جديدة",
-        description: `تم تحويل الطلب من الاستقبال - نوع الطلب: ${record.type}\nطلب العميل: ${record.customerRequest}`,
-        action: record.action || "",
-        duration: 0,
-        createdBy: user.username,
-        createdAt: new Date().toISOString(),
-        updatedBy: null,
-        updatedAt: null,
-        updates: [],
-      };
-
-      // حفظ الشكوى في قاعدة البيانات
-      await DataService.saveComplaint(complaintData);
-
-      // تحديث حالة سجل الاستقبال إلى "تم التحويل"
-      await DataService.updateReceptionRecord(record.id, {
-        ...record,
-        status: "تم التحويل للشكاوى",
-        action: `${record.action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
-      });
-
-      // إعادة تحميل البيانات
-      await loadReceptionRecords();
-
-      toast({
-        title: "تم التحويل بنجاح",
-        description: `تم تحويل الطلب إلى شكوى رقم ${complaintData.id}`,
-      });
-
-    } catch (error) {
-      console.error("خطأ في تحويل الطلب إلى شكوى:", error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحويل الطلب إلى شكوى",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -725,30 +649,6 @@ export default function Reception() {
         return "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300";
       case "قيد المعالجة":
         return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300";
-      case "قيد المراجعة":
-        return "bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-300";
-      case "في انتظار الرد":
-        return "bg-cyan-100 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300";
-      case "تم التواصل":
-        return "bg-teal-100 dark:bg-teal-900/20 text-teal-800 dark:text-teal-300";
-      case "تم الحل جزئياً":
-        return "bg-lime-100 dark:bg-lime-900/20 text-lime-800 dark:text-lime-300";
-      case "مؤجل":
-        return "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300";
-      case "مرفوض":
-        return "bg-red-200 dark:bg-red-800/20 text-red-900 dark:text-red-400";
-      case "ملغي":
-        return "bg-gray-100 dark:bg-gray-800/20 text-gray-800 dark:text-gray-400";
-      case "تم التحويل للشكاوى":
-        return "bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300";
-      case "تم التحويل للصيانة":
-        return "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300";
-      case "تم التحويل للمبيعات":
-        return "bg-pink-100 dark:bg-pink-900/20 text-pink-800 dark:text-pink-300";
-      case "يتطلب متابعة":
-        return "bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300";
-      case "مغلق":
-        return "bg-slate-100 dark:bg-slate-800/20 text-slate-800 dark:text-slate-400";
       case "جديد":
         return "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300";
       default:
@@ -977,7 +877,7 @@ export default function Reception() {
         </div>
 
         {/* إحصائيات سريعة */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
@@ -1013,36 +913,6 @@ export default function Reception() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
                 {records.filter(r => r.status === "مكتمل").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">محول للشكاوى</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">يتطلب متابعة</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-600">
-                {records.filter(r => r.status === "يتطلب متابعة").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">مغلق</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-600">
-                {records.filter(r => r.status === "مغلق").length}
               </div>
             </CardContent>
           </Card>
@@ -1139,16 +1009,6 @@ export default function Reception() {
                           <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {record.status !== "تم التحويل للشكاوى" && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleConvertToComplaint(record)}
-                              title="تحويل إلى شكوى"
-                            >
-                              <ArrowRight className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          )}
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteRecord(record.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1298,13 +1158,7 @@ export default function Reception() {
                         })()}
                       </span>
                     </div>
-                    {selectedRecord.status === "تم التحويل للشكاوى" && (
-                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-sm">
-                        <span className="text-purple-700 dark:text-purple-300">
-                          تم تحويل هذا الطلب إلى نظام الشكاوى
-                        </span>
-                      </div>
-                    )}
+
                   </div>
                 </div>
               </div>
