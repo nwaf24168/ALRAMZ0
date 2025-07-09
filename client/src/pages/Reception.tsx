@@ -883,7 +883,7 @@ export default function Reception() {
               <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{records.length}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{records.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -891,7 +891,7 @@ export default function Reception() {
               <CardTitle className="text-sm font-medium">جديدة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {records.filter(r => r.status === "جديدة").length}
               </div>
             </CardContent>
@@ -901,7 +901,7 @@ export default function Reception() {
               <CardTitle className="text-sm font-medium">قائمة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {records.filter(r => r.status === "قائمة").length}
               </div>
             </CardContent>
@@ -911,7 +911,7 @@ export default function Reception() {
               <CardTitle className="text-sm font-medium">تمت</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {records.filter(r => r.status === "تمت").length}
               </div>
             </CardContent>
