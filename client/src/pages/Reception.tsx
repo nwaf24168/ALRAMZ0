@@ -880,7 +880,7 @@ export default function Reception() {
                 <div>
                   <Label htmlFor="status" className="text-gray-200 font-medium">الحالة</Label>
                   <Select value={status} onValueChange={(value) => setStatus(value)}>
-                    <SelectTrigger className="bg-gray-800 dark:bg-gray-900 border-gray-600 text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400">
+                    <SelectTrigger className="bg-gray-800 dark:bg-gray-900 border-gray-600text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400">
                       <SelectValue placeholder="اختر الحالة" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 dark:bg-gray-900 border-gray-600">
@@ -1103,14 +1103,14 @@ export default function Reception() {
 
       {/* نافذة تفاصيل العميل */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card text-card-foreground border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
               تفاصيل عميل خدمة العملاء
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedRecord && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* معلومات العميل الأساسية */}
