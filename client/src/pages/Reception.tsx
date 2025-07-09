@@ -883,7 +883,12 @@ export default function Reception() {
               <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{records.length}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {records.length}
+                <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                  {loading ? "جاري التحميل..." : `${records.length} سجل`}
+                </span>
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -893,6 +898,9 @@ export default function Reception() {
             <CardContent>
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {records.filter(r => r.status === "جديدة").length}
+                <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                  حالة جديدة
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -903,6 +911,9 @@ export default function Reception() {
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {records.filter(r => r.status === "قائمة").length}
+                <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                  حالة قائمة
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -913,6 +924,9 @@ export default function Reception() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {records.filter(r => r.status === "تمت").length}
+                <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                  حالة مكتملة
+                </span>
               </div>
             </CardContent>
           </Card>
