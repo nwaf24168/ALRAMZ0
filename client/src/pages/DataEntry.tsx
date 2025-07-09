@@ -275,12 +275,21 @@ export default function DataEntry() {
           [field]: numValue,
         };
 
-        const total = Object.entries(updatedCustomerService.calls)
-          .filter(([key]) => key !== "total")
-          .reduce(
-            (sum, [_, val]) => sum + (typeof val === "number" ? val : 0),
-            0,
-          );
+        // حساب المجموع بدقة
+        const total = (updatedCustomerService.calls.complaints || 0) +
+                     (updatedCustomerService.calls.contactRequests || 0) +
+                     (updatedCustomerService.calls.maintenanceRequests || 0) +
+                     (updatedCustomerService.calls.inquiries || 0) +
+                     (updatedCustomerService.calls.officeInterested || 0) +
+                     (updatedCustomerService.calls.projectsInterested || 0) +
+                     (updatedCustomerService.calls.customersInterested || 0);
+
+        console.log('حساب المجموع في DataEntry:', {
+          field: field,
+          value: numValue,
+          total: total,
+          breakdown: updatedCustomerService.calls
+        });
 
         updatedCustomerService.calls.total = total;
       } else if (section === "inquiries") {

@@ -307,7 +307,7 @@ const CustomerServiceStats = () => {
                   إجمالي المكالمات
                 </span>
                 <span className="text-base sm:text-lg font-bold text-white">
-                  {customerServiceData.calls.total}
+                  {customerServiceData.calls.total || 0}
                 </span>
               </div>
             </div>

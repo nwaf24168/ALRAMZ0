@@ -84,30 +84,44 @@ export class DataService {
     data: CustomerServiceData,
     period: "weekly" | "yearly",
   ): Promise<void> {
-    // حساب المجموع تلقائياً
-    const calculatedTotal = data.calls.complaints + data.calls.contactRequests + 
-                           data.calls.maintenanceRequests + data.calls.inquiries + 
-                           data.calls.officeInterested + data.calls.projectsInterested + 
-                           data.calls.customersInterested;
+    // حساب المجموع تلقائياً وبدقة
+    const calculatedTotal = (data.calls.complaints || 0) + 
+                           (data.calls.contactRequests || 0) + 
+                           (data.calls.maintenanceRequests || 0) + 
+                           (data.calls.inquiries || 0) + 
+                           (data.calls.officeInterested || 0) + 
+                           (data.calls.projectsInterested || 0) + 
+                           (data.calls.customersInterested || 0);
+
+    console.log('حساب إجمالي المكالمات:', {
+      complaints: data.calls.complaints,
+      contactRequests: data.calls.contactRequests,
+      maintenanceRequests: data.calls.maintenanceRequests,
+      inquiries: data.calls.inquiries,
+      officeInterested: data.calls.officeInterested,
+      projectsInterested: data.calls.projectsInterested,
+      customersInterested: data.calls.customersInterested,
+      calculatedTotal: calculatedTotal
+    });
 
     const record: CustomerServiceRecord = {
       period,
-      complaints: data.calls.complaints,
-      contact_requests: data.calls.contactRequests,
-      maintenance_requests: data.calls.maintenanceRequests,
-      inquiries: data.calls.inquiries,
-      office_interested: data.calls.officeInterested,
-      projects_interested: data.calls.projectsInterested,
-      customers_interested: data.calls.customersInterested,
+      complaints: data.calls.complaints || 0,
+      contact_requests: data.calls.contactRequests || 0,
+      maintenance_requests: data.calls.maintenanceRequests || 0,
+      inquiries: data.calls.inquiries || 0,
+      office_interested: data.calls.officeInterested || 0,
+      projects_interested: data.calls.projectsInterested || 0,
+      customers_interested: data.calls.customersInterested || 0,
       total: calculatedTotal,
-      general_inquiries: data.inquiries.general,
-      document_requests: data.inquiries.documentRequests,
-      deed_inquiries: data.inquiries.deedInquiries,
-      apartment_rentals: data.inquiries.apartmentRentals,
-      sold_projects: data.inquiries.soldProjects,
-      cancelled_maintenance: data.maintenance.cancelled,
-      resolved_maintenance: data.maintenance.resolved,
-      in_progress_maintenance: data.maintenance.inProgress,
+      general_inquiries: data.inquiries.general || 0,
+      document_requests: data.inquiries.documentRequests || 0,
+      deed_inquiries: data.inquiries.deedInquiries || 0,
+      apartment_rentals: data.inquiries.apartmentRentals || 0,
+      sold_projects: data.inquiries.soldProjects || 0,
+      cancelled_maintenance: data.maintenance.cancelled || 0,
+      resolved_maintenance: data.maintenance.resolved || 0,
+      in_progress_maintenance: data.maintenance.inProgress || 0,
     };
 
     const { error } = await supabase
@@ -170,22 +184,26 @@ export class DataService {
     }
 
     const callsData = {
-      complaints: data.complaints,
-      contactRequests: data.contact_requests,
-      maintenanceRequests: data.maintenance_requests,
-      inquiries: data.inquiries,
-      officeInterested: data.office_interested,
-      projectsInterested: data.projects_interested,
-      customersInterested: data.customers_interested,
-      total: data.total,
+      complaints: data.complaints || 0,
+      contactRequests: data.contact_requests || 0,
+      maintenanceRequests: data.maintenance_requests || 0,
+      inquiries: data.inquiries || 0,
+      officeInterested: data.office_interested || 0,
+      projectsInterested: data.projects_interested || 0,
+      customersInterested: data.customers_interested || 0,
+      total: data.total || 0,
     };
 
-    // حساب المجموع إذا لم يكن محفوظ بشكل صحيح
-    if (!callsData.total || callsData.total === 0) {
-      callsData.total = callsData.complaints + callsData.contactRequests + 
-                      callsData.maintenanceRequests + callsData.inquiries + 
-                      callsData.officeInterested + callsData.projectsInterested + 
-                      callsData.customersInterested;
+    // إعادة حساب المجموع للتأكد من دقته
+    const recalculatedTotal = callsData.complaints + callsData.contactRequests + 
+                            callsData.maintenanceRequests + callsData.inquiries + 
+                            callsData.officeInterested + callsData.projectsInterested + 
+                            callsData.customersInterested;
+
+    // استخدام المجموع المحسوب إذا كان مختلفاً عن المحفوظ
+    if (callsData.total !== recalculatedTotal) {
+      console.log('تصحيح المجموع من', callsData.total, 'إلى', recalculatedTotal);
+      callsData.total = recalculatedTotal;
     }
 
     return {
@@ -1576,6 +1594,47 @@ export class DataService {
       return "في إدارة المشاريع";
     } else {
       return "في المبيعات";
+    }
+  }
+
+  // دالة إعادة حساب وتصحيح مجموع المكالمات
+  static async recalculateCallsTotal(period: "weekly" | "yearly"): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from("customer_service")
+        .select("*")
+        .eq("period", period)
+        .single();
+
+      if (error || !data) {
+        console.log("لا توجد بيانات لإعادة حساب المجموع");
+        return;
+      }
+
+      const correctTotal = (data.complaints || 0) + 
+                          (data.contact_requests || 0) + 
+                          (data.maintenance_requests || 0) + 
+                          (data.inquiries || 0) + 
+                          (data.office_interested || 0) + 
+                          (data.projects_interested || 0) + 
+                          (data.customers_interested || 0);
+
+      if (data.total !== correctTotal) {
+        console.log(`تصحيح المجموع للفترة ${period} من ${data.total} إلى ${correctTotal}`);
+        
+        const { error: updateError } = await supabase
+          .from("customer_service")
+          .update({ total: correctTotal })
+          .eq("period", period);
+
+        if (updateError) {
+          console.error("خطأ في تحديث المجموع:", updateError);
+        } else {
+          console.log("تم تصحيح المجموع بنجاح");
+        }
+      }
+    } catch (error) {
+      console.error("خطأ في إعادة حساب المجموع:", error);
     }
   }
 

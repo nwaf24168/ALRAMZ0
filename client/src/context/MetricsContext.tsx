@@ -232,8 +232,11 @@ export function MetricsProvider({ children }: { children: ReactNode }) {
         // تحميل بيانات خدمة العملاء
         const customerServiceFromDB =
           await DataService.getCustomerService(currentPeriod);
-        console.log("بيانات خدمة العملاء:", customerServiceFromDB);
         setCustomerServiceData(customerServiceFromDB);
+        console.log("بيانات خدمة العملاء:", customerServiceFromDB);
+
+        // إعادة حساب المجموع للتأكد من دقته
+        await DataService.recalculateCallsTotal(currentPeriod);
 
         // تحميل بيانات الرضا والتعليقات
         const satisfactionFromDB =
