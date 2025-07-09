@@ -69,6 +69,7 @@ interface ReceptionRecord {
   customerRequest: string;
   action: string;
   status: string;
+  creatorName: string;
 }
 
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
@@ -119,6 +120,7 @@ export default function Reception() {
         customerRequest: record.customer_request,
         action: record.action,
         status: record.status,
+        creatorName: record.creator_name || record.created_by || 'غير محدد',
       }));
       setRecords(formattedRecords);
     } catch (error) {
@@ -161,7 +163,8 @@ export default function Reception() {
         'نوع الطلب': record.type,
         'طلب العميل': record.customerRequest,
         'الإجراء المتخذ': record.action,
-        'الحالة': record.status
+        'الحالة': record.status,
+        'المنشئ': record.creatorName
       }));
 
       // إنشاء ورقة العمل
@@ -304,6 +307,7 @@ export default function Reception() {
                 customerRequest: String(row[7] || '').trim(),          // 7: طلب العميل
                 action: String(row[8] || '').trim(),                   // 8: الإجراء المتخذ
                 status: String(row[9] || 'جديد').trim(),               // 9: الحالة
+                creatorName: String(row[10] || user.username).trim(),  // 10: المنشئ
                 createdBy: user.username,
               };
 
@@ -467,6 +471,7 @@ export default function Reception() {
       status: status || "جديد",
       createdBy: user.username,
       updatedBy: user.username,
+      creatorName: user.username,
     };
 
     try {
@@ -1010,6 +1015,7 @@ export default function Reception() {
                     <TableHead>طلب العميل</TableHead>
                     <TableHead>الإجراء</TableHead>
                     <TableHead>الحالة</TableHead>
+                    <TableHead>المنشئ</TableHead>
                     <TableHead className="text-right">العمليات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1050,6 +1056,12 @@ export default function Reception() {
                         <Badge className={getStatusColor(record.status)}>
                           {record.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{record.creatorName}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -1189,7 +1201,7 @@ export default function Reception() {
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">تم الإنشاء بواسطة</Label>
                       <p className="text-sm flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {user?.username || "غير محدد"}
+                        {selectedRecord.creatorName || "غير محدد"}
                       </p>
                     </div>
                   </div>

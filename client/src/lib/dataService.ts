@@ -856,6 +856,7 @@ export class DataService {
       action: record.action,
       status: record.status || 'جديد',
       created_by: record.createdBy,
+      creator_name: record.creatorName,
     };
 
     const { data, error } = await supabase
@@ -878,7 +879,7 @@ export class DataService {
   static async saveReceptionRecordsBatch(records: any[]): Promise<any[]> {
     // إذا كان عدد السجلات كبير جداً، نقسمها إلى دفعات أصغر
     const MAX_BATCH_SIZE = 50; // حد أقصى للدفعة الواحدة
-    
+
     if (records.length <= MAX_BATCH_SIZE) {
       // إذا كان العدد صغير، نحفظ مرة واحدة
       const recordsData = records.map(record => ({
@@ -893,6 +894,7 @@ export class DataService {
         action: record.action,
         status: record.status || 'جديد',
         created_by: record.createdBy,
+        creator_name: record.creatorName,
       }));
 
       const { data, error } = await supabase
@@ -911,11 +913,11 @@ export class DataService {
     } else {
       // إذا كان العدد كبير، نقسم إلى دفعات أصغر
       const allSavedData = [];
-      
+
       for (let i = 0; i < records.length; i += MAX_BATCH_SIZE) {
         const batch = records.slice(i, i + MAX_BATCH_SIZE);
         console.log(`حفظ الدفعة الفرعية: ${i + 1} إلى ${Math.min(i + MAX_BATCH_SIZE, records.length)}`);
-        
+
         const recordsData = batch.map(record => ({
           date: record.date,
           customer_name: record.customerName,
@@ -928,6 +930,7 @@ export class DataService {
           action: record.action,
           status: record.status || 'جديد',
           created_by: record.createdBy,
+          creator_name: record.creatorName,
         }));
 
         const { data, error } = await supabase
@@ -987,6 +990,7 @@ export class DataService {
         action: recordData.action,
         status: recordData.status,
         updated_by: recordData.updatedBy,
+        creator_name: recordData.creatorName,
       })
       .eq("id", id);
 
@@ -1862,9 +1866,7 @@ export class DataService {
       if (error) {
         console.error('خطأ Supabase في حذف سجل CSAT:', error);
         throw new Error(`خطأ في حذف سجل CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
-      }
-
-      console.log('تم حذف سجل CSAT بنجاح');
+      }تم التعديل على الكود لإضافة حقل "اسم المنشئ" إلى سجلات الاستقبال.      console.log('تم حذف سجل CSAT بنجاح');
     } catch (error) {
       console.error('خطأ في حذف سجل CSAT:', error);
       throw error;
