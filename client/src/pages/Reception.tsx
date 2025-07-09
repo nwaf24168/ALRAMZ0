@@ -74,7 +74,7 @@ interface ReceptionRecord {
 
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة", "اهتمام"];
-const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل", "تم التحويل للشكاوى"];
+const statuses = ["جديدة", "قائمة", "تمت"];
 
 export default function Reception() {
   const { user } = useAuth();
@@ -468,7 +468,7 @@ export default function Reception() {
       type,
       customerRequest,
       action,
-      status: status || "جديد",
+      status: status || "جديدة",
       createdBy: user.username,
       updatedBy: user.username,
       creatorName: user.username,
@@ -512,10 +512,10 @@ export default function Reception() {
             // حفظ الشكوى في قاعدة البيانات
             await DataService.saveComplaint(complaintData);
 
-             // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+             // تحديث حالة سجل الاستقبال إلى "تمت"
             await DataService.updateReceptionRecord(newRecord.id, {
               ...newRecord,
-              status: "تم التحويل للشكاوى",
+              status: "تمت",
               action: `${action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
             });
 
@@ -676,10 +676,10 @@ export default function Reception() {
       // حفظ الشكوى في قاعدة البيانات
       await DataService.saveComplaint(complaintData);
 
-      // تحديث حالة سجل الاستقبال إلى "تم التحويل"
+      // تحديث حالة سجل الاستقبال إلى "تمت"
       await DataService.updateReceptionRecord(record.id, {
         ...record,
-        status: "تم التحويل للشكاوى",
+        status: "تمت",
         action: `${record.action || ""}\n\nتم تحويل الطلب إلى شكوى رقم: ${complaintData.id}`,
       });
 
@@ -705,16 +705,14 @@ export default function Reception() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "مكتمل":
+      case "تمت":
         return "bg-green-100 text-green-800";
-      case "قيد المعالجة":
+      case "قائمة":
         return "bg-yellow-100 text-yellow-800";
-      case "مؤجل":
-        return "bg-red-100 text-red-800";
-      case "تم التحويل للشكاوى":
-        return "bg-purple-100 text-purple-800";
-      default:
+      case "جديدة":
         return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -950,31 +948,31 @@ export default function Reception() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">قيد المعالجة</CardTitle>
+              <CardTitle className="text-sm font-medium">قائمة</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
-                {records.filter(r => r.status === "قيد المعالجة").length}
+                {records.filter(r => r.status === "قائمة").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">مكتمل</CardTitle>
+              <CardTitle className="text-sm font-medium">تمت</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {records.filter(r => r.status === "مكتمل").length}
+                {records.filter(r => r.status === "تمت").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">محول للشكاوى</CardTitle>
+              <CardTitle className="text-sm font-medium">جديدة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
+              <div className="text-2xl font-bold text-blue-600">
+                {records.filter(r => r.status === "جديدة").length}
               </div>
             </CardContent>
           </Card>
@@ -1071,7 +1069,7 @@ export default function Reception() {
                           <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {record.status !== "تم التحويل للشكاوى" && (
+                          {record.status !== "تمت" && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
@@ -1230,7 +1228,7 @@ export default function Reception() {
                         })()}
                       </span>
                     </div>
-                    {selectedRecord.status === "تم التحويل للشكاوى" && (
+                    {selectedRecord.action && selectedRecord.action.includes("تم تحويل الطلب إلى شكوى") && (
                       <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-sm">
                         <span className="text-purple-700 dark:text-purple-300">
                           تم تحويل هذا الطلب إلى نظام الشكاوى
