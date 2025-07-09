@@ -84,6 +84,12 @@ export class DataService {
     data: CustomerServiceData,
     period: "weekly" | "yearly",
   ): Promise<void> {
+    // حساب المجموع تلقائياً
+    const calculatedTotal = data.calls.complaints + data.calls.contactRequests + 
+                           data.calls.maintenanceRequests + data.calls.inquiries + 
+                           data.calls.officeInterested + data.calls.projectsInterested + 
+                           data.calls.customersInterested;
+
     const record: CustomerServiceRecord = {
       period,
       complaints: data.calls.complaints,
@@ -93,7 +99,7 @@ export class DataService {
       office_interested: data.calls.officeInterested,
       projects_interested: data.calls.projectsInterested,
       customers_interested: data.calls.customersInterested,
-      total: data.calls.total,
+      total: calculatedTotal,
       general_inquiries: data.inquiries.general,
       document_requests: data.inquiries.documentRequests,
       deed_inquiries: data.inquiries.deedInquiries,
@@ -135,17 +141,19 @@ export class DataService {
 
     if (!data) {
       // إرجاع البيانات الافتراضية إذا لم توجد بيانات
+      const defaultCalls = {
+        complaints: 0,
+        contactRequests: 0,
+        maintenanceRequests: 0,
+        inquiries: 0,
+        officeInterested: 0,
+        projectsInterested: 0,
+        customersInterested: 0,
+        total: 0,
+      };
+
       return {
-        calls: {
-          complaints: 0,
-          contactRequests: 0,
-          maintenanceRequests: 0,
-          inquiries: 0,
-          officeInterested: 0,
-          projectsInterested: 0,
-          customersInterested: 0,
-          total: 0,
-        },
+        calls: defaultCalls,
         inquiries: {
           general: 0,
           documentRequests: 0,
@@ -161,17 +169,27 @@ export class DataService {
       };
     }
 
+    const callsData = {
+      complaints: data.complaints,
+      contactRequests: data.contact_requests,
+      maintenanceRequests: data.maintenance_requests,
+      inquiries: data.inquiries,
+      officeInterested: data.office_interested,
+      projectsInterested: data.projects_interested,
+      customersInterested: data.customers_interested,
+      total: data.total,
+    };
+
+    // حساب المجموع إذا لم يكن محفوظ بشكل صحيح
+    if (!callsData.total || callsData.total === 0) {
+      callsData.total = callsData.complaints + callsData.contactRequests + 
+                      callsData.maintenanceRequests + callsData.inquiries + 
+                      callsData.officeInterested + callsData.projectsInterested + 
+                      callsData.customersInterested;
+    }
+
     return {
-      calls: {
-        complaints: data.complaints,
-        contactRequests: data.contact_requests,
-        maintenanceRequests: data.maintenance_requests,
-        inquiries: data.inquiries,
-        officeInterested: data.office_interested,
-        projectsInterested: data.projects_interested,
-        customersInterested: data.customers_interested,
-        total: data.total,
-      },
+      calls: callsData,
       inquiries: {
         general: data.general_inquiries,
         documentRequests: data.document_requests,
