@@ -1146,13 +1146,13 @@ export default function Reception() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">طلب العميل</Label>
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded border text-gray-900 dark:text-gray-100 min-h-[80px]">
                         {selectedRecord.customerRequest || "لا توجد تفاصيل"}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الإجراء المتخذ</Label>
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded border text-gray-900 dark:text-gray-100 min-h-[80px]">
                         {selectedRecord.action || "لم يتم اتخاذ إجراء بعد"}
                       </div>
                     </div>
