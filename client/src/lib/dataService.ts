@@ -84,12 +84,6 @@ export class DataService {
     data: CustomerServiceData,
     period: "weekly" | "yearly",
   ): Promise<void> {
-    // حساب المجموع تلقائياً
-    const calculatedTotal = data.calls.complaints + data.calls.contactRequests + 
-                           data.calls.maintenanceRequests + data.calls.inquiries + 
-                           data.calls.officeInterested + data.calls.projectsInterested + 
-                           data.calls.customersInterested;
-
     const record: CustomerServiceRecord = {
       period,
       complaints: data.calls.complaints,
@@ -99,7 +93,7 @@ export class DataService {
       office_interested: data.calls.officeInterested,
       projects_interested: data.calls.projectsInterested,
       customers_interested: data.calls.customersInterested,
-      total: calculatedTotal,
+      total: data.calls.total,
       general_inquiries: data.inquiries.general,
       document_requests: data.inquiries.documentRequests,
       deed_inquiries: data.inquiries.deedInquiries,
@@ -141,19 +135,17 @@ export class DataService {
 
     if (!data) {
       // إرجاع البيانات الافتراضية إذا لم توجد بيانات
-      const defaultCalls = {
-        complaints: 0,
-        contactRequests: 0,
-        maintenanceRequests: 0,
-        inquiries: 0,
-        officeInterested: 0,
-        projectsInterested: 0,
-        customersInterested: 0,
-        total: 0,
-      };
-
       return {
-        calls: defaultCalls,
+        calls: {
+          complaints: 0,
+          contactRequests: 0,
+          maintenanceRequests: 0,
+          inquiries: 0,
+          officeInterested: 0,
+          projectsInterested: 0,
+          customersInterested: 0,
+          total: 0,
+        },
         inquiries: {
           general: 0,
           documentRequests: 0,
@@ -169,27 +161,17 @@ export class DataService {
       };
     }
 
-    const callsData = {
-      complaints: data.complaints,
-      contactRequests: data.contact_requests,
-      maintenanceRequests: data.maintenance_requests,
-      inquiries: data.inquiries,
-      officeInterested: data.office_interested,
-      projectsInterested: data.projects_interested,
-      customersInterested: data.customers_interested,
-      total: data.total,
-    };
-
-    // حساب المجموع إذا لم يكن محفوظ بشكل صحيح
-    if (!callsData.total || callsData.total === 0) {
-      callsData.total = callsData.complaints + callsData.contactRequests + 
-                      callsData.maintenanceRequests + callsData.inquiries + 
-                      callsData.officeInterested + callsData.projectsInterested + 
-                      callsData.customersInterested;
-    }
-
     return {
-      calls: callsData,
+      calls: {
+        complaints: data.complaints,
+        contactRequests: data.contact_requests,
+        maintenanceRequests: data.maintenance_requests,
+        inquiries: data.inquiries,
+        officeInterested: data.office_interested,
+        projectsInterested: data.projects_interested,
+        customersInterested: data.customers_interested,
+        total: data.total,
+      },
       inquiries: {
         general: data.general_inquiries,
         documentRequests: data.document_requests,
@@ -872,7 +854,7 @@ export class DataService {
       type: record.type,
       customer_request: record.customerRequest,
       action: record.action,
-      status: record.status || 'جديدة',
+      status: record.status || 'جديد',
       created_by: record.createdBy,
       creator_name: record.creatorName,
     };
@@ -910,7 +892,7 @@ export class DataService {
         type: record.type,
         customer_request: record.customerRequest,
         action: record.action,
-        status: record.status || 'جديدة',
+        status: record.status || 'جديد',
         created_by: record.createdBy,
         creator_name: record.creatorName,
       }));
@@ -946,7 +928,7 @@ export class DataService {
           type: record.type,
           customer_request: record.customerRequest,
           action: record.action,
-          status: record.status || 'جديدة',
+          status: record.status || 'جديد',
           created_by: record.createdBy,
           creator_name: record.creatorName,
         }));
@@ -994,29 +976,22 @@ export class DataService {
   }
 
   static async updateReceptionRecord(id: string, recordData: any): Promise<void> {
-    const updateData: any = {
-      date: recordData.date,
-      customer_name: recordData.customerName,
-      phone_number: recordData.phoneNumber,
-      project: recordData.project,
-      employee: recordData.employee,
-      contact_method: recordData.contactMethod,
-      type: recordData.type,
-      customer_request: recordData.customerRequest,
-      action: recordData.action,
-      status: recordData.status,
-      updated_by: recordData.updatedBy,
-      updated_at: new Date().toISOString()
-    };
-
-    // إضافة creator_name فقط إذا كان موجوداً في البيانات
-    if (recordData.creatorName) {
-      updateData.creator_name = recordData.creatorName;
-    }
-
     const { error } = await supabase
       .from("reception_records")
-      .update(updateData)
+      .update({
+        date: recordData.date,
+        customer_name: recordData.customerName,
+        phone_number: recordData.phoneNumber,
+        project: recordData.project,
+        employee: recordData.employee,
+        contact_method: recordData.contactMethod,
+        type: recordData.type,
+        customer_request: recordData.customerRequest,
+        action: recordData.action,
+        status: recordData.status,
+        updated_by: recordData.updatedBy,
+        creator_name: recordData.creatorName,
+      })
       .eq("id", id);
 
     if (error) {
@@ -1865,7 +1840,8 @@ export class DataService {
         .from('csat_whatsapp')
         .select('*')
         .eq('period', period)
-        .order('created_at', { ascending: false })        .limit(limit);
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (error) {
         console.error('خطأ Supabase في جلب تاريخ CSAT:', error);
