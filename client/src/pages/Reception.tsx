@@ -704,8 +704,7 @@ export default function Reception() {
   };
 
   const getStatusColor = (status: string) => {
-    const normalizedStatus = status ? status.trim() : "";
-    switch (normalizedStatus) {
+    switch (status) {
       case "مكتمل":
         return "bg-green-100 text-green-800";
       case "قيد المعالجة":
@@ -714,10 +713,8 @@ export default function Reception() {
         return "bg-red-100 text-red-800";
       case "تم التحويل للشكاوى":
         return "bg-purple-100 text-purple-800";
-      case "جديد":
-        return "bg-blue-100 text-blue-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-blue-100 text-blue-800";
     }
   };
 
@@ -957,7 +954,7 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
-                {records.filter(r => r.status && r.status.trim() === "قيد المعالجة").length}
+                {records.filter(r => r.status === "قيد المعالجة").length}
               </div>
             </CardContent>
           </Card>
@@ -967,7 +964,7 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {records.filter(r => r.status && r.status.trim() === "مكتمل").length}
+                {records.filter(r => r.status === "مكتمل").length}
               </div>
             </CardContent>
           </Card>
@@ -977,37 +974,11 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {records.filter(r => r.status && r.status.trim() === "تم التحويل للشكاوى").length}
+                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* عرض تفصيلي للحالات للتشخيص */}
-        {records.length > 0 && (
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle className="text-lg">تفصيل الحالات (للتشخيص)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
-                {(() => {
-                  const statusCounts = {};
-                  records.forEach(record => {
-                    const status = record.status ? record.status.trim() : 'غير محدد';
-                    statusCounts[status] = (statusCounts[status] || 0) + 1;
-                  });
-                  return Object.entries(statusCounts).map(([status, count]) => (
-                    <div key={status} className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                      <div className="font-medium">{status}</div>
-                      <div className="text-blue-600">{count}</div>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <Card>
           <CardHeader>
@@ -1144,34 +1115,34 @@ export default function Reception() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* معلومات العميل الأساسية */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <UserCheck className="h-5 w-5 text-blue-600" />
                     معلومات العميل
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">اسم العميل</Label>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedRecord.customerName}</p>
+                      <p className="text-lg font-semibold">{selectedRecord.customerName}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">رقم الجوال</Label>
-                      <p className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                      <p className="text-lg font-semibold flex items-center gap-2">
                         <Phone className="h-4 w-4" />
                         {selectedRecord.phoneNumber}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">المشروع</Label>
-                      <p className="text-lg text-gray-900 dark:text-gray-100">{selectedRecord.project}</p>
+                      <p className="text-lg">{selectedRecord.project}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الموظف المختص</Label>
-                      <p className="text-lg text-gray-900 dark:text-gray-100">{selectedRecord.employee}</p>
+                      <p className="text-lg">{selectedRecord.employee}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">طريقة التواصل</Label>
-                      <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2">
                         {getContactMethodIcon(selectedRecord.contactMethod)}
                         <span>{selectedRecord.contactMethod}</span>
                       </div>
@@ -1186,21 +1157,21 @@ export default function Reception() {
                 </div>
 
                 {/* تفاصيل الطلب */}
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-green-600" />
                     تفاصيل الطلب
                   </h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">طلب العميل</Label>
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 min-h-[80px]">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded border text-gray-900 dark:text-gray-100 min-h-[80px]">
                         {selectedRecord.customerRequest || "لا توجد تفاصيل"}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الإجراء المتخذ</Label>
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 min-h-[80px]">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded border text-gray-900 dark:text-gray-100 min-h-[80px]">
                         {selectedRecord.action || "لم يتم اتخاذ إجراء بعد"}
                       </div>
                     </div>
@@ -1210,15 +1181,15 @@ export default function Reception() {
 
               {/* معلومات النظام */}
               <div className="space-y-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-blue-600" />
                     معلومات النظام
                   </h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">التاريخ</Label>
-                      <p className="text-sm font-mono text-gray-900 dark:text-gray-100">{selectedRecord.date}</p>
+                      <p className="text-sm font-mono">{selectedRecord.date}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الحالة</Label>
@@ -1228,7 +1199,7 @@ export default function Reception() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">تم الإنشاء بواسطة</Label>
-                      <p className="text-sm flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                      <p className="text-sm flex items-center gap-2">
                         <User className="h-4 w-4" />
                         {selectedRecord.creatorName || "غير محدد"}
                       </p>
@@ -1237,19 +1208,19 @@ export default function Reception() {
                 </div>
 
                 {/* إحصائيات سريعة */}
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-green-600" />
                     معلومات إضافية
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600 dark:text-gray-400">رقم السجل</span>
-                      <span className="text-sm font-mono text-gray-900 dark:text-gray-100">{selectedRecord.id}</span>
+                      <span className="text-sm font-mono">{selectedRecord.id}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600 dark:text-gray-400">مدة المعالجة</span>
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="text-sm">
                         {(() => {
                           const createdDate = new Date(selectedRecord.date);
                           const now = new Date();
@@ -1260,7 +1231,7 @@ export default function Reception() {
                       </span>
                     </div>
                     {selectedRecord.status === "تم التحويل للشكاوى" && (
-                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-sm border border-purple-200 dark:border-purple-700">
+                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-sm">
                         <span className="text-purple-700 dark:text-purple-300">
                           تم تحويل هذا الطلب إلى نظام الشكاوى
                         </span>
