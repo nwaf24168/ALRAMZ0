@@ -996,10 +996,12 @@ export class DataService {
   }
 
   static async getReceptionRecords(): Promise<any[]> {
-    const { data, error } = await supabase
+    // جلب جميع السجلات مع تحديد عدد أكبر لتجنب الحد الافتراضي
+    const { data, error, count } = await supabase
       .from("reception_records")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: 'exact' })
+      .order("created_at", { ascending: false })
+      .limit(10000); // زيادة الحد الأقصى لجلب المزيد من السجلات
 
     if (error) {
       console.error("خطأ Supabase في جلب سجلات الاستقبال:", error);
@@ -1008,6 +1010,7 @@ export class DataService {
       );
     }
 
+    console.log(`تم جلب ${data?.length || 0} سجل من أصل ${count} سجل في قاعدة البيانات`);
     return data || [];
   }
 
