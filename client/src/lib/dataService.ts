@@ -1866,7 +1866,8 @@ export class DataService {
       if (error) {
         console.error('خطأ Supabase في حذف سجل CSAT:', error);
         throw new Error(`خطأ في حذف سجل CSAT: ${error.message || error.details || "خطأ غير معروف"}`);
-      }تم التعديل على الكود لإضافة حقل "اسم المنشئ" إلى سجلات الاستقبال.      console.log('تم حذف سجل CSAT بنجاح');
+      }
+      console.log('تم حذف سجل CSAT بنجاح');
     } catch (error) {
       console.error('خطأ في حذف سجل CSAT:', error);
       throw error;
