@@ -730,7 +730,7 @@ export default function Reception() {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">اتصالات خدمة العملاء</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">سجلات خدمة العملاء</h1>
           <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:space-x-reverse">
             <input
               type="file"
@@ -787,9 +787,9 @@ export default function Reception() {
                   إضافة عميل جديد
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-gray-900 text-white border-gray-700">
               <DialogHeader>
-                <DialogTitle>{editingRecord ? "تعديل سجل الاستقبال" : "إضافة سجل استقبال جديد"}</DialogTitle>
+                <DialogTitle>{editingRecord ? "تعديل سجل خدمة العملاء" : "إضافة سجل خدمة عملاء جديد"}</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -799,6 +799,7 @@ export default function Reception() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
                 <div>
@@ -808,6 +809,7 @@ export default function Reception() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="اسم العميل"
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -817,6 +819,7 @@ export default function Reception() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="رقم الجوال"
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -826,6 +829,7 @@ export default function Reception() {
                     value={project}
                     onChange={(e) => setProject(e.target.value)}
                     placeholder="اسم المشروع"
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -835,17 +839,18 @@ export default function Reception() {
                     value={employee}
                     onChange={(e) => setEmployee(e.target.value)}
                     placeholder="اسم الموظف"
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div>
                   <Label htmlFor="contactMethod">طريقة التواصل</Label>
                   <Select value={contactMethod} onValueChange={(value) => setContactMethod(value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue placeholder="اختر طريقة التواصل" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       {contactMethods.map((method) => (
-                        <SelectItem key={method} value={method}>
+                        <SelectItem key={method} value={method} className="text-white hover:bg-gray-700">
                           {method}
                         </SelectItem>
                       ))}
@@ -855,12 +860,12 @@ export default function Reception() {
                 <div>
                   <Label htmlFor="type">النوع</Label>
                   <Select value={type} onValueChange={(value) => setType(value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue placeholder="اختر نوع الطلب" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       {types.map((type) => (
-                        <SelectItem key={type} value={type}>
+                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-700">
                           {type}
                         </SelectItem>
                       ))}
@@ -870,12 +875,12 @@ export default function Reception() {
                 <div>
                   <Label htmlFor="status">الحالة</Label>
                   <Select value={status} onValueChange={(value) => setStatus(value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue placeholder="اختر الحالة" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       {statuses.map((status) => (
-                        <SelectItem key={status} value={status}>
+                        <SelectItem key={status} value={status} className="text-white hover:bg-gray-700">
                           {status}
                         </SelectItem>
                       ))}
@@ -890,6 +895,7 @@ export default function Reception() {
                     onChange={(e) => setCustomerRequest(e.target.value)}
                     placeholder="تفاصيل طلب العميل"
                     rows={3}
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -900,6 +906,7 @@ export default function Reception() {
                     onChange={(e) => setAction(e.target.value)}
                     placeholder="الإجراء المتخذ"
                     rows={3}
+                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                   <div className="flex items-center space-x-2 mb-4">
@@ -970,7 +977,7 @@ export default function Reception() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between"><CardTitle>سجلات الاستقبال</CardTitle>
+            <div className="flex items-center justify-between"><CardTitle>سجلات خدمة العملاء</CardTitle>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -1088,7 +1095,7 @@ export default function Reception() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              تفاصيل عميل الاستقبال
+              تفاصيل عميل خدمة العملاء
             </DialogTitle>
           </DialogHeader>
           
