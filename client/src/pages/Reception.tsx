@@ -75,9 +75,9 @@ interface ReceptionRecord {
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة", "اهتمام"];
 const statuses = [
-  "جديد",
-  "قيد المعالجة", 
-  "مكتمل"
+  "جديدة",
+  "قائمة", 
+  "تمت"
 ];
 
 export default function Reception() {
@@ -645,11 +645,11 @@ export default function Reception() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "مكتمل":
+      case "تمت":
         return "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300";
-      case "قيد المعالجة":
+      case "قائمة":
         return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300";
-      case "جديد":
+      case "جديدة":
         return "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300";
       default:
         return "bg-gray-100 dark:bg-gray-800/20 text-gray-800 dark:text-gray-400";
@@ -888,31 +888,31 @@ export default function Reception() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">جديد</CardTitle>
+              <CardTitle className="text-sm font-medium">جديدة</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {records.filter(r => r.status === "جديد").length}
+                {records.filter(r => r.status === "جديدة").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">قيد المعالجة</CardTitle>
+              <CardTitle className="text-sm font-medium">قائمة</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
-                {records.filter(r => r.status === "قيد المعالجة").length}
+                {records.filter(r => r.status === "قائمة").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">مكتمل</CardTitle>
+              <CardTitle className="text-sm font-medium">تمت</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {records.filter(r => r.status === "مكتمل").length}
+                {records.filter(r => r.status === "تمت").length}
               </div>
             </CardContent>
           </Card>

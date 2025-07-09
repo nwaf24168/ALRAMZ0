@@ -120,7 +120,7 @@ Database Change → Supabase Real-time → WebSocket → Context Update → Comp
 
 ## Changelog
 
-- July 9, 2025. Simplified customer service contacts status system to 3 core statuses: جديد، قيد المعالجة، مكتمل
+- July 9, 2025. Simplified customer service contacts status system to 3 core statuses: جديدة، قائمة، تمت
 - July 9, 2025. Fixed dialog styling for better dark mode compatibility with proper contrast
 - June 26, 2025. Initial setup
 
