@@ -872,7 +872,7 @@ export class DataService {
       type: record.type,
       customer_request: record.customerRequest,
       action: record.action,
-      status: record.status || 'جديد',
+      status: record.status || 'قائمة',
       created_by: record.createdBy,
       creator_name: record.creatorName,
     };
@@ -910,7 +910,7 @@ export class DataService {
         type: record.type,
         customer_request: record.customerRequest,
         action: record.action,
-        status: record.status || 'جديد',
+        status: record.status || 'قائمة',
         created_by: record.createdBy,
         creator_name: record.creatorName,
       }));
@@ -946,7 +946,7 @@ export class DataService {
           type: record.type,
           customer_request: record.customerRequest,
           action: record.action,
-          status: record.status || 'جديد',
+          status: record.status || 'قائمة',
           created_by: record.createdBy,
           creator_name: record.creatorName,
         }));
@@ -1865,8 +1865,7 @@ export class DataService {
         .from('csat_whatsapp')
         .select('*')
         .eq('period', period)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+        .order('created_at', { ascending: false })        .limit(limit);
 
       if (error) {
         console.error('خطأ Supabase في جلب تاريخ CSAT:', error);
