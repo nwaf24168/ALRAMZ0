@@ -74,7 +74,23 @@ interface ReceptionRecord {
 
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
 const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة", "اهتمام"];
-const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل", "تم التحويل للشكاوى"];
+const statuses = [
+  "جديد",
+  "قيد المراجعة", 
+  "قيد المعالجة",
+  "في انتظار الرد",
+  "تم التواصل",
+  "تم الحل جزئياً",
+  "مكتمل",
+  "مؤجل",
+  "مرفوض",
+  "ملغي",
+  "تم التحويل للشكاوى",
+  "تم التحويل للصيانة",
+  "تم التحويل للمبيعات",
+  "يتطلب متابعة",
+  "مغلق"
+];
 
 export default function Reception() {
   const { user } = useAuth();
@@ -706,15 +722,37 @@ export default function Reception() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "مكتمل":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300";
       case "قيد المعالجة":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300";
+      case "قيد المراجعة":
+        return "bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-300";
+      case "في انتظار الرد":
+        return "bg-cyan-100 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300";
+      case "تم التواصل":
+        return "bg-teal-100 dark:bg-teal-900/20 text-teal-800 dark:text-teal-300";
+      case "تم الحل جزئياً":
+        return "bg-lime-100 dark:bg-lime-900/20 text-lime-800 dark:text-lime-300";
       case "مؤجل":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300";
+      case "مرفوض":
+        return "bg-red-200 dark:bg-red-800/20 text-red-900 dark:text-red-400";
+      case "ملغي":
+        return "bg-gray-100 dark:bg-gray-800/20 text-gray-800 dark:text-gray-400";
       case "تم التحويل للشكاوى":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300";
+      case "تم التحويل للصيانة":
+        return "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300";
+      case "تم التحويل للمبيعات":
+        return "bg-pink-100 dark:bg-pink-900/20 text-pink-800 dark:text-pink-300";
+      case "يتطلب متابعة":
+        return "bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300";
+      case "مغلق":
+        return "bg-slate-100 dark:bg-slate-800/20 text-slate-800 dark:text-slate-400";
+      case "جديد":
+        return "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300";
       default:
-        return "bg-blue-100 text-blue-800";
+        return "bg-gray-100 dark:bg-gray-800/20 text-gray-800 dark:text-gray-400";
     }
   };
 
@@ -939,13 +977,23 @@ export default function Reception() {
         </div>
 
         {/* إحصائيات سريعة */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{records.length}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{records.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">جديد</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {records.filter(r => r.status === "جديد").length}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -975,6 +1023,26 @@ export default function Reception() {
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
                 {records.filter(r => r.status === "تم التحويل للشكاوى").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">يتطلب متابعة</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600">
+                {records.filter(r => r.status === "يتطلب متابعة").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">مغلق</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-600">
+                {records.filter(r => r.status === "مغلق").length}
               </div>
             </CardContent>
           </Card>

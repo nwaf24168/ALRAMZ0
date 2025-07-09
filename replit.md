@@ -120,6 +120,8 @@ Database Change → Supabase Real-time → WebSocket → Context Update → Comp
 
 ## Changelog
 
+- July 9, 2025. Enhanced customer service contacts status system with comprehensive status options
+- July 9, 2025. Fixed dialog styling for better dark mode compatibility with proper contrast
 - June 26, 2025. Initial setup
 
 ## User Preferences
