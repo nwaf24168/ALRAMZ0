@@ -72,7 +72,7 @@ interface ReceptionRecord {
 }
 
 const contactMethods = ["اتصال هاتفي", "بريد إلكتروني", "واتساب", "زيارة شخصية"];
-const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة"];
+const types = ["شكوى", "استفسار", "طلب خدمة", "متابعة", "اهتمام"];
 const statuses = ["جديد", "قيد المعالجة", "مكتمل", "مؤجل", "تم التحويل للشكاوى"];
 
 export default function Reception() {
@@ -83,6 +83,8 @@ export default function Reception() {
   const [isLoading, setIsLoading] = useState(false);
   const [records, setRecords] = useState<ReceptionRecord[]>([]);
   const [transferToComplaints, setTransferToComplaints] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<ReceptionRecord | null>(null);
 
   // بيانات النموذج
   const [date, setDate] = useState("");
@@ -625,6 +627,11 @@ export default function Reception() {
     }
   };
 
+  const handleViewDetails = (record: ReceptionRecord) => {
+    setSelectedRecord(record);
+    setIsDetailsDialogOpen(true);
+  };
+
   const handleConvertToComplaint = async (record: ReceptionRecord) => {
     if (!user?.username) {
       toast({
@@ -1039,6 +1046,9 @@ export default function Reception() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)} title="عرض التفاصيل">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEditRecord(record)}>
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -1071,6 +1081,164 @@ export default function Reception() {
           </CardContent>
         </Card>
       </div>
+
+      {/* نافذة تفاصيل العميل */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              تفاصيل عميل الاستقبال
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRecord && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* معلومات العميل الأساسية */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-blue-600" />
+                    معلومات العميل
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">اسم العميل</Label>
+                      <p className="text-lg font-semibold">{selectedRecord.customerName}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">رقم الجوال</Label>
+                      <p className="text-lg font-semibold flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        {selectedRecord.phoneNumber}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">المشروع</Label>
+                      <p className="text-lg">{selectedRecord.project}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الموظف المختص</Label>
+                      <p className="text-lg">{selectedRecord.employee}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">طريقة التواصل</Label>
+                      <div className="flex items-center gap-2">
+                        {getContactMethodIcon(selectedRecord.contactMethod)}
+                        <span>{selectedRecord.contactMethod}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">نوع الطلب</Label>
+                      <Badge variant="outline" className="text-sm">
+                        {selectedRecord.type}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* تفاصيل الطلب */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-green-600" />
+                    تفاصيل الطلب
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">طلب العميل</Label>
+                      <div className="bg-white dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                        {selectedRecord.customerRequest || "لا توجد تفاصيل"}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الإجراء المتخذ</Label>
+                      <div className="bg-white dark:bg-gray-900 p-3 rounded border min-h-[80px]">
+                        {selectedRecord.action || "لم يتم اتخاذ إجراء بعد"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* معلومات النظام */}
+              <div className="space-y-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    معلومات النظام
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">التاريخ</Label>
+                      <p className="text-sm font-mono">{selectedRecord.date}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">الحالة</Label>
+                      <Badge className={getStatusColor(selectedRecord.status)}>
+                        {selectedRecord.status}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">تم الإنشاء بواسطة</Label>
+                      <p className="text-sm flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {user?.username || "غير محدد"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* إحصائيات سريعة */}
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-green-600" />
+                    معلومات إضافية
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">رقم السجل</span>
+                      <span className="text-sm font-mono">{selectedRecord.id}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">مدة المعالجة</span>
+                      <span className="text-sm">
+                        {(() => {
+                          const createdDate = new Date(selectedRecord.date);
+                          const now = new Date();
+                          const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          return `${diffDays} يوم`;
+                        })()}
+                      </span>
+                    </div>
+                    {selectedRecord.status === "تم التحويل للشكاوى" && (
+                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-sm">
+                        <span className="text-purple-700 dark:text-purple-300">
+                          تم تحويل هذا الطلب إلى نظام الشكاوى
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+              إغلاق
+            </Button>
+            {selectedRecord && (
+              <Button onClick={() => {
+                setIsDetailsDialogOpen(false);
+                handleEditRecord(selectedRecord);
+              }}>
+                تعديل السجل
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
