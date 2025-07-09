@@ -789,7 +789,7 @@ export default function Reception() {
               </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-gray-900 text-white border-gray-700">
               <DialogHeader>
-                <DialogTitle>{editingRecord ? "تعديل سجل خدمة العملاء" : "إضافة سجل خدمة عملاء جديد"}</DialogTitle>
+                <DialogTitle className="text-white">{editingRecord ? "تعديل سجل خدمة العملاء" : "إضافة سجل خدمة عملاء جديد"}</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -799,7 +799,7 @@ export default function Reception() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div>
@@ -809,7 +809,7 @@ export default function Reception() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="اسم العميل"
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div>
@@ -819,7 +819,7 @@ export default function Reception() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="رقم الجوال"
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div>
@@ -829,7 +829,7 @@ export default function Reception() {
                     value={project}
                     onChange={(e) => setProject(e.target.value)}
                     placeholder="اسم المشروع"
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div>
@@ -839,18 +839,18 @@ export default function Reception() {
                     value={employee}
                     onChange={(e) => setEmployee(e.target.value)}
                     placeholder="اسم الموظف"
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div>
                   <Label htmlFor="contactMethod" className="text-gray-200 font-medium">طريقة التواصل</Label>
                   <Select value={contactMethod} onValueChange={(value) => setContactMethod(value)}>
-                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <SelectTrigger className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400">
                       <SelectValue placeholder="اختر طريقة التواصل" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-800 dark:bg-gray-900 border-gray-700">
                       {contactMethods.map((method) => (
-                        <SelectItem key={method} value={method} className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                        <SelectItem key={method} value={method} className="text-white hover:bg-gray-600 focus:bg-gray-600">
                           {method}
                         </SelectItem>
                       ))}
@@ -860,12 +860,12 @@ export default function Reception() {
                 <div>
                   <Label htmlFor="type" className="text-gray-200 font-medium">النوع</Label>
                   <Select value={type} onValueChange={(value) => setType(value)}>
-                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <SelectTrigger className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400">
                       <SelectValue placeholder="اختر نوع الطلب" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-800 dark:bg-gray-900 border-gray-700">
                       {types.map((type) => (
-                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-600 focus:bg-gray-600">
                           {type}
                         </SelectItem>
                       ))}
@@ -875,12 +875,12 @@ export default function Reception() {
                 <div>
                   <Label htmlFor="status" className="text-gray-200 font-medium">الحالة</Label>
                   <Select value={status} onValueChange={(value) => setStatus(value)}>
-                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <SelectTrigger className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400">
                       <SelectValue placeholder="اختر الحالة" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-800 dark:bg-gray-900 border-gray-700">
                       {statuses.map((status) => (
-                        <SelectItem key={status} value={status} className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                        <SelectItem key={status} value={status} className="text-white hover:bg-gray-600 focus:bg-gray-600">
                           {status}
                         </SelectItem>
                       ))}
@@ -895,7 +895,7 @@ export default function Reception() {
                     onChange={(e) => setCustomerRequest(e.target.value)}
                     placeholder="تفاصيل طلب العميل"
                     rows={3}
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -906,7 +906,7 @@ export default function Reception() {
                     onChange={(e) => setAction(e.target.value)}
                     placeholder="الإجراء المتخذ"
                     rows={3}
-                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-gray-800 dark:bg-gray-900 border-gray-700 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
                   <div className="flex items-center space-x-2 mb-4">
