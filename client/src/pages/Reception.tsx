@@ -793,64 +793,64 @@ export default function Reception() {
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date">التاريخ</Label>
+                  <Label htmlFor="date" className="text-gray-200 font-medium">التاريخ</Label>
                   <Input
                     id="date"
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="customerName">اسم العميل</Label>
+                  <Label htmlFor="customerName" className="text-gray-200 font-medium">اسم العميل</Label>
                   <Input
                     id="customerName"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="اسم العميل"
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phoneNumber">رقم الجوال</Label>
+                  <Label htmlFor="phoneNumber" className="text-gray-200 font-medium">رقم الجوال</Label>
                   <Input
                     id="phoneNumber"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="رقم الجوال"
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="project">المشروع</Label>
+                  <Label htmlFor="project" className="text-gray-200 font-medium">المشروع</Label>
                   <Input
                     id="project"
                     value={project}
                     onChange={(e) => setProject(e.target.value)}
                     placeholder="اسم المشروع"
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="employee">الموظف</Label>
+                  <Label htmlFor="employee" className="text-gray-200 font-medium">الموظف</Label>
                   <Input
                     id="employee"
                     value={employee}
                     onChange={(e) => setEmployee(e.target.value)}
                     placeholder="اسم الموظف"
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="contactMethod">طريقة التواصل</Label>
+                  <Label htmlFor="contactMethod" className="text-gray-200 font-medium">طريقة التواصل</Label>
                   <Select value={contactMethod} onValueChange={(value) => setContactMethod(value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                       <SelectValue placeholder="اختر طريقة التواصل" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
                       {contactMethods.map((method) => (
-                        <SelectItem key={method} value={method} className="text-white hover:bg-gray-700">
+                        <SelectItem key={method} value={method} className="text-white hover:bg-gray-700 focus:bg-gray-700">
                           {method}
                         </SelectItem>
                       ))}
@@ -858,14 +858,14 @@ export default function Reception() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="type">النوع</Label>
+                  <Label htmlFor="type" className="text-gray-200 font-medium">النوع</Label>
                   <Select value={type} onValueChange={(value) => setType(value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                       <SelectValue placeholder="اختر نوع الطلب" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
                       {types.map((type) => (
-                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-700">
+                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-700 focus:bg-gray-700">
                           {type}
                         </SelectItem>
                       ))}
@@ -873,14 +873,14 @@ export default function Reception() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="status">الحالة</Label>
+                  <Label htmlFor="status" className="text-gray-200 font-medium">الحالة</Label>
                   <Select value={status} onValueChange={(value) => setStatus(value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                    <SelectTrigger className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                       <SelectValue placeholder="اختر الحالة" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectContent className="bg-gray-900 dark:bg-gray-800 border-gray-600">
                       {statuses.map((status) => (
-                        <SelectItem key={status} value={status} className="text-white hover:bg-gray-700">
+                        <SelectItem key={status} value={status} className="text-white hover:bg-gray-700 focus:bg-gray-700">
                           {status}
                         </SelectItem>
                       ))}
@@ -888,25 +888,25 @@ export default function Reception() {
                   </Select>
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="customerRequest">طلب العميل</Label>
+                  <Label htmlFor="customerRequest" className="text-gray-200 font-medium">طلب العميل</Label>
                   <Textarea
                     id="customerRequest"
                     value={customerRequest}
                     onChange={(e) => setCustomerRequest(e.target.value)}
                     placeholder="تفاصيل طلب العميل"
                     rows={3}
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="action">الإجراء</Label>
+                  <Label htmlFor="action" className="text-gray-200 font-medium">الإجراء</Label>
                   <Textarea
                     id="action"
                     value={action}
                     onChange={(e) => setAction(e.target.value)}
                     placeholder="الإجراء المتخذ"
                     rows={3}
-                    className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+                    className="bg-gray-900 dark:bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                   <div className="flex items-center space-x-2 mb-4">
@@ -915,16 +915,16 @@ export default function Reception() {
                       checked={transferToComplaints}
                       onCheckedChange={(checked) => setTransferToComplaints(checked)}
                     />
-                    <Label htmlFor="transferToComplaints" className="text-sm font-medium">
+                    <Label htmlFor="transferToComplaints" className="text-sm font-medium text-gray-200">
                       تحويل هذا الطلب إلى صفحة الشكاوى
                     </Label>
                   </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={handleCancelDialog}>
+                <Button variant="outline" onClick={handleCancelDialog} className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white">
                   إلغاء
                 </Button>
-                <Button onClick={handleSaveRecord} disabled={loading}>
+                <Button onClick={handleSaveRecord} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
                   {transferToComplaints ? "حفظ وتحويل للشكاوى" : "حفظ"}
                 </Button>
               </div>
