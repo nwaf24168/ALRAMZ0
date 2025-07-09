@@ -704,7 +704,8 @@ export default function Reception() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status ? status.trim() : "";
+    switch (normalizedStatus) {
       case "مكتمل":
         return "bg-green-100 text-green-800";
       case "قيد المعالجة":
@@ -713,8 +714,10 @@ export default function Reception() {
         return "bg-red-100 text-red-800";
       case "تم التحويل للشكاوى":
         return "bg-purple-100 text-purple-800";
-      default:
+      case "جديد":
         return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -954,7 +957,7 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
-                {records.filter(r => r.status === "قيد المعالجة").length}
+                {records.filter(r => r.status && r.status.trim() === "قيد المعالجة").length}
               </div>
             </CardContent>
           </Card>
@@ -964,7 +967,7 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {records.filter(r => r.status === "مكتمل").length}
+                {records.filter(r => r.status && r.status.trim() === "مكتمل").length}
               </div>
             </CardContent>
           </Card>
@@ -974,11 +977,37 @@ export default function Reception() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {records.filter(r => r.status === "تم التحويل للشكاوى").length}
+                {records.filter(r => r.status && r.status.trim() === "تم التحويل للشكاوى").length}
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* عرض تفصيلي للحالات للتشخيص */}
+        {records.length > 0 && (
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg">تفصيل الحالات (للتشخيص)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+                {(() => {
+                  const statusCounts = {};
+                  records.forEach(record => {
+                    const status = record.status ? record.status.trim() : 'غير محدد';
+                    statusCounts[status] = (statusCounts[status] || 0) + 1;
+                  });
+                  return Object.entries(statusCounts).map(([status, count]) => (
+                    <div key={status} className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                      <div className="font-medium">{status}</div>
+                      <div className="text-blue-600">{count}</div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
